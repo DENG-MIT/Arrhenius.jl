@@ -5,6 +5,8 @@ struct Reaction
     product_stoich_coeffs
     reactant_stoich_coeffs
     reactant_orders
+    is_reversible
+    list_type4_noTroe
     Arrhenius_coeffs
     Arrhenius_A0
     Arrhenius_b0
@@ -122,6 +124,8 @@ function CreateSolution(mech)
     product_stoich_coeffs = npz["product_stoich_coeffs"]
     reactant_stoich_coeffs = npz["reactant_stoich_coeffs"]
     reactant_orders = npz["reactant_orders"]
+    is_reversible = npz["is_reversible"]
+    list_type4_noTroe = npz["list_type4_noTroe"]
     Arrhenius_coeffs = npz["Arrhenius_coeffs"]
     Arrhenius_A0 = npz["Arrhenius_A0"]
     Arrhenius_b0 = npz["Arrhenius_b0"]
@@ -145,7 +149,7 @@ function CreateSolution(mech)
         end
     end
 
-    reaction = Reaction(product_stoich_coeffs, reactant_stoich_coeffs, reactant_orders,
+    reaction = Reaction(product_stoich_coeffs, reactant_stoich_coeffs, reactant_orders, is_reversible, list_type4_noTroe,
                         Arrhenius_coeffs, Arrhenius_A0, Arrhenius_b0, Arrhenius_Ea0,
                         Troe_A, Troe_T1, Troe_T2, Troe_T3, index_three_body, index_falloff, efficiencies_coeffs)
 

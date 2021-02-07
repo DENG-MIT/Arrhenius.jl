@@ -15,7 +15,7 @@ end
 
 function H_mole_func(gas, mgas)
     T = mgas.T
-    H_T = [1., T / 2., T^2 / 3., T^3 / 4., T^4 / 5., 1. /T]
+    H_T = [1., T / 2., T^2 / 3., T^3 / 4., T^4 / 5., 1. / T]
     if T <= 1000.
         mgas.h_mole = @view(gas.thermo.nasa_low[:, 1:6]) * H_T  * R * T
     else

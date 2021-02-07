@@ -7,7 +7,6 @@ import reactorch as rt
 import json
 
 mech_yaml = 'JP10skeletal.yaml'
-# mech_yaml = 'h2o2.yaml'
 
 sol = rt.Solution(mech_yaml=mech_yaml, device=torch.device('cpu'),
                   vectorize=True,
@@ -23,12 +22,11 @@ product_stoich_coeffs = gas.product_stoich_coeffs()
 Arrhenius_coeffs = sol.Arrhenius_coeffs
 efficiencies_coeffs = sol.efficiencies_coeffs
 
-list_type4_noTroe = [-1]
+list_type4_noTroe = []
 for i in sol.list_reaction_type4:
-    if i not in sol.list_reaction_type4_Troe:
-        list_type4_noTroe.append(i+1)
-
-list_type4_noTroe = np.array(list_type4_noTroe)
+    if i not in sol.list_reaction_type4_Troe::
+        list_type4_noTroe
+    
 
 np.savez(mech_yaml,
          molecular_weights=molecular_weights,
@@ -36,7 +34,6 @@ np.savez(mech_yaml,
          product_stoich_coeffs=product_stoich_coeffs,
          reactant_orders=sol.reactant_orders,
          is_reversible = sol.is_reversible,
-         list_type4_noTroe = list_type4_noTroe,
          Arrhenius_coeffs=Arrhenius_coeffs,
          efficiencies_coeffs=efficiencies_coeffs,
          Arrhenius_A0 = sol.Arrhenius_A0,
