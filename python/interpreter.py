@@ -7,13 +7,15 @@ import reactorch as rt
 import json
 
 mech_yaml = 'h2o2.yaml'
-composition = "O2:1.0"
+composition = "H2:1.0"
 
 sol = rt.Solution(mech_yaml=mech_yaml, device=torch.device('cpu'),
                   vectorize=True,
                   is_clip=False, is_norm=False, is_wdot_vec=False)
 
 gas = sol.gas
+
+gas.TPY = 1200, ct.one_atm, np.ones(gas.n_species)/gas.n_species
 
 molecular_weights = gas.molecular_weights.tolist()
 reactant_stoich_coeffs = gas.reactant_stoich_coeffs()
@@ -26,6 +28,7 @@ np.savez(mech_yaml,
          molecular_weights=molecular_weights,
          reactant_stoich_coeffs=reactant_stoich_coeffs,
          product_stoich_coeffs=product_stoich_coeffs,
+         reactant_orders=sol.reactant_orders,
          Arrhenius_coeffs=Arrhenius_coeffs,
          efficiencies_coeffs=efficiencies_coeffs,
          Arrhenius_A0 = sol.Arrhenius_A0,
