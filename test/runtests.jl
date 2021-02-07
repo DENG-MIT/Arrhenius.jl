@@ -1,11 +1,11 @@
 using Arrhenius
+using Arrhenius:one_atm,CreateSolution,CreateMSolution,set_states
 using Test
 
 @testset "jl" begin
     # Write your tests here.
-    # TODO: test not implemented yet
 
-    gas = CreateSolution("python/JP10skeletal.yaml")
+    gas = CreateSolution("../python/JP10skeletal.yaml")
     mgas = CreateMSolution(gas)
 
     set_states(gas, mgas, 1200., one_atm, ones(gas.n_species) ./ gas.n_species)
