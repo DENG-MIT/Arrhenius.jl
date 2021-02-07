@@ -1,0 +1,13 @@
+name = "Arrhenius"
+uuid = "d1b5debe-99ef-4a51-88bd-55361cc46b8b"
+authors = ["jiweiqi <jiweiqi10@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
