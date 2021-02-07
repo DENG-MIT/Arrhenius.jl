@@ -3,6 +3,11 @@ uuid = "d1b5debe-99ef-4a51-88bd-55361cc46b8b"
 authors = ["jiweiqi <jiweiqi10@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
+
 [compat]
 julia = "1"
 
