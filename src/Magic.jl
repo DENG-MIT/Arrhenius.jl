@@ -17,3 +17,7 @@ end
 function X2Y(gas, mgas)
     mgas.Y = mgas.X .* gas.molecular_weights / mgas.mean_molecular_weight
 end
+
+function species_index(gas, species)
+    return findfirst(gas.species_names .== species)
+end
