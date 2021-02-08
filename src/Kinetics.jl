@@ -10,8 +10,8 @@ function wdot_func(gas, mgas)
         kf[i] *= dot(reaction.efficiencies_coeffs[:, i], C)
     end
 
-    j = 1
-    for i in reaction.index_falloff
+    jj = 1
+    for (j, i) in enumerate(reaction.index_falloff)
         kinf = kf[i]
         A0 = reaction.Arrhenius_A0[j]
         b0 = reaction.Arrhenius_b0[j]
@@ -30,7 +30,7 @@ function wdot_func(gas, mgas)
         T1 = reaction.Troe_T1[j]
         T2 = reaction.Troe_T2[j]
         T3 = reaction.Troe_T3[j]
-        j = j + 1
+        jj = jj + 1
 
         F_cent = (1 - A) * exp(-T / T3) + A * exp(-T / T1) + exp(-T2 / T)
         lF_cent = log10(F_cent)
@@ -51,7 +51,7 @@ function wdot_func(gas, mgas)
         i_reactant = findall(reaction.reactant_orders[:, i] .> 0.01)
         i_product = findall(reaction.product_stoich_coeffs[:, i] .> 0.01)
         rop_f = kf[i]
-        for j in i_reactant
+        for i_r in i_reactant
             rop_f *= C[j]^reaction.reactant_orders[j, i]
         end
         rop_r = kr[i]
