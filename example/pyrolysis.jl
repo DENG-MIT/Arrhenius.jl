@@ -25,8 +25,7 @@ P = one_atm
 
 set_states(gas, mgas, T0, P, Y0)
 
-@show mgas.ρ_mass
-@show mgas.wdot
+@show mgas.ρ_mass mgas.wdot
 
 u0 = vcat(Y0, T0)
 

@@ -78,5 +78,7 @@ function CreateSolution(mech)
                         index_three_body, index_falloff, efficiencies_coeffs,
                         i_reactant, i_product)
 
+    global vk = product_stoich_coeffs - reactant_stoich_coeffs
+    global reaction
     gas = Solution(n_species, n_reactions, molecular_weights, species_names, thermo, reaction)
 end
