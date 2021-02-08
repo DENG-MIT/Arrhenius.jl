@@ -12,7 +12,7 @@ The name of `Arrhenius.jl` is reflecting the fact that the distinction between c
 
 You can start from the example of pyrolysis of JP10 (an aviation fuel power the flight) under the folder of `example`. It will guide you on how to implement the governing equations with a couple of lines of code.
 
-> Currently, the package relies on `Cantera` and `ReacTorch` for interpreting the reaction mechanism. If you want to have a try, you don't need to install Cantera and ReacTorch, since there are already some pre-compiled reaction mechanisms under the folder of `python`. Otherwise, you can install Cantera and ReacTorch to compile it using the python script `interpreter.py` under the folder of `python`. You can also ask for help in the discussion forum and our developers can compile the model for you.
+> Currently, the package relies on [`Cantera`](https://github.com/Cantera/cantera) and [`ReacTorch`](https://github.com/DENG-MIT/reactorch) for interpreting the reaction mechanism. If you want to have a try, you don't need to install Cantera and ReacTorch, since there are already some pre-compiled reaction mechanisms under the folder of `python`. Otherwise, you can install [`Cantera`](https://github.com/Cantera/cantera) and [`ReacTorch`](https://github.com/DENG-MIT/reactorch) to compile it using the python script `interpreter.py` under the folder of `mechanism`. You can also ask for help in the discussion forum and our developers can compile the model for you.
 
 ## Validation with Cantera
 
