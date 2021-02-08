@@ -12,7 +12,7 @@ ct_ts= cantera_data[:, 1]
 ct_T = cantera_data[:, 2]
 ct_Y = cantera_data[:, 3:end]
 
-gas = CreateSolution("../python/JP10skeletal.yaml")
+gas = CreateSolution("../mechanism/JP10skeletal.yaml")
 mgas = CreateMSolution(gas)
 
 ns = gas.n_species

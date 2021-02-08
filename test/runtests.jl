@@ -5,7 +5,7 @@ using Test
 @testset "jl" begin
     # Write your tests here.
 
-    gas = CreateSolution("../python/JP10skeletal.yaml")
+    gas = CreateSolution("../mechanism/JP10skeletal.yaml")
     mgas = CreateMSolution(gas)
 
     set_states(gas, mgas, 1200., one_atm, ones(gas.n_species) ./ gas.n_species)

@@ -9,7 +9,7 @@ import cantera as ct
 
 np.random.seed(1)
 
-gas = ct.Solution('../python/JP10skeletal.yaml')
+gas = ct.Solution('../mechanism/JP10skeletal.yaml')
 gas.TPY = 1200, ct.one_atm, 'C10H16:0.05,N2:0.95'
 
 Y_fuel_0 = gas.Y[gas.species_index('C10H16')]
