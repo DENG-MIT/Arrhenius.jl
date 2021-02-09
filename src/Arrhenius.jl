@@ -10,7 +10,7 @@ module Arrhenius
     include("Thermo.jl")
     include("Kinetics.jl")
 end
-#
+
 # using LinearAlgebra
 # using DifferentialEquations
 # using Sundials
@@ -18,8 +18,7 @@ end
 # using ForwardDiff
 # using Zygote
 #
-# Arrhenius.CreateSolution("./mechanism/JP10skeletal.yaml")
-# gas = Arrhenius.gas
+# gas = Arrhenius.CreateSolution("./mechanism/JP10skeletal.yaml")
 #
 # ns = gas.n_species
 # Y0 = ones(ns) / ns

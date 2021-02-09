@@ -82,5 +82,5 @@ function CreateSolution(mech)
     global reactant_orders, product_stoich_coeffs, i_reactant, i_product
     global gas
 
-    return false
+    return gas
 end

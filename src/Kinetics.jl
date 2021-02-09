@@ -52,7 +52,7 @@ function wdot_func(T, C, S0, h_mole)
         for j in i_product[i]
             rop_r *= C[j]^product_stoich_coeffs[j, i]
         end
-        _qdot[i] *= rop_f - rop_r
+        _qdot[i] = rop_f - rop_r
     end
     return vk * _qdot
 end
