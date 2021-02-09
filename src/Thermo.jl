@@ -1,47 +1,44 @@
-function cp_mole_func(gas, mgas)
-    T = mgas.T
-    cp_T = [1., T, T^2, T^3, T^4]
-    if T <= 1000.
-        cp = @view(gas.thermo.nasa_low[:, 1:5]) * cp_T
+function cp_mole_func(T, X)
+    if T <= 1000.0
+        cp = @view(gas.thermo.nasa_low[:, 1:5]) * [1.0, T, T^2, T^3, T^4]
     else
-        cp = @view(gas.thermo.nasa_high[:, 1:5]) * cp_T
+        cp = @view(gas.thermo.nasa_high[:, 1:5]) * [1.0, T, T^2, T^3, T^4]
     end
-    mgas.cp_mole = dot(cp, mgas.X) * R
+    return dot(cp, X) * R
 end
 
-function cp_mass_func(gas, mgas)
-    mgas.cp_mass = mgas.cp_mole / mgas.mean_molecular_weight
+function cp_mass_func(cp_mole, mean_MW)
+    return cp_mole / mean_MW
 end
 
-function H_mole_func(gas, mgas)
-    T = mgas.T
-    H_T = [1., T / 2., T^2 / 3., T^3 / 4., T^4 / 5., 1. / T]
-    if T <= 1000.
-        mgas.h_mole = @view(gas.thermo.nasa_low[:, 1:6]) * H_T  * R * T
+function H_mole_func(T, X)
+    H_T = [1.0, T / 2.0, T^2 / 3.0, T^3 / 4.0, T^4 / 5.0, 1.0 / T]
+    if T <= 1000.0
+        h_mole = @view(gas.thermo.nasa_low[:, 1:6]) * H_T * R * T
     else
-        mgas.h_mole = @view(gas.thermo.nasa_high[:, 1:6]) * H_T  * R * T
+        h_mole = @view(gas.thermo.nasa_high[:, 1:6]) * H_T * R * T
     end
-    mgas.H_mole = dot(mgas.h_mole, mgas.X)
+    H_mole = dot(h_mole, X)
+    return H_mole, h_mole
 end
 
-function H_mass_func(gas, mgas)
-    mgas.H_mass = dot(mgas.h_mole ./ gas.molecular_weights, mgas.Y)
+function H_mass_func(h_mole, Y)
+    return dot(h_mole ./ gas.MW, Y)
 end
 
-function S_mole_func(gas, mgas)
-    T = mgas.T
-    S_T = [log(T), T, T^2 / 2., T^3 / 3., T^4 / 4., 1.]
-    if T <= 1000.
-        S0 = @view(gas.thermo.nasa_low[:, [1,2,3,4,5,7]]) * S_T  * R
+function S_mole_func(T, P, X)
+    S_T = [log(T), T, T^2 / 2.0, T^3 / 3.0, T^4 / 4.0, 1.0]
+    if T <= 1000.0
+        S0 = @view(gas.thermo.nasa_low[:, [1, 2, 3, 4, 5, 7]]) * S_T * R
     else
-        S0 = @view(gas.thermo.nasa_high[:, [1,2,3,4,5,7]]) * S_T  * R
+        S0 = @view(gas.thermo.nasa_high[:, [1, 2, 3, 4, 5, 7]]) * S_T * R
     end
-    mgas.S0 = S0
-    X = @. S0 - R * log(clamp(mgas.X, 1.e-30, Inf))
-    mgas.s_mole = X .- R * (mgas.P / one_atm)
-    mgas.S_mole = dot(mgas.s_mole, mgas.X)
+    _X = @. S0 - R * log(clamp(X, 1.e-30, Inf))
+    s_mole = _X .- R * (P / one_atm)
+    S_mole = dot(s_mole, X)
+    return S_mole, s_mole, S0
 end
 
-function S_mass_func(gas, mgas)
-    mgas.S_mass = dot(mgas.s_mole ./ gas.molecular_weights, mgas.Y)
+function S_mass_func(s_mole, Y)
+    return dot(s_mole ./ gas.MW, Y)
 end

@@ -1,13 +1,12 @@
-function wdot_func(gas, mgas)
-    T = mgas.T
+function wdot_func(T, C, S0, h_mole)
 
-    mgas.kf = @. @view(reaction.Arrhenius_coeffs[:, 1]) * exp(
+    _kf = @. @view(reaction.Arrhenius_coeffs[:, 1]) * exp(
         @view(reaction.Arrhenius_coeffs[:, 2]) * log(T) -
         @view(reaction.Arrhenius_coeffs[:, 3]) * (4184.0 / R / T),
     )
 
     for i in reaction.index_three_body
-        mgas.kf[i] *= dot(@view(reaction.efficiencies_coeffs[:, i]), mgas.C)
+        _kf[i] *= dot(@view(reaction.efficiencies_coeffs[:, i]), C)
     end
 
     jj = 1
@@ -16,12 +15,10 @@ function wdot_func(gas, mgas)
         b0 = reaction.Arrhenius_b0[j]
         Ea0 = reaction.Arrhenius_Ea0[j]
         k0 = A0 * exp(b0 * log(T) - Ea0 * 4184.0 / R / T)
-        Pr =
-            k0 * dot(@view(reaction.efficiencies_coeffs[:, i]), mgas.C) /
-            mgas.kf[i]
+        Pr = k0 * dot(@view(reaction.efficiencies_coeffs[:, i]), C) / _kf[i]
         lPr = log10(Pr)
 
-        mgas.kf[i] *= (Pr / (1 + Pr))
+        _kf[i] *= (Pr / (1 + Pr))
 
         if i in reaction.list_type4_noTroe
             continue
@@ -35,26 +32,27 @@ function wdot_func(gas, mgas)
         _C = -0.4 - 0.67 * lF_cent
         N = 0.75 - 1.27 * lF_cent
         f1 = (lPr + _C) / (N - 0.14 * (lPr + _C))
-        mgas.kf[i] *= exp(log(10.0) * lF_cent / (1 + f1^2))
+        _kf[i] *= exp(log(10.0) * lF_cent / (1 + f1^2))
         jj += 1
     end
 
-    ΔS_R = vk' * mgas.S0 / R
-    ΔH_RT = vk' * mgas.h_mole / (R * T)
+    ΔS_R = vk' * S0 / R
+    ΔH_RT = vk' * h_mole / (R * T)
     Keq = exp.(ΔS_R .- ΔH_RT .+ log(one_atm / R / T) .* sum(vk, dims = 1)[1, :])
-    mgas.kr = @. mgas.kf / Keq * reaction.is_reversible
+    _kr = @. _kf / Keq * reaction.is_reversible
 
+    _qdot = similar(_kf)
     for i = 1:gas.n_reactions
-        rop_f = mgas.kf[i]
+        rop_f = _kf[i]
         for j in i_reactant[i]
-            rop_f *= mgas.C[j]^reactant_orders[j, i]
+            rop_f *= C[j]^reactant_orders[j, i]
         end
 
-        rop_r = mgas.kr[i]
+        rop_r = _kr[i]
         for j in i_product[i]
-            rop_r *= mgas.C[j]^product_stoich_coeffs[j, i]
+            rop_r *= C[j]^product_stoich_coeffs[j, i]
         end
-        mgas.qdot[i] = rop_f - rop_r
+        _qdot[i] *= rop_f - rop_r
     end
-    mgas.wdot = vk * mgas.qdot
+    return vk * _qdot
 end

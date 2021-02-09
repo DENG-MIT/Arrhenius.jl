@@ -1,23 +1,23 @@
-function Y2X(gas, mgas)
-    mgas.X = mgas.Y * mgas.mean_molecular_weight ./ gas.molecular_weights
+function Y2X(Y, mean_MW)
+    return Y * mean_MW ./ gas.MW
 end
 
-function Y2C(gas, mgas)
-    mgas.C = mgas.Y * mgas.ρ_mass ./ gas.molecular_weights
+function Y2C(Y, ρ_mass)
+    return Y * ρ_mass ./ gas.MW
 end
 
-function C2X(gas, mgas)
-    mgas.X = mgas.C ./ sum(mgas.C)
+function C2X(C)
+    return C ./ sum(C)
 end
 
-function X2C(gas, mgas)
-    mgas.C = mgas.X * mgas.ρ_mass ./ gas.molecular_weights
+function X2C(X, ρ_mass)
+    return X * ρ_mass ./ gas.MW
 end
 
-function X2Y(gas, mgas)
-    mgas.Y = mgas.X .* gas.molecular_weights / mgas.mean_molecular_weight
+function X2Y(X, mean_MW)
+    return X .* gas.MW / mean_MW
 end
 
-function species_index(gas, species)
+function species_index(species)
     return findfirst(gas.species_names .== species)
 end

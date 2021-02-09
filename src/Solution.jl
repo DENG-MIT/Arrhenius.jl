@@ -1,18 +1,16 @@
-function set_states(gas, mgas, T, P, Y)
-    mgas.T = T
-    mgas.P = P
-    mgas.Y = Y
-    mgas.mean_molecular_weight = 1. / dot(mgas.Y, 1 ./ gas.molecular_weights)
-    mgas.ρ_mass = mgas.P / R / mgas.T * mgas.mean_molecular_weight
-    Y2X(gas, mgas)
-    Y2C(gas, mgas)
-    cp_mole_func(gas, mgas)
-    cp_mass_func(gas, mgas)
-    H_mole_func(gas, mgas)
-    H_mass_func(gas, mgas)
-    S_mole_func(gas, mgas)
-    S_mass_func(gas, mgas)
-    wdot_func(gas, mgas)
+function set_states(T, P, Y)
+    mean_MW = 1. / dot(Y, 1 ./ gas.MW)
+    ρ_mass = P / R / T * mean_MW
+    X = Y2X(Y, mean_MW)
+    C = Y2C(Y, ρ_mass)
+    cp_mole = cp_mole_func(T, X)
+    cp_mass = cp_mass_func(cp_mole, mean_MW)
+    H_mole, h_mole = H_mole_func(T, X)
+    H_mass = H_mass_func(h_mole, Y)
+    S_mole, s_mole, S0 = S_mole_func(T, P, X)
+    S_mass = S_mass_func(s_mole, Y)
+    wdot = wdot_func(T, C, S0, h_mole)
+    return wdot
 end
 
 function CreateSolution(mech)
@@ -33,7 +31,7 @@ function CreateSolution(mech)
     thermo = Thermo(nasa_low, nasa_high)
 
     npz = npzread("$mech.npz")
-    molecular_weights = npz["molecular_weights"]
+    MW = npz["molecular_weights"]
     efficiencies_coeffs = npz["efficiencies_coeffs"]
     product_stoich_coeffs = npz["product_stoich_coeffs"]
     reactant_stoich_coeffs = npz["reactant_stoich_coeffs"]
@@ -65,7 +63,6 @@ function CreateSolution(mech)
 
     i_reactant = []
     i_product = []
-
     for i in 1:n_reactions
         push!(i_reactant, findall(reactant_orders[:, i] .> 0.01))
         push!(i_product, findall(product_stoich_coeffs[:, i] .> 0.01))
@@ -78,8 +75,12 @@ function CreateSolution(mech)
                         index_three_body, index_falloff, efficiencies_coeffs,
                         i_reactant, i_product)
 
+    gas = Solution(n_species, n_reactions, MW, species_names, thermo, reaction)
+
     global vk = product_stoich_coeffs - reactant_stoich_coeffs
     global reaction
     global reactant_orders, product_stoich_coeffs, i_reactant, i_product
-    gas = Solution(n_species, n_reactions, molecular_weights, species_names, thermo, reaction)
+    global gas
+
+    return false
 end
