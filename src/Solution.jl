@@ -9,8 +9,7 @@ function set_states(T, P, Y)
     H_mass = H_mass_func(h_mole, Y)
     S_mole, s_mole, S0 = S_mole_func(T, P, X)
     S_mass = S_mass_func(s_mole, Y)
-    wdot = wdot_func(T, C, S0, h_mole)
-    return wdot
+    return wdot_func(T, C, S0, h_mole)
 end
 
 function CreateSolution(mech)

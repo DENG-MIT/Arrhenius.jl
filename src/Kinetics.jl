@@ -48,11 +48,16 @@ function wdot_func(T, C, S0, h_mole)
             rop_f *= C[j]^reactant_orders[j, i]
         end
 
-        rop_r = _kr[i]
-        for j in i_product[i]
-            rop_r *= C[j]^product_stoich_coeffs[j, i]
+        if reaction.is_reversible[i]
+            rop_r = _kr[i]
+            for j in i_product[i]
+                rop_r *= C[j]^product_stoich_coeffs[j, i]
+            end
+            _qdot[i] = rop_f - rop_r
+        else
+            _qdot[i] = rop_f
         end
-        _qdot[i] = rop_f - rop_r
     end
-    return vk * _qdot
+
+    return vk * _qdot  #, _qdot, _kf, _kr
 end
