@@ -79,6 +79,7 @@ function CreateSolution(mech)
     global vk = product_stoich_coeffs - reactant_stoich_coeffs
     global reaction
     global reactant_orders, product_stoich_coeffs, i_reactant, i_product
+    global Arrhenius_coeffs
     global gas
 
     return gas
