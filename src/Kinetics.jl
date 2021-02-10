@@ -41,23 +41,42 @@ function wdot_func(T, C, S0, h_mole)
     Keq = exp.(ΔS_R .- ΔH_RT .+ log(one_atm / R / T) .* sum(vk, dims = 1)[1, :])
     _kr = @. _kf / Keq * reaction.is_reversible
 
-    _qdot = similar(_kf)
-    for i = 1:gas.n_reactions
+    function qdot_func(i)
         rop_f = _kf[i]
         for j in i_reactant[i]
             rop_f *= C[j]^reactant_orders[j, i]
         end
-
         if reaction.is_reversible[i]
             rop_r = _kr[i]
             for j in i_product[i]
                 rop_r *= C[j]^product_stoich_coeffs[j, i]
             end
-            _qdot[i] = rop_f - rop_r
-        else
-            _qdot[i] = rop_f
+            rop_f -= rop_r
         end
+        rop_f
     end
+    _qdot = qdot_func.(1:gas.n_reactions)
+
+    # _qdot = _kf * 1.0
+    # _qdot = []
+    # for i = 1:gas.n_reactions
+    #     rop_f = _kf[i]
+    #     for j in i_reactant[i]
+    #         rop_f *= C[j]^reactant_orders[j, i]
+    #     end
+    #
+    #     if reaction.is_reversible[i]
+    #         rop_r = _kr[i]
+    #         for j in i_product[i]
+    #             rop_r *= C[j]^product_stoich_coeffs[j, i]
+    #         end
+    #         # _qdot[i] = rop_f - rop_r
+    #         push!(_qdot, rop_f - rop_r)
+    #     else
+    #         # _qdot[i] = rop_f
+    #         push!(_qdot, rop_f)
+    #     end
+    # end
 
     return vk * _qdot  #, _qdot, _kf, _kr
 end
