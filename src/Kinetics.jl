@@ -10,7 +10,7 @@ end
 
 function kf_func(i; T, C)
     kfi = Arrhenius_coeffs[i, 1] * T^Arrhenius_coeffs[i, 2] *
-            exp(Arrhenius_coeffs[i, 3] * (4184.0 / R / T))
+            exp(-Arrhenius_coeffs[i, 3] * (4184.0 / R / T))
 
     if i in reaction.index_three_body
         kfi *= dot(@view(reaction.efficiencies_coeffs[:, i]), C)
