@@ -21,3 +21,4 @@ end
 function species_index(gas, species)
     return findfirst(gas.species_names .== species)
 end
+export species_index

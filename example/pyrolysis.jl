@@ -1,6 +1,4 @@
 using Arrhenius
-using Arrhenius:one_atm
-using Arrhenius:CreateSolution, species_index, R, one_atm
 using LinearAlgebra
 using DifferentialEquations
 using Sundials

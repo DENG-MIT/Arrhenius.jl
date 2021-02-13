@@ -105,3 +105,5 @@ function CreateSolution(mech)
     gas = Solution(n_species, n_reactions, MW, species_names, thermo, reaction)
     return gas
 end
+
+export CreateSolution
