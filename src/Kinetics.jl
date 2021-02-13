@@ -51,3 +51,4 @@ function wdot_func(reaction, T, C, S0, h_mole)
 
     return reaction.vk * (_kf - _kr)
 end
+export wdot_func

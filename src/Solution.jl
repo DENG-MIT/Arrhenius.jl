@@ -3,14 +3,13 @@ function set_states(gas::Solution, T, P, Y)
     ρ_mass = P / R / T * mean_MW
     X = Y2X(gas, Y, mean_MW)
     C = Y2C(gas, Y, ρ_mass)
-    cp_mole = cp_mole_func(gas, T, X)
-    cp_mass = cp_mass_func(gas, cp_mole, mean_MW)
-    H_mole, h_mole = H_mole_func(gas, T, X)
-    H_mass = H_mass_func(gas, h_mole, Y)
-    S_mole, s_mole, S0 = S_mole_func(gas, T, P, X)
-    S_mass = S_mass_func(gas, s_mole, Y)
-    return wdot_func(gas.reaction, T, C, S0, h_mole)
+    cp_mole, cp_mass = get_cp(gas, T, X, mean_MW)
+    h_mole = get_H(gas, T, Y, X)
+    S0 = get_S(gas, T, P, X)
+    wdot = wdot_func(gas.reaction, T, C, S0, h_mole)
+    return wdot
 end
+export set_states
 
 function CreateSolution(mech)
     yaml = YAML.load_file(mech)
