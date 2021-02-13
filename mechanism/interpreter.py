@@ -23,26 +23,19 @@ product_stoich_coeffs = gas.product_stoich_coeffs()
 Arrhenius_coeffs = sol.Arrhenius_coeffs
 efficiencies_coeffs = sol.efficiencies_coeffs
 
-list_type4_noTroe = [-1]
-for i in sol.list_reaction_type4:
-    if i not in sol.list_reaction_type4_Troe:
-        list_type4_noTroe.append(i+1)
-
-list_type4_noTroe = np.array(list_type4_noTroe)
-
 np.savez(mech_yaml,
          molecular_weights=molecular_weights,
          reactant_stoich_coeffs=reactant_stoich_coeffs,
          product_stoich_coeffs=product_stoich_coeffs,
          reactant_orders=sol.reactant_orders,
-         is_reversible = sol.is_reversible,
-         list_type4_noTroe = list_type4_noTroe,
+         is_reversible=sol.is_reversible,
          Arrhenius_coeffs=Arrhenius_coeffs,
          efficiencies_coeffs=efficiencies_coeffs,
-         Arrhenius_A0 = sol.Arrhenius_A0,
-         Arrhenius_b0 = sol.Arrhenius_b0,
-         Arrhenius_Ea0 = sol.Arrhenius_Ea0,
-         Troe_A = sol.Troe_A,
-         Troe_T1 = sol.Troe_T1,
-         Troe_T2 = sol.Troe_T2,
-         Troe_T3 = sol.Troe_T3)
+        #  Arrhenius_A0=sol.Arrhenius_A0,
+        #  Arrhenius_b0=sol.Arrhenius_b0,
+        #  Arrhenius_Ea0=sol.Arrhenius_Ea0,
+        #  Troe_A=sol.Troe_A,
+        #  Troe_T1=sol.Troe_T1,
+        #  Troe_T2=sol.Troe_T2,
+        #  Troe_T3=sol.Troe_T3
+         )

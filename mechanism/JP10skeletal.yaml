@@ -734,545 +734,546 @@ reactions:
     C2H4 + 0.062529 C3H6 + 0.859765 C5H6 + 0.367353 H2 + 0.361213 C6H6 +
     0.084728 C6H5CH3  # Reaction 7
   rate-constant: {A: 4.33e-06, b: 4.983, Ea: 8992.0}
-- equation: H + O2 <=> O + OH  # Reaction 8
-  rate-constant: {A: 2.644e+16, b: -0.6707, Ea: 1.7041e+04}
-- equation: O + H2 <=> H + OH  # Reaction 9
-  rate-constant: {A: 4.589e+04, b: 2.7, Ea: 6260.0}
-- equation: OH + H2 <=> H + H2O  # Reaction 10
-  rate-constant: {A: 1.734e+08, b: 1.51, Ea: 3430.0}
-- equation: OH + OH <=> O + H2O  # Reaction 11
-  rate-constant: {A: 3.973e+04, b: 2.4, Ea: -2110.0}
-- equation: H + H + M <=> H2 + M  # Reaction 12
-  type: three-body
-  rate-constant: {A: 1.78e+18, b: -1.0, Ea: 0.0}
-  efficiencies: {H2: 0.0, H2O: 0.0, CO2: 0.0}
-- equation: H + H + H2 <=> H2 + H2  # Reaction 13
-  rate-constant: {A: 9.0e+16, b: -0.6, Ea: 0.0}
-- equation: H + H + H2O <=> H2 + H2O  # Reaction 14
-  rate-constant: {A: 5.624e+19, b: -1.25, Ea: 0.0}
-- equation: H + H + CO2 <=> H2 + CO2  # Reaction 15
-  rate-constant: {A: 5.5e+20, b: -2.0, Ea: 0.0}
-- equation: H + OH + M <=> H2O + M  # Reaction 16
-  type: three-body
-  rate-constant: {A: 4.4e+22, b: -2.0, Ea: 0.0}
-  efficiencies: {H2: 2.0, H2O: 6.3, CO2: 3.6, CO: 1.75}
-- equation: O + H + M <=> OH + M  # Reaction 17
-  type: three-body
-  rate-constant: {A: 9.428e+18, b: -1.0, Ea: 0.0}
-  efficiencies: {H2: 2.0, H2O: 12.0, CO2: 3.6, CO: 1.75}
-- equation: O + O + M <=> O2 + M  # Reaction 18
-  type: three-body
-  rate-constant: {A: 1.2e+17, b: -1.0, Ea: 0.0}
-  efficiencies: {H2: 2.4, H2O: 15.4, CO2: 3.6, CO: 1.75}
-- equation: H + O2 (+ M) <=> HO2 (+ M)  # Reaction 19
-  type: falloff
-  low-P-rate-constant: {A: 6.328e+19, b: -1.4, Ea: 0.0}
-  high-P-rate-constant: {A: 5.116e+12, b: 0.44, Ea: 0.0}
-  Troe: {A: 0.5, T3: 1.0e-30, T1: 1.0e+30}
-  efficiencies: {H2O: 11.89, CO2: 2.18, CO: 1.09, O2: 0.85}
-- equation: H2 + O2 <=> HO2 + H  # Reaction 20
-  rate-constant: {A: 5.916e+05, b: 2.433, Ea: 5.3502e+04}
-- equation: OH + OH (+ M) <=> H2O2 (+ M)  # Reaction 21
-  type: falloff
-  low-P-rate-constant: {A: 2.01e+17, b: -0.584, Ea: -2293.0}
-  high-P-rate-constant: {A: 1.11e+14, b: -0.37, Ea: 0.0}
-  Troe: {A: 0.7346, T3: 94.0, T1: 1756.0, T2: 5182.0}
-  efficiencies: {H2: 2.0, H2O: 6.0, CO2: 3.6, CO: 1.75}
-- equation: HO2 + H <=> O + H2O  # Reaction 22
-  rate-constant: {A: 3.97e+12, b: 0.0, Ea: 671.0}
-- equation: HO2 + H <=> OH + OH  # Reaction 23
-  rate-constant: {A: 7.485e+13, b: 0.0, Ea: 295.0}
-- equation: HO2 + O <=> OH + O2  # Reaction 24
-  rate-constant: {A: 4.0e+13, b: 0.0, Ea: 0.0}
-- equation: HO2 + HO2 <=> O2 + H2O2  # Reaction 25
-  rate-constant: {A: 1.3e+11, b: 0.0, Ea: -1630.0}
-  duplicate: true
-- equation: HO2 + HO2 <=> O2 + H2O2  # Reaction 26
-  rate-constant: {A: 3.658e+14, b: 0.0, Ea: 1.2e+04}
-  duplicate: true
-- equation: OH + HO2 <=> H2O + O2  # Reaction 27
-  rate-constant: {A: 1.41e+18, b: -1.76, Ea: 60.0}
-  duplicate: true
-- equation: OH + HO2 <=> H2O + O2  # Reaction 28
-  rate-constant: {A: 1.12e+85, b: -22.3, Ea: 2.69e+04}
-  duplicate: true
-- equation: OH + HO2 <=> H2O + O2  # Reaction 29
-  rate-constant: {A: 5.37e+70, b: -16.72, Ea: 3.29e+04}
-  duplicate: true
-- equation: OH + HO2 <=> H2O + O2  # Reaction 30
-  rate-constant: {A: 2.51e+12, b: 2.0, Ea: 4.0e+04}
-  duplicate: true
-- equation: OH + HO2 <=> H2O + O2  # Reaction 31
-  rate-constant: {A: 1.0e+136, b: -40.0, Ea: 3.48e+04}
-  duplicate: true
-- equation: H2O2 + H <=> HO2 + H2  # Reaction 32
-  rate-constant: {A: 6.05e+06, b: 2.0, Ea: 5200.0}
-- equation: H2O2 + H <=> OH + H2O  # Reaction 33
-  rate-constant: {A: 2.41e+13, b: 0.0, Ea: 3970.0}
-- equation: H2O2 + O <=> OH + HO2  # Reaction 34
-  rate-constant: {A: 9.63e+06, b: 2.0, Ea: 3970.0}
-- equation: H2O2 + OH <=> HO2 + H2O  # Reaction 35
-  rate-constant: {A: 2.0e+12, b: 0.0, Ea: 427.0}
-  duplicate: true
-- equation: H2O2 + OH <=> HO2 + H2O  # Reaction 36
-  rate-constant: {A: 2.67e+41, b: -7.0, Ea: 3.76e+04}
-  duplicate: true
-- equation: CO + O (+ M) <=> CO2 (+ M)  # Reaction 37
-  type: falloff
-  low-P-rate-constant: {A: 1.173e+24, b: -2.79, Ea: 4191.0}
-  high-P-rate-constant: {A: 1.362e+10, b: 0.0, Ea: 2384.0}
-  efficiencies: {H2: 2.0, H2O: 12.0, CO2: 3.6, CO: 1.75}
-- equation: CO + OH <=> CO2 + H  # Reaction 38
-  rate-constant: {A: 7.046e+04, b: 2.053, Ea: -355.67}
-  duplicate: true
-- equation: CO + OH <=> CO2 + H  # Reaction 39
-  rate-constant: {A: 5.757e+12, b: -0.664, Ea: 331.83}
-  duplicate: true
-- equation: CO + O2 <=> CO2 + O  # Reaction 40
-  rate-constant: {A: 1.119e+12, b: 0.0, Ea: 4.77e+04}
-- equation: CO + HO2 <=> CO2 + OH  # Reaction 41
-  rate-constant: {A: 1.57e+05, b: 2.18, Ea: 1.794261e+04}
-- equation: HCO + H <=> CO + H2  # Reaction 42
-  rate-constant: {A: 1.2e+14, b: 0.0, Ea: 0.0}
-- equation: HCO + O <=> CO + OH  # Reaction 43
-  rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
-- equation: HCO + O <=> CO2 + H  # Reaction 44
-  rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
-- equation: HCO + OH <=> CO + H2O  # Reaction 45
-  rate-constant: {A: 3.02e+13, b: 0.0, Ea: 0.0}
-- equation: HCO + M <=> CO + H + M  # Reaction 46
-  type: three-body
-  rate-constant: {A: 1.87e+17, b: -1.0, Ea: 1.7e+04}
-  efficiencies: {H2: 2.0, H2O: 0.0, CO2: 3.6, CO: 1.75}
-- equation: HCO + H2O <=> CO + H + H2O  # Reaction 47
-  rate-constant: {A: 2.244e+18, b: -1.0, Ea: 1.7e+04}
-- equation: HCO + O2 <=> CO + HO2  # Reaction 48
-  rate-constant: {A: 1.204e+10, b: 0.807, Ea: -727.0}
-- equation: CO + H2 (+ M) <=> CH2O (+ M)  # Reaction 49
-  type: falloff
-  low-P-rate-constant: {A: 5.07e+27, b: -3.42, Ea: 8.435e+04}
-  high-P-rate-constant: {A: 4.3e+07, b: 1.5, Ea: 7.96e+04}
-  Troe: {A: 0.932, T3: 197.0, T1: 1540.0, T2: 1.03e+04}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: HCO + H (+ M) <=> CH2O (+ M)  # Reaction 50
-  type: falloff
-  low-P-rate-constant: {A: 1.35e+24, b: -2.57, Ea: 1425.0}
-  high-P-rate-constant: {A: 1.09e+12, b: 0.48, Ea: -260.0}
-  Troe: {A: 0.7824, T3: 271.0, T1: 2755.0, T2: 6570.0}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: CH2 + H (+ M) <=> CH3 (+ M)  # Reaction 51
-  type: falloff
-  low-P-rate-constant: {A: 3.2e+27, b: -3.14, Ea: 1230.0}
-  high-P-rate-constant: {A: 2.5e+16, b: -0.8, Ea: 0.0}
-  Troe: {A: 0.68, T3: 78.0, T1: 1995.0, T2: 5590.0}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: CH2 + O <=> HCO + H  # Reaction 52
-  rate-constant: {A: 8.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH2 + OH <=> CH2O + H  # Reaction 53
-  rate-constant: {A: 2.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH2 + H2 <=> H + CH3  # Reaction 54
-  rate-constant: {A: 5.0e+05, b: 2.0, Ea: 7230.0}
-- equation: CH2 + O2 <=> HCO + OH  # Reaction 55
-  rate-constant: {A: 1.06e+13, b: 0.0, Ea: 1500.0}
-- equation: CH2 + O2 <=> CO2 + H + H  # Reaction 56
-  rate-constant: {A: 2.64e+12, b: 0.0, Ea: 1500.0}
-- equation: CH2 + HO2 <=> CH2O + OH  # Reaction 57
-  rate-constant: {A: 2.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH2 + CO (+ M) <=> CH2CO (+ M)  # Reaction 58
-  type: falloff
-  low-P-rate-constant: {A: 2.69e+33, b: -5.11, Ea: 7095.0}
-  high-P-rate-constant: {A: 8.1e+11, b: 0.5, Ea: 4510.0}
-  Troe: {A: 0.5907, T3: 275.0, T1: 1226.0, T2: 5185.0}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: CH2 + CH2 <=> C2H2 + H2  # Reaction 59
-  rate-constant: {A: 3.2e+13, b: 0.0, Ea: 0.0}
-- equation: CH2* + N2 <=> CH2 + N2  # Reaction 60
-  rate-constant: {A: 1.5e+13, b: 0.0, Ea: 600.0}
-- equation: CH2* + O <=> CO + H2  # Reaction 61
-  rate-constant: {A: 1.5e+13, b: 0.0, Ea: 0.0}
-- equation: CH2* + O <=> HCO + H  # Reaction 62
-  rate-constant: {A: 1.5e+13, b: 0.0, Ea: 0.0}
-- equation: CH2* + OH <=> CH2O + H  # Reaction 63
-  rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH2* + H2 <=> CH3 + H  # Reaction 64
-  rate-constant: {A: 7.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH2* + O2 <=> H + OH + CO  # Reaction 65
-  rate-constant: {A: 2.8e+13, b: 0.0, Ea: 0.0}
-- equation: CH2* + O2 <=> CO + H2O  # Reaction 66
-  rate-constant: {A: 1.2e+13, b: 0.0, Ea: 0.0}
-- equation: CH2* + H2O <=> CH2 + H2O  # Reaction 67
-  rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH2* + CO <=> CH2 + CO  # Reaction 68
-  rate-constant: {A: 9.0e+12, b: 0.0, Ea: 0.0}
-- equation: CH2* + CO2 <=> CH2 + CO2  # Reaction 69
-  rate-constant: {A: 7.0e+12, b: 0.0, Ea: 0.0}
-- equation: CH2* + CO2 <=> CH2O + CO  # Reaction 70
-  rate-constant: {A: 1.4e+13, b: 0.0, Ea: 0.0}
-- equation: CH2O + H (+ M) <=> CH3O (+ M)  # Reaction 71
-  type: falloff
-  low-P-rate-constant: {A: 2.2e+30, b: -4.8, Ea: 5560.0}
-  high-P-rate-constant: {A: 5.4e+11, b: 0.454, Ea: 2600.0}
-  Troe: {A: 0.758, T3: 94.0, T1: 1555.0, T2: 4200.0}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: CH2O + H <=> HCO + H2  # Reaction 72
-  rate-constant: {A: 2.3e+10, b: 1.05, Ea: 3275.0}
-- equation: CH2O + O <=> HCO + OH  # Reaction 73
-  rate-constant: {A: 3.9e+13, b: 0.0, Ea: 3540.0}
-- equation: CH2O + OH <=> HCO + H2O  # Reaction 74
-  rate-constant: {A: 3.43e+09, b: 1.18, Ea: -447.0}
-- equation: CH2O + O2 <=> HCO + HO2  # Reaction 75
-  rate-constant: {A: 1.0e+14, b: 0.0, Ea: 4.0e+04}
-- equation: CH2O + HO2 <=> HCO + H2O2  # Reaction 76
-  rate-constant: {A: 1.0e+12, b: 0.0, Ea: 8000.0}
-- equation: CH3 + H (+ M) <=> CH4 (+ M)  # Reaction 77
-  type: falloff
-  low-P-rate-constant: {A: 2.477e+33, b: -4.76, Ea: 2440.0}
-  high-P-rate-constant: {A: 1.27e+16, b: -0.63, Ea: 383.0}
-  Troe: {A: 0.783, T3: 74.0, T1: 2941.0, T2: 6964.0}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: CH3 + O <=> CH2O + H  # Reaction 78
-  rate-constant: {A: 8.43e+13, b: 0.0, Ea: 0.0}
-- equation: CH3 + OH <=> CH2 + H2O  # Reaction 79
-  rate-constant: {A: 5.6e+07, b: 1.6, Ea: 5420.0}
-- equation: CH3 + OH <=> CH2* + H2O  # Reaction 80
-  rate-constant: {A: 2.501e+13, b: 0.0, Ea: 0.0}
-- equation: CH3 + O2 <=> O + CH3O  # Reaction 81
-  rate-constant: {A: 3.083e+13, b: 0.0, Ea: 2.88e+04}
-- equation: CH3 + O2 <=> OH + CH2O  # Reaction 82
-  rate-constant: {A: 3.6e+10, b: 0.0, Ea: 8940.0}
-- equation: CH3 + HO2 <=> CH4 + O2  # Reaction 83
-  rate-constant: {A: 1.0e+12, b: 0.0, Ea: 0.0}
-- equation: CH3 + HO2 <=> CH3O + OH  # Reaction 84
-  rate-constant: {A: 1.34e+13, b: 0.0, Ea: 0.0}
-- equation: CH3 + H2O2 <=> CH4 + HO2  # Reaction 85
-  rate-constant: {A: 2.45e+04, b: 2.47, Ea: 5180.0}
-- equation: CH3 + HCO <=> CH4 + CO  # Reaction 86
-  rate-constant: {A: 8.48e+12, b: 0.0, Ea: 0.0}
-- equation: CH3 + CH2O <=> CH4 + HCO  # Reaction 87
-  rate-constant: {A: 3320.0, b: 2.81, Ea: 5860.0}
-- equation: CH3 + CH2 <=> C2H4 + H  # Reaction 88
-  rate-constant: {A: 4.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH3 + CH2* <=> C2H4 + H  # Reaction 89
-  rate-constant: {A: 1.2e+13, b: 0.0, Ea: -570.0}
-- equation: CH3 + HCCO <=> C2H4 + CO  # Reaction 90
-  rate-constant: {A: 5.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH3O + H <=> CH2O + H2  # Reaction 91
-  rate-constant: {A: 2.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH3O + H <=> CH3 + OH  # Reaction 92
-  rate-constant: {A: 3.2e+13, b: 0.0, Ea: 0.0}
-- equation: CH3O + H <=> CH2* + H2O  # Reaction 93
-  rate-constant: {A: 1.6e+13, b: 0.0, Ea: 0.0}
-- equation: CH3O + O <=> CH2O + OH  # Reaction 94
-  rate-constant: {A: 1.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH3O + OH <=> CH2O + H2O  # Reaction 95
-  rate-constant: {A: 5.0e+12, b: 0.0, Ea: 0.0}
-- equation: CH3O + O2 <=> CH2O + HO2  # Reaction 96
-  rate-constant: {A: 4.28e-13, b: 7.6, Ea: -3530.0}
-- equation: CH4 + H <=> CH3 + H2  # Reaction 97
-  rate-constant: {A: 6.6e+08, b: 1.62, Ea: 1.084e+04}
-- equation: CH4 + O <=> CH3 + OH  # Reaction 98
-  rate-constant: {A: 1.02e+09, b: 1.5, Ea: 8600.0}
-- equation: CH4 + OH <=> CH3 + H2O  # Reaction 99
-  rate-constant: {A: 1.0e+08, b: 1.6, Ea: 3120.0}
-- equation: CH4 + CH2 <=> CH3 + CH3  # Reaction 100
-  rate-constant: {A: 2.46e+06, b: 2.0, Ea: 8270.0}
-- equation: CH4 + CH2* <=> CH3 + CH3  # Reaction 101
-  rate-constant: {A: 1.6e+13, b: 0.0, Ea: -570.0}
-- equation: HCCO + H <=> CH2* + CO  # Reaction 102
-  rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
-- equation: HCCO + O <=> H + CO + CO  # Reaction 103
-  rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
-- equation: HCCO + O2 <=> OH + 2 CO  # Reaction 104
-  rate-constant: {A: 1.6e+12, b: 0.0, Ea: 854.0}
-- equation: HCCO + CH2 <=> C2H3 + CO  # Reaction 105
-  rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
-- equation: HCCO + HCCO <=> C2H2 + CO + CO  # Reaction 106
-  rate-constant: {A: 1.0e+13, b: 0.0, Ea: 0.0}
-- equation: C2H3 (+ M) <=> C2H2 + H (+ M)  # Reaction 107
-  type: falloff
-  low-P-rate-constant: {A: 2.565e+27, b: -3.4, Ea: 3.579872e+04}
-  high-P-rate-constant: {A: 3.86e+08, b: 1.62, Ea: 3.70482e+04}
-  Troe: {A: 1.9816, T3: 5383.7, T1: 4.2932, T2: -0.0795}
-  efficiencies: {CO2: 2.0, CO: 1.5, H2: 2.0, H2O: 6.0, CH4: 2.0, C2H4: 3.0,
-    C2H2: 3.0}
-- equation: C2H2 + O <=> CH2 + CO  # Reaction 108
-  rate-constant: {A: 4.08e+06, b: 2.0, Ea: 1900.0}
-- equation: C2H2 + O <=> HCCO + H  # Reaction 109
-  rate-constant: {A: 1.632e+07, b: 2.0, Ea: 1900.0}
-- equation: C2H2 + OH <=> CH2CO + H  # Reaction 110
-  rate-constant: {A: 2.18e-04, b: 4.5, Ea: -1000.0}
-- equation: C2H2 + OH <=> CH3 + CO  # Reaction 111
-  rate-constant: {A: 4.83e-04, b: 4.0, Ea: -2000.0}
-- equation: C2H2 + HCO <=> C2H3 + CO  # Reaction 112
-  rate-constant: {A: 1.0e+07, b: 2.0, Ea: 6000.0}
-- equation: C2H2 + CH2 <=> C3H3 + H  # Reaction 113
-  rate-constant: {A: 1.2e+13, b: 0.0, Ea: 6620.0}
-- equation: C2H2 + CH2* <=> C3H3 + H  # Reaction 114
-  rate-constant: {A: 2.0e+13, b: 0.0, Ea: 0.0}
-- equation: C2H2 + HCCO <=> C3H3 + CO  # Reaction 115
-  rate-constant: {A: 1.0e+11, b: 0.0, Ea: 3000.0}
-- equation: C2H2 + CH3 <=> pC3H4 + H  # Reaction 116
-  rate-constant: {A: 2.56e+09, b: 1.1, Ea: 1.3644e+04}
-- equation: C2H2 + CH3 <=> aC3H5  # Reaction 117
-  rate-constant: {A: 2.68e+53, b: -12.82, Ea: 3.573e+04}
-- equation: CH2CO + H (+ M) <=> CH2CHO (+ M)  # Reaction 118
-  type: falloff
-  low-P-rate-constant: {A: 3.8e+41, b: -7.64, Ea: 1.19e+04}
-  high-P-rate-constant: {A: 3.3e+14, b: -0.06, Ea: 8500.0}
-  Troe: {A: 0.337, T3: 1707.0, T1: 3200.0, T2: 4131.0}
-  efficiencies: {CO2: 2.0, CO: 1.5, H2: 2.0, H2O: 6.0, CH4: 2.0, C2H4: 3.0,
-    C2H2: 3.0}
-- equation: CH2CO + H <=> HCCO + H2  # Reaction 119
-  rate-constant: {A: 5.0e+13, b: 0.0, Ea: 8000.0}
-- equation: CH2CO + H <=> CH3 + CO  # Reaction 120
-  rate-constant: {A: 1.5e+09, b: 1.43, Ea: 2690.0}
-- equation: CH2CO + O <=> HCCO + OH  # Reaction 121
-  rate-constant: {A: 1.0e+13, b: 0.0, Ea: 8000.0}
-- equation: CH2CO + O <=> CH2 + CO2  # Reaction 122
-  rate-constant: {A: 1.75e+12, b: 0.0, Ea: 1350.0}
-- equation: CH2CO + OH <=> HCCO + H2O  # Reaction 123
-  rate-constant: {A: 7.5e+12, b: 0.0, Ea: 2000.0}
-- equation: C2H3 + H (+ M) <=> C2H4 (+ M)  # Reaction 124
-  type: falloff
-  low-P-rate-constant: {A: 1.4e+30, b: -3.86, Ea: 3320.0}
-  high-P-rate-constant: {A: 6.08e+12, b: 0.27, Ea: 280.0}
-  Troe: {A: 0.782, T3: 207.5, T1: 2663.0, T2: 6095.0}
-  efficiencies: {CO2: 2.0, CO: 1.5, H2: 2.0, H2O: 6.0, CH4: 2.0, C2H4: 3.0,
-    C2H2: 3.0}
-- equation: C2H3 + H <=> C2H2 + H2  # Reaction 125
-  rate-constant: {A: 9.0e+13, b: 0.0, Ea: 0.0}
-- equation: C2H3 + O <=> CH2CO + H  # Reaction 126
-  rate-constant: {A: 4.8e+13, b: 0.0, Ea: 0.0}
-- equation: C2H3 + O <=> CH3 + CO  # Reaction 127
-  rate-constant: {A: 4.8e+13, b: 0.0, Ea: 0.0}
-- equation: C2H3 + OH <=> C2H2 + H2O  # Reaction 128
-  rate-constant: {A: 3.011e+13, b: 0.0, Ea: 0.0}
-- equation: C2H3 + O2 <=> C2H2 + HO2  # Reaction 129
-  rate-constant: {A: 1.34e+06, b: 1.61, Ea: -383.4}
-- equation: C2H3 + O2 <=> CH2CHO + O  # Reaction 130
-  rate-constant: {A: 3.0e+11, b: 0.29, Ea: 11.0}
-- equation: C2H3 + O2 <=> HCO + CH2O  # Reaction 131
-  rate-constant: {A: 4.6e+16, b: -1.39, Ea: 1010.0}
-- equation: C2H3 + HO2 <=> CH2CHO + OH  # Reaction 132
-  rate-constant: {A: 1.0e+13, b: 0.0, Ea: 0.0}
-- equation: C2H3 + H2O2 <=> C2H4 + HO2  # Reaction 133
-  rate-constant: {A: 1.21e+10, b: 0.0, Ea: -596.0}
-- equation: C2H3 + HCO <=> C2H4 + CO  # Reaction 134
-  rate-constant: {A: 9.033e+13, b: 0.0, Ea: 0.0}
-- equation: C2H3 + HCO <=> C2H3CHO  # Reaction 135
-  rate-constant: {A: 1.8e+13, b: 0.0, Ea: 0.0}
-- equation: C2H3 + CH3 <=> C2H2 + CH4  # Reaction 136
-  rate-constant: {A: 3.92e+11, b: 0.0, Ea: 0.0}
-- equation: C2H3 + CH3 (+ M) <=> C3H6 (+ M)  # Reaction 137
-  type: falloff
-  low-P-rate-constant: {A: 4.27e+58, b: -11.94, Ea: 9769.8}
-  high-P-rate-constant: {A: 2.5e+13, b: 0.0, Ea: 0.0}
-  Troe: {A: 0.175, T3: 1340.6, T1: 6.0e+04, T2: 1.01398e+04}
-  efficiencies: {CO2: 2.0, CO: 1.5, H2: 2.0, H2O: 6.0, CH4: 2.0, C2H4: 3.0,
-    C2H2: 3.0}
-- equation: C2H3 + CH3 <=> aC3H5 + H  # Reaction 138
-  rate-constant: {A: 1.5e+24, b: -2.83, Ea: 1.8618e+04}
-- equation: C2H3 + C2H3 <=> C2H2 + C2H4  # Reaction 139
-  rate-constant: {A: 9.6e+11, b: 0.0, Ea: 0.0}
-- equation: CH2CHO <=> CH3 + CO  # Reaction 140
-  rate-constant: {A: 7.8e+41, b: -9.147, Ea: 4.69e+04}
-- equation: CH2CHO + H <=> CH3 + HCO  # Reaction 141
-  rate-constant: {A: 9.0e+13, b: 0.0, Ea: 0.0}
-- equation: CH2CHO + H <=> CH2CO + H2  # Reaction 142
-  rate-constant: {A: 2.0e+13, b: 0.0, Ea: 4000.0}
-- equation: CH2CHO + O <=> CH2CO + OH  # Reaction 143
-  rate-constant: {A: 2.0e+13, b: 0.0, Ea: 4000.0}
-- equation: CH2CHO + OH <=> CH2CO + H2O  # Reaction 144
-  rate-constant: {A: 1.0e+13, b: 0.0, Ea: 2000.0}
-- equation: CH2CHO + O2 <=> CH2CO + HO2  # Reaction 145
-  rate-constant: {A: 1.4e+11, b: 0.0, Ea: 0.0}
-- equation: CH2CHO + O2 <=> CH2O + CO + OH  # Reaction 146
-  rate-constant: {A: 1.8e+10, b: 0.0, Ea: 0.0}
-- equation: C2H4 + H <=> C2H3 + H2  # Reaction 147
-  rate-constant: {A: 5.07e+07, b: 1.9, Ea: 1.295e+04}
-- equation: C2H4 + O <=> C2H3 + OH  # Reaction 148
-  rate-constant: {A: 1.51e+07, b: 1.9, Ea: 3740.0}
-- equation: C2H4 + O <=> CH3 + HCO  # Reaction 149
-  rate-constant: {A: 1.92e+07, b: 1.83, Ea: 220.0}
-- equation: C2H4 + O <=> CH2 + CH2O  # Reaction 150
-  rate-constant: {A: 3.84e+05, b: 1.83, Ea: 220.0}
-- equation: C2H4 + OH <=> C2H3 + H2O  # Reaction 151
-  rate-constant: {A: 3.6e+06, b: 2.0, Ea: 2500.0}
-- equation: C2H4 + CH2 <=> aC3H5 + H  # Reaction 152
-  rate-constant: {A: 2.0e+13, b: 0.0, Ea: 6000.0}
-- equation: C2H4 + CH2* <=> aC3H5 + H  # Reaction 153
-  rate-constant: {A: 5.0e+13, b: 0.0, Ea: 0.0}
-- equation: C2H4 + CH3 <=> C2H3 + CH4  # Reaction 154
-  rate-constant: {A: 2.27e+05, b: 2.0, Ea: 9200.0}
-- equation: C2H4 + O2 <=> C2H3 + HO2  # Reaction 155
-  rate-constant: {A: 4.22e+13, b: 0.0, Ea: 6.08e+04}
-- equation: C3H3 + H <=> pC3H4  # Reaction 156
-  rate-constant: {A: 1.5e+13, b: 0.0, Ea: 0.0}
-- equation: C3H3 + O2 <=> CH2CO + HCO  # Reaction 157
-  rate-constant: {A: 3.0e+10, b: 0.0, Ea: 2868.0}
-- equation: C3H3 + HO2 <=> OH + CO + C2H3  # Reaction 158
-  rate-constant: {A: 8.0e+11, b: 0.0, Ea: 0.0}
-- equation: C3H3 + HO2 <=> pC3H4 + O2  # Reaction 159
-  rate-constant: {A: 2.5e+12, b: 0.0, Ea: 0.0}
-- equation: C3H3 + HCO <=> pC3H4 + CO  # Reaction 160
-  rate-constant: {A: 2.5e+13, b: 0.0, Ea: 0.0}
-- equation: C3H3 + C2H2 <=> C5H5  # Reaction 161
-  rate-constant: {A: 6.87e+55, b: -12.5, Ea: 4.2025e+04}
-- equation: C3H3 + C3H3 => C6H5 + H  # Reaction 162
-  rate-constant: {A: 5.0e+12, b: 0.0, Ea: 0.0}
-- equation: C3H3 + C3H3 => C6H6  # Reaction 163
-  rate-constant: {A: 2.0e+12, b: 0.0, Ea: 0.0}
-- equation: pC3H4 + H <=> aC3H5  # Reaction 164
-  rate-constant: {A: 4.91e+60, b: -14.37, Ea: 3.1644e+04}
-- equation: pC3H4 + H <=> C3H3 + H2  # Reaction 165
-  rate-constant: {A: 1.3e+06, b: 2.0, Ea: 5500.0}
-- equation: pC3H4 + O <=> HCCO + CH3  # Reaction 166
-  rate-constant: {A: 7.3e+12, b: 0.0, Ea: 2250.0}
-- equation: pC3H4 + O <=> C2H4 + CO  # Reaction 167
-  rate-constant: {A: 1.0e+13, b: 0.0, Ea: 2250.0}
-- equation: pC3H4 + OH <=> C3H3 + H2O  # Reaction 168
-  rate-constant: {A: 1.0e+06, b: 2.0, Ea: 100.0}
-- equation: pC3H4 + CH3 <=> C3H3 + CH4  # Reaction 169
-  rate-constant: {A: 1.8e+12, b: 0.0, Ea: 7700.0}
-- equation: aC3H5 + H (+ M) <=> C3H6 (+ M)  # Reaction 170
-  type: falloff
-  low-P-rate-constant: {A: 1.33e+60, b: -12.0, Ea: 5967.8}
-  high-P-rate-constant: {A: 2.0e+14, b: 0.0, Ea: 0.0}
-  Troe: {A: 0.02, T3: 1096.6, T1: 1096.6, T2: 6859.5}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: aC3H5 + O <=> C2H3CHO + H  # Reaction 171
-  rate-constant: {A: 6.0e+13, b: 0.0, Ea: 0.0}
-- equation: aC3H5 + OH <=> C2H3CHO + H + H  # Reaction 172
-  rate-constant: {A: 4.2e+32, b: -5.16, Ea: 3.0126e+04}
-- equation: aC3H5 + O2 <=> C2H3CHO + OH  # Reaction 173
-  rate-constant: {A: 1.82e+13, b: -0.41, Ea: 2.2859e+04}
-- equation: aC3H5 + HO2 <=> C3H6 + O2  # Reaction 174
-  rate-constant: {A: 2.66e+12, b: 0.0, Ea: 0.0}
-- equation: aC3H5 + HO2 <=> OH + C2H3 + CH2O  # Reaction 175
-  rate-constant: {A: 6.6e+12, b: 0.0, Ea: 0.0}
-- equation: aC3H5 + HCO <=> C3H6 + CO  # Reaction 176
-  rate-constant: {A: 6.0e+13, b: 0.0, Ea: 0.0}
-- equation: aC3H5 + CH3 (+ M) <=> C4H81 (+ M)  # Reaction 177
-  type: falloff
-  low-P-rate-constant: {A: 3.91e+60, b: -12.81, Ea: 6250.0}
-  high-P-rate-constant: {A: 1.0e+14, b: -0.32, Ea: -262.3}
-  Troe: {A: 0.104, T3: 1606.0, T1: 6.0e+04, T2: 6118.4}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: C3H6 + H <=> C2H4 + CH3  # Reaction 178
-  rate-constant: {A: 8.0e+21, b: -2.39, Ea: 1.118e+04}
-- equation: C3H6 + H <=> aC3H5 + H2  # Reaction 179
-  rate-constant: {A: 1.92e+06, b: 2.309, Ea: 4674.0}
-- equation: C3H6 + O <=> CH2CO + CH3 + H  # Reaction 180
-  rate-constant: {A: 8.0e+07, b: 1.65, Ea: 327.0}
-- equation: C3H6 + O <=> C2H3CHO + H + H  # Reaction 181
-  rate-constant: {A: 4.0e+07, b: 1.65, Ea: 327.0}
-- equation: C3H6 + O <=> aC3H5 + OH  # Reaction 182
-  rate-constant: {A: 1.8e+11, b: 0.7, Ea: 5880.0}
-- equation: C3H6 + OH <=> aC3H5 + H2O  # Reaction 183
-  rate-constant: {A: 3.1e+06, b: 2.0, Ea: -298.0}
-- equation: C3H6 + HO2 <=> aC3H5 + H2O2  # Reaction 184
-  rate-constant: {A: 9600.0, b: 2.6, Ea: 1.391e+04}
-- equation: C3H6 + CH3 <=> aC3H5 + CH4  # Reaction 185
-  rate-constant: {A: 45.4, b: 3.268, Ea: 7152.0}
-- equation: C2H3CHO + H <=> C2H4 + HCO  # Reaction 186
-  rate-constant: {A: 1.08e+11, b: 0.454, Ea: 5820.0}
-- equation: C2H3CHO + O <=> C2H3 + OH + CO  # Reaction 187
-  rate-constant: {A: 3.0e+13, b: 0.0, Ea: 3540.0}
-- equation: C2H3CHO + O <=> CH2O + CH2CO  # Reaction 188
-  rate-constant: {A: 1.9e+07, b: 1.8, Ea: 220.0}
-- equation: C2H3CHO + OH <=> C2H3 + H2O + CO  # Reaction 189
-  rate-constant: {A: 3.43e+09, b: 1.18, Ea: -447.0}
-- equation: C4H81 + H <=> C3H6 + CH3  # Reaction 190
-  rate-constant: {A: 3.2e+22, b: -2.39, Ea: 1.118e+04}
-- equation: C6H5 + CH3 <=> C6H5CH3  # Reaction 191
-  rate-constant: {A: 1.38e+13, b: 0.0, Ea: 46.0}
-- equation: C6H5CH3 + H <=> C6H6 + CH3  # Reaction 192
-  rate-constant: {A: 1.93e+06, b: 2.17, Ea: 4163.0}
-- equation: C6H5 + H (+ M) <=> C6H6 (+ M)  # Reaction 193
-  type: falloff
-  low-P-rate-constant: {A: 6.6e+75, b: -16.3, Ea: 7000.0}
-  high-P-rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
-  Troe: {A: 1.0, T3: 0.1, T1: 584.9, T2: 6113.0}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: C6H6 + OH <=> C6H5 + H2O  # Reaction 194
-  rate-constant: {A: 3.985e+05, b: 2.286, Ea: 1058.0}
-- equation: C6H6 + O <=> C6H5O + H  # Reaction 195
-  rate-constant: {A: 1.39e+13, b: 0.0, Ea: 4910.0}
-- equation: C6H6 + O <=> C5H5 + HCO  # Reaction 196
-  rate-constant: {A: 1.39e+13, b: 0.0, Ea: 4530.0}
-- equation: C6H5 + H2 <=> C6H6 + H  # Reaction 197
-  rate-constant: {A: 5.707e+04, b: 2.43, Ea: 6273.0}
-- equation: C6H5 + O2 <=> C6H5O + O  # Reaction 198
-  rate-constant: {A: 2.6e+13, b: 0.0, Ea: 6120.0}
-- equation: C6H5 + O <=> C5H5 + CO  # Reaction 199
-  rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
-- equation: C6H5 + OH <=> C6H5O + H  # Reaction 200
-  rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
-- equation: C6H5 + HO2 <=> C6H5O + OH  # Reaction 201
-  rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
-- equation: C6H5 + HO2 <=> C6H6 + O2  # Reaction 202
-  rate-constant: {A: 1.0e+12, b: 0.0, Ea: 0.0}
-- equation: C6H5 + CH4 <=> C6H6 + CH3  # Reaction 203
-  rate-constant: {A: 3.89e-03, b: 4.57, Ea: 5256.0}
-- equation: C6H5 + CH2O <=> C6H6 + HCO  # Reaction 204
-  rate-constant: {A: 8.55e+04, b: 2.19, Ea: 38.0}
-- equation: C6H5O + H <=> C5H5 + HCO  # Reaction 205
-  rate-constant: {A: 1.0e+13, b: 0.0, Ea: 1.2e+04}
-- equation: C6H5O + H <=> C5H6 + CO  # Reaction 206
-  rate-constant: {A: 5.0e+13, b: 0.0, Ea: 0.0}
-- equation: C6H5O <=> CO + C5H5  # Reaction 207
-  rate-constant: {A: 3.76e+54, b: -12.06, Ea: 7.28e+04}
-- equation: C5H6 + H <=> C2H2 + aC3H5  # Reaction 208
-  rate-constant: {A: 7.74e+36, b: -6.18, Ea: 3.289e+04}
-- equation: C5H6 + H <=> C5H5 + H2  # Reaction 209
-  rate-constant: {A: 3.03e+08, b: 1.71, Ea: 5590.0}
-- equation: C5H6 + O <=> C5H5 + OH  # Reaction 210
-  rate-constant: {A: 4.77e+04, b: 2.71, Ea: 1106.0}
-- equation: C5H6 + OH <=> C5H5 + H2O  # Reaction 211
-  rate-constant: {A: 3.08e+06, b: 2.0, Ea: 0.0}
-- equation: C5H6 + HO2 <=> C5H5 + H2O2  # Reaction 212
-  rate-constant: {A: 1.1e+04, b: 2.6, Ea: 1.29e+04}
-- equation: C5H6 + O2 <=> C5H5 + HO2  # Reaction 213
-  rate-constant: {A: 4.0e+13, b: 0.0, Ea: 3.715e+04}
-- equation: C5H6 + HCO <=> C5H5 + CH2O  # Reaction 214
-  rate-constant: {A: 1.08e+08, b: 1.9, Ea: 1.6e+04}
-- equation: C5H6 + CH3 <=> C5H5 + CH4  # Reaction 215
-  rate-constant: {A: 0.18, b: 4.0, Ea: 0.0}
-- equation: C5H5 + H (+ M) <=> C5H6 (+ M)  # Reaction 216
-  type: falloff
-  low-P-rate-constant: {A: 4.4e+80, b: -18.28, Ea: 1.2994e+04}
-  high-P-rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
-  Troe: {A: 0.068, T3: 400.7, T1: 4135.8, T2: 5501.9}
-  efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
-- equation: C5H5 + O2 <=> C5H5O(2,4) + O  # Reaction 217
-  rate-constant: {A: 7.78e+15, b: -0.73, Ea: 4.874e+04}
-- equation: C5H5 + O <=> C5H5O(2,4)  # Reaction 218
-  rate-constant: {A: 1.12e-12, b: 5.87, Ea: -1.731e+04}
-- equation: C5H5 + O <=> C5H4O + H  # Reaction 219
-  rate-constant: {A: 5.81e+13, b: -0.02, Ea: 20.0}
-- equation: C5H5 + OH <=> C5H5O(2,4) + H  # Reaction 220
-  rate-constant: {A: 1.36e+51, b: -10.46, Ea: 5.71e+04}
-- equation: C5H5 + HO2 <=> C5H5O(2,4) + OH  # Reaction 221
-  rate-constant: {A: 6.27e+29, b: -4.69, Ea: 1.165e+04}
-- equation: C5H5 + O2 <=> C5H4O + OH  # Reaction 222
-  rate-constant: {A: 1.8e+12, b: 0.08, Ea: 1.8e+04}
-- equation: C5H5O(2,4) <=> C5H4O + H  # Reaction 223
-  rate-constant: {A: 2.0e+13, b: 0.0, Ea: 3.0e+04}
-- equation: C5H5O(2,4) + O2 <=> C5H4O + HO2  # Reaction 224
-  rate-constant: {A: 1.0e+11, b: 0.0, Ea: 0.0}
-- equation: C5H4O <=> 2 C2H2 + CO  # Reaction 225
-  rate-constant: {A: 6.2e+41, b: -7.87, Ea: 9.87e+04}
-- equation: C5H4O + H <=> CO + c-C4H5  # Reaction 226
-  rate-constant: {A: 4.3e+09, b: 1.45, Ea: 3900.0}
-- equation: C5H4O + O <=> CO + HCO + C3H3  # Reaction 227
-  rate-constant: {A: 6.2e+08, b: 1.45, Ea: -858.0}
-- equation: c-C4H5 + H <=> C2H4 + C2H2  # Reaction 228
-  rate-constant: {A: 1.0e+13, b: 0.0, Ea: 0.0}
-- equation: c-C4H5 + O <=> CH2CHO + C2H2  # Reaction 229
-  rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
-- equation: c-C4H5 + O2 <=> CH2CHO + CH2CO  # Reaction 230
-  rate-constant: {A: 4.8e+11, b: 0.0, Ea: 1.9e+04}
-- equation: c-C4H5 <=> C2H3 + C2H2  # Reaction 231
-  rate-constant: {A: 2.0e+12, b: 0.0, Ea: 5.8e+04}
-- equation: aC3H5 + C3H6 => C5H6 + H2 + CH3  # Reaction 232
-  rate-constant: {A: 2.0e+13, b: 0.0, Ea: 1.1e+04}
+# - equation: H + O2 <=> O + OH  # Reaction 8
+#   rate-constant: {A: 2.644e+16, b: -0.6707, Ea: 1.7041e+04}
+# - equation: O + H2 <=> H + OH  # Reaction 9
+#   rate-constant: {A: 4.589e+04, b: 2.7, Ea: 6260.0}
+# - equation: OH + H2 <=> H + H2O  # Reaction 10
+#   rate-constant: {A: 1.734e+08, b: 1.51, Ea: 3430.0}
+# - equation: OH + OH <=> O + H2O  # Reaction 11
+#   rate-constant: {A: 3.973e+04, b: 2.4, Ea: -2110.0}
+# - equation: H + H + M <=> H2 + M  # Reaction 12
+#   type: three-body
+#   rate-constant: {A: 1.78e+18, b: -1.0, Ea: 0.0}
+#   efficiencies: {H2: 0.0, H2O: 0.0, CO2: 0.0}
+# - equation: H + H + H2 <=> H2 + H2  # Reaction 13
+#   rate-constant: {A: 9.0e+16, b: -0.6, Ea: 0.0}
+# - equation: H + H + H2O <=> H2 + H2O  # Reaction 14
+#   rate-constant: {A: 5.624e+19, b: -1.25, Ea: 0.0}
+# - equation: H + H + CO2 <=> H2 + CO2  # Reaction 15
+#   rate-constant: {A: 5.5e+20, b: -2.0, Ea: 0.0}
+# - equation: H + OH + M <=> H2O + M  # Reaction 16
+#   type: three-body
+#   rate-constant: {A: 4.4e+22, b: -2.0, Ea: 0.0}
+#   efficiencies: {H2: 2.0, H2O: 6.3, CO2: 3.6, CO: 1.75}
+# - equation: O + H + M <=> OH + M  # Reaction 17
+#   type: three-body
+#   rate-constant: {A: 9.428e+18, b: -1.0, Ea: 0.0}
+#   efficiencies: {H2: 2.0, H2O: 12.0, CO2: 3.6, CO: 1.75}
+# - equation: O + O + M <=> O2 + M  # Reaction 18
+#   type: three-body
+#   rate-constant: {A: 1.2e+17, b: -1.0, Ea: 0.0}
+#   efficiencies: {H2: 2.4, H2O: 15.4, CO2: 3.6, CO: 1.75}
+# - equation: H + O2 (+ M) <=> HO2 (+ M)  # Reaction 19
+#   type: falloff
+#   low-P-rate-constant: {A: 6.328e+19, b: -1.4, Ea: 0.0}
+#   high-P-rate-constant: {A: 5.116e+12, b: 0.44, Ea: 0.0}
+#   Troe: {A: 0.5, T3: 1.0e-30, T1: 1.0e+30}
+#   efficiencies: {H2O: 11.89, CO2: 2.18, CO: 1.09, O2: 0.85}
+# - equation: H2 + O2 <=> HO2 + H  # Reaction 20
+#   rate-constant: {A: 5.916e+05, b: 2.433, Ea: 5.3502e+04}
+# - equation: OH + OH (+ M) <=> H2O2 (+ M)  # Reaction 21
+#   type: falloff
+#   low-P-rate-constant: {A: 2.01e+17, b: -0.584, Ea: -2293.0}
+#   high-P-rate-constant: {A: 1.11e+14, b: -0.37, Ea: 0.0}
+#   Troe: {A: 0.7346, T3: 94.0, T1: 1756.0, T2: 5182.0}
+#   efficiencies: {H2: 2.0, H2O: 6.0, CO2: 3.6, CO: 1.75}
+# - equation: HO2 + H <=> O + H2O  # Reaction 22
+#   rate-constant: {A: 3.97e+12, b: 0.0, Ea: 671.0}
+# - equation: HO2 + H <=> OH + OH  # Reaction 23
+#   rate-constant: {A: 7.485e+13, b: 0.0, Ea: 295.0}
+# - equation: HO2 + O <=> OH + O2  # Reaction 24
+#   rate-constant: {A: 4.0e+13, b: 0.0, Ea: 0.0}
+# - equation: HO2 + HO2 <=> O2 + H2O2  # Reaction 25
+#   rate-constant: {A: 1.3e+11, b: 0.0, Ea: -1630.0}
+#   duplicate: true
+# - equation: HO2 + HO2 <=> O2 + H2O2  # Reaction 26
+#   rate-constant: {A: 3.658e+14, b: 0.0, Ea: 1.2e+04}
+#   duplicate: true
+# - equation: OH + HO2 <=> H2O + O2  # Reaction 27
+#   rate-constant: {A: 1.41e+18, b: -1.76, Ea: 60.0}
+#   duplicate: true
+# - equation: OH + HO2 <=> H2O + O2  # Reaction 28
+#   rate-constant: {A: 1.12e+85, b: -22.3, Ea: 2.69e+04}
+#   duplicate: true
+# - equation: OH + HO2 <=> H2O + O2  # Reaction 29
+#   rate-constant: {A: 5.37e+70, b: -16.72, Ea: 3.29e+04}
+#   duplicate: true
+# - equation: OH + HO2 <=> H2O + O2  # Reaction 30
+#   rate-constant: {A: 2.51e+12, b: 2.0, Ea: 4.0e+04}
+#   duplicate: true
+# - equation: OH + HO2 <=> H2O + O2  # Reaction 31
+#   rate-constant: {A: 1.0e+136, b: -40.0, Ea: 3.48e+04}
+#   duplicate: true
+# - equation: H2O2 + H <=> HO2 + H2  # Reaction 32
+#   rate-constant: {A: 6.05e+06, b: 2.0, Ea: 5200.0}
+# - equation: H2O2 + H <=> OH + H2O  # Reaction 33
+#   rate-constant: {A: 2.41e+13, b: 0.0, Ea: 3970.0}
+# - equation: H2O2 + O <=> OH + HO2  # Reaction 34
+#   rate-constant: {A: 9.63e+06, b: 2.0, Ea: 3970.0}
+# - equation: H2O2 + OH <=> HO2 + H2O  # Reaction 35
+#   rate-constant: {A: 2.0e+12, b: 0.0, Ea: 427.0}
+#   duplicate: true
+# - equation: H2O2 + OH <=> HO2 + H2O  # Reaction 36
+#   rate-constant: {A: 2.67e+41, b: -7.0, Ea: 3.76e+04}
+#   duplicate: true
+# - equation: CO + O (+ M) <=> CO2 (+ M)  # Reaction 37
+#   type: falloff
+#   low-P-rate-constant: {A: 1.173e+24, b: -2.79, Ea: 4191.0}
+#   high-P-rate-constant: {A: 1.362e+10, b: 0.0, Ea: 2384.0}
+#   Troe: {A: 1e-16, T3: 1e-16, T1: 1e-16, T2: 1e-16}
+#   efficiencies: {H2: 2.0, H2O: 12.0, CO2: 3.6, CO: 1.75}
+# - equation: CO + OH <=> CO2 + H  # Reaction 38
+#   rate-constant: {A: 7.046e+04, b: 2.053, Ea: -355.67}
+#   duplicate: true
+# - equation: CO + OH <=> CO2 + H  # Reaction 39
+#   rate-constant: {A: 5.757e+12, b: -0.664, Ea: 331.83}
+#   duplicate: true
+# - equation: CO + O2 <=> CO2 + O  # Reaction 40
+#   rate-constant: {A: 1.119e+12, b: 0.0, Ea: 4.77e+04}
+# - equation: CO + HO2 <=> CO2 + OH  # Reaction 41
+#   rate-constant: {A: 1.57e+05, b: 2.18, Ea: 1.794261e+04}
+# - equation: HCO + H <=> CO + H2  # Reaction 42
+#   rate-constant: {A: 1.2e+14, b: 0.0, Ea: 0.0}
+# - equation: HCO + O <=> CO + OH  # Reaction 43
+#   rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
+# - equation: HCO + O <=> CO2 + H  # Reaction 44
+#   rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
+# - equation: HCO + OH <=> CO + H2O  # Reaction 45
+#   rate-constant: {A: 3.02e+13, b: 0.0, Ea: 0.0}
+# - equation: HCO + M <=> CO + H + M  # Reaction 46
+#   type: three-body
+#   rate-constant: {A: 1.87e+17, b: -1.0, Ea: 1.7e+04}
+#   efficiencies: {H2: 2.0, H2O: 0.0, CO2: 3.6, CO: 1.75}
+# - equation: HCO + H2O <=> CO + H + H2O  # Reaction 47
+#   rate-constant: {A: 2.244e+18, b: -1.0, Ea: 1.7e+04}
+# - equation: HCO + O2 <=> CO + HO2  # Reaction 48
+#   rate-constant: {A: 1.204e+10, b: 0.807, Ea: -727.0}
+# - equation: CO + H2 (+ M) <=> CH2O (+ M)  # Reaction 49
+#   type: falloff
+#   low-P-rate-constant: {A: 5.07e+27, b: -3.42, Ea: 8.435e+04}
+#   high-P-rate-constant: {A: 4.3e+07, b: 1.5, Ea: 7.96e+04}
+#   Troe: {A: 0.932, T3: 197.0, T1: 1540.0, T2: 1.03e+04}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: HCO + H (+ M) <=> CH2O (+ M)  # Reaction 50
+#   type: falloff
+#   low-P-rate-constant: {A: 1.35e+24, b: -2.57, Ea: 1425.0}
+#   high-P-rate-constant: {A: 1.09e+12, b: 0.48, Ea: -260.0}
+#   Troe: {A: 0.7824, T3: 271.0, T1: 2755.0, T2: 6570.0}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: CH2 + H (+ M) <=> CH3 (+ M)  # Reaction 51
+#   type: falloff
+#   low-P-rate-constant: {A: 3.2e+27, b: -3.14, Ea: 1230.0}
+#   high-P-rate-constant: {A: 2.5e+16, b: -0.8, Ea: 0.0}
+#   Troe: {A: 0.68, T3: 78.0, T1: 1995.0, T2: 5590.0}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: CH2 + O <=> HCO + H  # Reaction 52
+#   rate-constant: {A: 8.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2 + OH <=> CH2O + H  # Reaction 53
+#   rate-constant: {A: 2.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2 + H2 <=> H + CH3  # Reaction 54
+#   rate-constant: {A: 5.0e+05, b: 2.0, Ea: 7230.0}
+# - equation: CH2 + O2 <=> HCO + OH  # Reaction 55
+#   rate-constant: {A: 1.06e+13, b: 0.0, Ea: 1500.0}
+# - equation: CH2 + O2 <=> CO2 + H + H  # Reaction 56
+#   rate-constant: {A: 2.64e+12, b: 0.0, Ea: 1500.0}
+# - equation: CH2 + HO2 <=> CH2O + OH  # Reaction 57
+#   rate-constant: {A: 2.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2 + CO (+ M) <=> CH2CO (+ M)  # Reaction 58
+#   type: falloff
+#   low-P-rate-constant: {A: 2.69e+33, b: -5.11, Ea: 7095.0}
+#   high-P-rate-constant: {A: 8.1e+11, b: 0.5, Ea: 4510.0}
+#   Troe: {A: 0.5907, T3: 275.0, T1: 1226.0, T2: 5185.0}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: CH2 + CH2 <=> C2H2 + H2  # Reaction 59
+#   rate-constant: {A: 3.2e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2* + N2 <=> CH2 + N2  # Reaction 60
+#   rate-constant: {A: 1.5e+13, b: 0.0, Ea: 600.0}
+# - equation: CH2* + O <=> CO + H2  # Reaction 61
+#   rate-constant: {A: 1.5e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2* + O <=> HCO + H  # Reaction 62
+#   rate-constant: {A: 1.5e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2* + OH <=> CH2O + H  # Reaction 63
+#   rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2* + H2 <=> CH3 + H  # Reaction 64
+#   rate-constant: {A: 7.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2* + O2 <=> H + OH + CO  # Reaction 65
+#   rate-constant: {A: 2.8e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2* + O2 <=> CO + H2O  # Reaction 66
+#   rate-constant: {A: 1.2e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2* + H2O <=> CH2 + H2O  # Reaction 67
+#   rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2* + CO <=> CH2 + CO  # Reaction 68
+#   rate-constant: {A: 9.0e+12, b: 0.0, Ea: 0.0}
+# - equation: CH2* + CO2 <=> CH2 + CO2  # Reaction 69
+#   rate-constant: {A: 7.0e+12, b: 0.0, Ea: 0.0}
+# - equation: CH2* + CO2 <=> CH2O + CO  # Reaction 70
+#   rate-constant: {A: 1.4e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2O + H (+ M) <=> CH3O (+ M)  # Reaction 71
+#   type: falloff
+#   low-P-rate-constant: {A: 2.2e+30, b: -4.8, Ea: 5560.0}
+#   high-P-rate-constant: {A: 5.4e+11, b: 0.454, Ea: 2600.0}
+#   Troe: {A: 0.758, T3: 94.0, T1: 1555.0, T2: 4200.0}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: CH2O + H <=> HCO + H2  # Reaction 72
+#   rate-constant: {A: 2.3e+10, b: 1.05, Ea: 3275.0}
+# - equation: CH2O + O <=> HCO + OH  # Reaction 73
+#   rate-constant: {A: 3.9e+13, b: 0.0, Ea: 3540.0}
+# - equation: CH2O + OH <=> HCO + H2O  # Reaction 74
+#   rate-constant: {A: 3.43e+09, b: 1.18, Ea: -447.0}
+# - equation: CH2O + O2 <=> HCO + HO2  # Reaction 75
+#   rate-constant: {A: 1.0e+14, b: 0.0, Ea: 4.0e+04}
+# - equation: CH2O + HO2 <=> HCO + H2O2  # Reaction 76
+#   rate-constant: {A: 1.0e+12, b: 0.0, Ea: 8000.0}
+# - equation: CH3 + H (+ M) <=> CH4 (+ M)  # Reaction 77
+#   type: falloff
+#   low-P-rate-constant: {A: 2.477e+33, b: -4.76, Ea: 2440.0}
+#   high-P-rate-constant: {A: 1.27e+16, b: -0.63, Ea: 383.0}
+#   Troe: {A: 0.783, T3: 74.0, T1: 2941.0, T2: 6964.0}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: CH3 + O <=> CH2O + H  # Reaction 78
+#   rate-constant: {A: 8.43e+13, b: 0.0, Ea: 0.0}
+# - equation: CH3 + OH <=> CH2 + H2O  # Reaction 79
+#   rate-constant: {A: 5.6e+07, b: 1.6, Ea: 5420.0}
+# - equation: CH3 + OH <=> CH2* + H2O  # Reaction 80
+#   rate-constant: {A: 2.501e+13, b: 0.0, Ea: 0.0}
+# - equation: CH3 + O2 <=> O + CH3O  # Reaction 81
+#   rate-constant: {A: 3.083e+13, b: 0.0, Ea: 2.88e+04}
+# - equation: CH3 + O2 <=> OH + CH2O  # Reaction 82
+#   rate-constant: {A: 3.6e+10, b: 0.0, Ea: 8940.0}
+# - equation: CH3 + HO2 <=> CH4 + O2  # Reaction 83
+#   rate-constant: {A: 1.0e+12, b: 0.0, Ea: 0.0}
+# - equation: CH3 + HO2 <=> CH3O + OH  # Reaction 84
+#   rate-constant: {A: 1.34e+13, b: 0.0, Ea: 0.0}
+# - equation: CH3 + H2O2 <=> CH4 + HO2  # Reaction 85
+#   rate-constant: {A: 2.45e+04, b: 2.47, Ea: 5180.0}
+# - equation: CH3 + HCO <=> CH4 + CO  # Reaction 86
+#   rate-constant: {A: 8.48e+12, b: 0.0, Ea: 0.0}
+# - equation: CH3 + CH2O <=> CH4 + HCO  # Reaction 87
+#   rate-constant: {A: 3320.0, b: 2.81, Ea: 5860.0}
+# - equation: CH3 + CH2 <=> C2H4 + H  # Reaction 88
+#   rate-constant: {A: 4.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH3 + CH2* <=> C2H4 + H  # Reaction 89
+#   rate-constant: {A: 1.2e+13, b: 0.0, Ea: -570.0}
+# - equation: CH3 + HCCO <=> C2H4 + CO  # Reaction 90
+#   rate-constant: {A: 5.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH3O + H <=> CH2O + H2  # Reaction 91
+#   rate-constant: {A: 2.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH3O + H <=> CH3 + OH  # Reaction 92
+#   rate-constant: {A: 3.2e+13, b: 0.0, Ea: 0.0}
+# - equation: CH3O + H <=> CH2* + H2O  # Reaction 93
+#   rate-constant: {A: 1.6e+13, b: 0.0, Ea: 0.0}
+# - equation: CH3O + O <=> CH2O + OH  # Reaction 94
+#   rate-constant: {A: 1.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH3O + OH <=> CH2O + H2O  # Reaction 95
+#   rate-constant: {A: 5.0e+12, b: 0.0, Ea: 0.0}
+# - equation: CH3O + O2 <=> CH2O + HO2  # Reaction 96
+#   rate-constant: {A: 4.28e-13, b: 7.6, Ea: -3530.0}
+# - equation: CH4 + H <=> CH3 + H2  # Reaction 97
+#   rate-constant: {A: 6.6e+08, b: 1.62, Ea: 1.084e+04}
+# - equation: CH4 + O <=> CH3 + OH  # Reaction 98
+#   rate-constant: {A: 1.02e+09, b: 1.5, Ea: 8600.0}
+# - equation: CH4 + OH <=> CH3 + H2O  # Reaction 99
+#   rate-constant: {A: 1.0e+08, b: 1.6, Ea: 3120.0}
+# - equation: CH4 + CH2 <=> CH3 + CH3  # Reaction 100
+#   rate-constant: {A: 2.46e+06, b: 2.0, Ea: 8270.0}
+# - equation: CH4 + CH2* <=> CH3 + CH3  # Reaction 101
+#   rate-constant: {A: 1.6e+13, b: 0.0, Ea: -570.0}
+# - equation: HCCO + H <=> CH2* + CO  # Reaction 102
+#   rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
+# - equation: HCCO + O <=> H + CO + CO  # Reaction 103
+#   rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
+# - equation: HCCO + O2 <=> OH + 2 CO  # Reaction 104
+#   rate-constant: {A: 1.6e+12, b: 0.0, Ea: 854.0}
+# - equation: HCCO + CH2 <=> C2H3 + CO  # Reaction 105
+#   rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
+# - equation: HCCO + HCCO <=> C2H2 + CO + CO  # Reaction 106
+#   rate-constant: {A: 1.0e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H3 (+ M) <=> C2H2 + H (+ M)  # Reaction 107
+#   type: falloff
+#   low-P-rate-constant: {A: 2.565e+27, b: -3.4, Ea: 3.579872e+04}
+#   high-P-rate-constant: {A: 3.86e+08, b: 1.62, Ea: 3.70482e+04}
+#   Troe: {A: 1.9816, T3: 5383.7, T1: 4.2932, T2: -0.0795}
+#   efficiencies: {CO2: 2.0, CO: 1.5, H2: 2.0, H2O: 6.0, CH4: 2.0, C2H4: 3.0,
+#     C2H2: 3.0}
+# - equation: C2H2 + O <=> CH2 + CO  # Reaction 108
+#   rate-constant: {A: 4.08e+06, b: 2.0, Ea: 1900.0}
+# - equation: C2H2 + O <=> HCCO + H  # Reaction 109
+#   rate-constant: {A: 1.632e+07, b: 2.0, Ea: 1900.0}
+# - equation: C2H2 + OH <=> CH2CO + H  # Reaction 110
+#   rate-constant: {A: 2.18e-04, b: 4.5, Ea: -1000.0}
+# - equation: C2H2 + OH <=> CH3 + CO  # Reaction 111
+#   rate-constant: {A: 4.83e-04, b: 4.0, Ea: -2000.0}
+# - equation: C2H2 + HCO <=> C2H3 + CO  # Reaction 112
+#   rate-constant: {A: 1.0e+07, b: 2.0, Ea: 6000.0}
+# - equation: C2H2 + CH2 <=> C3H3 + H  # Reaction 113
+#   rate-constant: {A: 1.2e+13, b: 0.0, Ea: 6620.0}
+# - equation: C2H2 + CH2* <=> C3H3 + H  # Reaction 114
+#   rate-constant: {A: 2.0e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H2 + HCCO <=> C3H3 + CO  # Reaction 115
+#   rate-constant: {A: 1.0e+11, b: 0.0, Ea: 3000.0}
+# - equation: C2H2 + CH3 <=> pC3H4 + H  # Reaction 116
+#   rate-constant: {A: 2.56e+09, b: 1.1, Ea: 1.3644e+04}
+# - equation: C2H2 + CH3 <=> aC3H5  # Reaction 117
+#   rate-constant: {A: 2.68e+53, b: -12.82, Ea: 3.573e+04}
+# - equation: CH2CO + H (+ M) <=> CH2CHO (+ M)  # Reaction 118
+#   type: falloff
+#   low-P-rate-constant: {A: 3.8e+41, b: -7.64, Ea: 1.19e+04}
+#   high-P-rate-constant: {A: 3.3e+14, b: -0.06, Ea: 8500.0}
+#   Troe: {A: 0.337, T3: 1707.0, T1: 3200.0, T2: 4131.0}
+#   efficiencies: {CO2: 2.0, CO: 1.5, H2: 2.0, H2O: 6.0, CH4: 2.0, C2H4: 3.0,
+#     C2H2: 3.0}
+# - equation: CH2CO + H <=> HCCO + H2  # Reaction 119
+#   rate-constant: {A: 5.0e+13, b: 0.0, Ea: 8000.0}
+# - equation: CH2CO + H <=> CH3 + CO  # Reaction 120
+#   rate-constant: {A: 1.5e+09, b: 1.43, Ea: 2690.0}
+# - equation: CH2CO + O <=> HCCO + OH  # Reaction 121
+#   rate-constant: {A: 1.0e+13, b: 0.0, Ea: 8000.0}
+# - equation: CH2CO + O <=> CH2 + CO2  # Reaction 122
+#   rate-constant: {A: 1.75e+12, b: 0.0, Ea: 1350.0}
+# - equation: CH2CO + OH <=> HCCO + H2O  # Reaction 123
+#   rate-constant: {A: 7.5e+12, b: 0.0, Ea: 2000.0}
+# - equation: C2H3 + H (+ M) <=> C2H4 (+ M)  # Reaction 124
+#   type: falloff
+#   low-P-rate-constant: {A: 1.4e+30, b: -3.86, Ea: 3320.0}
+#   high-P-rate-constant: {A: 6.08e+12, b: 0.27, Ea: 280.0}
+#   Troe: {A: 0.782, T3: 207.5, T1: 2663.0, T2: 6095.0}
+#   efficiencies: {CO2: 2.0, CO: 1.5, H2: 2.0, H2O: 6.0, CH4: 2.0, C2H4: 3.0,
+#     C2H2: 3.0}
+# - equation: C2H3 + H <=> C2H2 + H2  # Reaction 125
+#   rate-constant: {A: 9.0e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H3 + O <=> CH2CO + H  # Reaction 126
+#   rate-constant: {A: 4.8e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H3 + O <=> CH3 + CO  # Reaction 127
+#   rate-constant: {A: 4.8e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H3 + OH <=> C2H2 + H2O  # Reaction 128
+#   rate-constant: {A: 3.011e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H3 + O2 <=> C2H2 + HO2  # Reaction 129
+#   rate-constant: {A: 1.34e+06, b: 1.61, Ea: -383.4}
+# - equation: C2H3 + O2 <=> CH2CHO + O  # Reaction 130
+#   rate-constant: {A: 3.0e+11, b: 0.29, Ea: 11.0}
+# - equation: C2H3 + O2 <=> HCO + CH2O  # Reaction 131
+#   rate-constant: {A: 4.6e+16, b: -1.39, Ea: 1010.0}
+# - equation: C2H3 + HO2 <=> CH2CHO + OH  # Reaction 132
+#   rate-constant: {A: 1.0e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H3 + H2O2 <=> C2H4 + HO2  # Reaction 133
+#   rate-constant: {A: 1.21e+10, b: 0.0, Ea: -596.0}
+# - equation: C2H3 + HCO <=> C2H4 + CO  # Reaction 134
+#   rate-constant: {A: 9.033e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H3 + HCO <=> C2H3CHO  # Reaction 135
+#   rate-constant: {A: 1.8e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H3 + CH3 <=> C2H2 + CH4  # Reaction 136
+#   rate-constant: {A: 3.92e+11, b: 0.0, Ea: 0.0}
+# - equation: C2H3 + CH3 (+ M) <=> C3H6 (+ M)  # Reaction 137
+#   type: falloff
+#   low-P-rate-constant: {A: 4.27e+58, b: -11.94, Ea: 9769.8}
+#   high-P-rate-constant: {A: 2.5e+13, b: 0.0, Ea: 0.0}
+#   Troe: {A: 0.175, T3: 1340.6, T1: 6.0e+04, T2: 1.01398e+04}
+#   efficiencies: {CO2: 2.0, CO: 1.5, H2: 2.0, H2O: 6.0, CH4: 2.0, C2H4: 3.0,
+#     C2H2: 3.0}
+# - equation: C2H3 + CH3 <=> aC3H5 + H  # Reaction 138
+#   rate-constant: {A: 1.5e+24, b: -2.83, Ea: 1.8618e+04}
+# - equation: C2H3 + C2H3 <=> C2H2 + C2H4  # Reaction 139
+#   rate-constant: {A: 9.6e+11, b: 0.0, Ea: 0.0}
+# - equation: CH2CHO <=> CH3 + CO  # Reaction 140
+#   rate-constant: {A: 7.8e+41, b: -9.147, Ea: 4.69e+04}
+# - equation: CH2CHO + H <=> CH3 + HCO  # Reaction 141
+#   rate-constant: {A: 9.0e+13, b: 0.0, Ea: 0.0}
+# - equation: CH2CHO + H <=> CH2CO + H2  # Reaction 142
+#   rate-constant: {A: 2.0e+13, b: 0.0, Ea: 4000.0}
+# - equation: CH2CHO + O <=> CH2CO + OH  # Reaction 143
+#   rate-constant: {A: 2.0e+13, b: 0.0, Ea: 4000.0}
+# - equation: CH2CHO + OH <=> CH2CO + H2O  # Reaction 144
+#   rate-constant: {A: 1.0e+13, b: 0.0, Ea: 2000.0}
+# - equation: CH2CHO + O2 <=> CH2CO + HO2  # Reaction 145
+#   rate-constant: {A: 1.4e+11, b: 0.0, Ea: 0.0}
+# - equation: CH2CHO + O2 <=> CH2O + CO + OH  # Reaction 146
+#   rate-constant: {A: 1.8e+10, b: 0.0, Ea: 0.0}
+# - equation: C2H4 + H <=> C2H3 + H2  # Reaction 147
+#   rate-constant: {A: 5.07e+07, b: 1.9, Ea: 1.295e+04}
+# - equation: C2H4 + O <=> C2H3 + OH  # Reaction 148
+#   rate-constant: {A: 1.51e+07, b: 1.9, Ea: 3740.0}
+# - equation: C2H4 + O <=> CH3 + HCO  # Reaction 149
+#   rate-constant: {A: 1.92e+07, b: 1.83, Ea: 220.0}
+# - equation: C2H4 + O <=> CH2 + CH2O  # Reaction 150
+#   rate-constant: {A: 3.84e+05, b: 1.83, Ea: 220.0}
+# - equation: C2H4 + OH <=> C2H3 + H2O  # Reaction 151
+#   rate-constant: {A: 3.6e+06, b: 2.0, Ea: 2500.0}
+# - equation: C2H4 + CH2 <=> aC3H5 + H  # Reaction 152
+#   rate-constant: {A: 2.0e+13, b: 0.0, Ea: 6000.0}
+# - equation: C2H4 + CH2* <=> aC3H5 + H  # Reaction 153
+#   rate-constant: {A: 5.0e+13, b: 0.0, Ea: 0.0}
+# - equation: C2H4 + CH3 <=> C2H3 + CH4  # Reaction 154
+#   rate-constant: {A: 2.27e+05, b: 2.0, Ea: 9200.0}
+# - equation: C2H4 + O2 <=> C2H3 + HO2  # Reaction 155
+#   rate-constant: {A: 4.22e+13, b: 0.0, Ea: 6.08e+04}
+# - equation: C3H3 + H <=> pC3H4  # Reaction 156
+#   rate-constant: {A: 1.5e+13, b: 0.0, Ea: 0.0}
+# - equation: C3H3 + O2 <=> CH2CO + HCO  # Reaction 157
+#   rate-constant: {A: 3.0e+10, b: 0.0, Ea: 2868.0}
+# - equation: C3H3 + HO2 <=> OH + CO + C2H3  # Reaction 158
+#   rate-constant: {A: 8.0e+11, b: 0.0, Ea: 0.0}
+# - equation: C3H3 + HO2 <=> pC3H4 + O2  # Reaction 159
+#   rate-constant: {A: 2.5e+12, b: 0.0, Ea: 0.0}
+# - equation: C3H3 + HCO <=> pC3H4 + CO  # Reaction 160
+#   rate-constant: {A: 2.5e+13, b: 0.0, Ea: 0.0}
+# - equation: C3H3 + C2H2 <=> C5H5  # Reaction 161
+#   rate-constant: {A: 6.87e+55, b: -12.5, Ea: 4.2025e+04}
+# - equation: C3H3 + C3H3 => C6H5 + H  # Reaction 162
+#   rate-constant: {A: 5.0e+12, b: 0.0, Ea: 0.0}
+# - equation: C3H3 + C3H3 => C6H6  # Reaction 163
+#   rate-constant: {A: 2.0e+12, b: 0.0, Ea: 0.0}
+# - equation: pC3H4 + H <=> aC3H5  # Reaction 164
+#   rate-constant: {A: 4.91e+60, b: -14.37, Ea: 3.1644e+04}
+# - equation: pC3H4 + H <=> C3H3 + H2  # Reaction 165
+#   rate-constant: {A: 1.3e+06, b: 2.0, Ea: 5500.0}
+# - equation: pC3H4 + O <=> HCCO + CH3  # Reaction 166
+#   rate-constant: {A: 7.3e+12, b: 0.0, Ea: 2250.0}
+# - equation: pC3H4 + O <=> C2H4 + CO  # Reaction 167
+#   rate-constant: {A: 1.0e+13, b: 0.0, Ea: 2250.0}
+# - equation: pC3H4 + OH <=> C3H3 + H2O  # Reaction 168
+#   rate-constant: {A: 1.0e+06, b: 2.0, Ea: 100.0}
+# - equation: pC3H4 + CH3 <=> C3H3 + CH4  # Reaction 169
+#   rate-constant: {A: 1.8e+12, b: 0.0, Ea: 7700.0}
+# - equation: aC3H5 + H (+ M) <=> C3H6 (+ M)  # Reaction 170
+#   type: falloff
+#   low-P-rate-constant: {A: 1.33e+60, b: -12.0, Ea: 5967.8}
+#   high-P-rate-constant: {A: 2.0e+14, b: 0.0, Ea: 0.0}
+#   Troe: {A: 0.02, T3: 1096.6, T1: 1096.6, T2: 6859.5}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: aC3H5 + O <=> C2H3CHO + H  # Reaction 171
+#   rate-constant: {A: 6.0e+13, b: 0.0, Ea: 0.0}
+# - equation: aC3H5 + OH <=> C2H3CHO + H + H  # Reaction 172
+#   rate-constant: {A: 4.2e+32, b: -5.16, Ea: 3.0126e+04}
+# - equation: aC3H5 + O2 <=> C2H3CHO + OH  # Reaction 173
+#   rate-constant: {A: 1.82e+13, b: -0.41, Ea: 2.2859e+04}
+# - equation: aC3H5 + HO2 <=> C3H6 + O2  # Reaction 174
+#   rate-constant: {A: 2.66e+12, b: 0.0, Ea: 0.0}
+# - equation: aC3H5 + HO2 <=> OH + C2H3 + CH2O  # Reaction 175
+#   rate-constant: {A: 6.6e+12, b: 0.0, Ea: 0.0}
+# - equation: aC3H5 + HCO <=> C3H6 + CO  # Reaction 176
+#   rate-constant: {A: 6.0e+13, b: 0.0, Ea: 0.0}
+# - equation: aC3H5 + CH3 (+ M) <=> C4H81 (+ M)  # Reaction 177
+#   type: falloff
+#   low-P-rate-constant: {A: 3.91e+60, b: -12.81, Ea: 6250.0}
+#   high-P-rate-constant: {A: 1.0e+14, b: -0.32, Ea: -262.3}
+#   Troe: {A: 0.104, T3: 1606.0, T1: 6.0e+04, T2: 6118.4}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: C3H6 + H <=> C2H4 + CH3  # Reaction 178
+#   rate-constant: {A: 8.0e+21, b: -2.39, Ea: 1.118e+04}
+# - equation: C3H6 + H <=> aC3H5 + H2  # Reaction 179
+#   rate-constant: {A: 1.92e+06, b: 2.309, Ea: 4674.0}
+# - equation: C3H6 + O <=> CH2CO + CH3 + H  # Reaction 180
+#   rate-constant: {A: 8.0e+07, b: 1.65, Ea: 327.0}
+# - equation: C3H6 + O <=> C2H3CHO + H + H  # Reaction 181
+#   rate-constant: {A: 4.0e+07, b: 1.65, Ea: 327.0}
+# - equation: C3H6 + O <=> aC3H5 + OH  # Reaction 182
+#   rate-constant: {A: 1.8e+11, b: 0.7, Ea: 5880.0}
+# - equation: C3H6 + OH <=> aC3H5 + H2O  # Reaction 183
+#   rate-constant: {A: 3.1e+06, b: 2.0, Ea: -298.0}
+# - equation: C3H6 + HO2 <=> aC3H5 + H2O2  # Reaction 184
+#   rate-constant: {A: 9600.0, b: 2.6, Ea: 1.391e+04}
+# - equation: C3H6 + CH3 <=> aC3H5 + CH4  # Reaction 185
+#   rate-constant: {A: 45.4, b: 3.268, Ea: 7152.0}
+# - equation: C2H3CHO + H <=> C2H4 + HCO  # Reaction 186
+#   rate-constant: {A: 1.08e+11, b: 0.454, Ea: 5820.0}
+# - equation: C2H3CHO + O <=> C2H3 + OH + CO  # Reaction 187
+#   rate-constant: {A: 3.0e+13, b: 0.0, Ea: 3540.0}
+# - equation: C2H3CHO + O <=> CH2O + CH2CO  # Reaction 188
+#   rate-constant: {A: 1.9e+07, b: 1.8, Ea: 220.0}
+# - equation: C2H3CHO + OH <=> C2H3 + H2O + CO  # Reaction 189
+#   rate-constant: {A: 3.43e+09, b: 1.18, Ea: -447.0}
+# - equation: C4H81 + H <=> C3H6 + CH3  # Reaction 190
+#   rate-constant: {A: 3.2e+22, b: -2.39, Ea: 1.118e+04}
+# - equation: C6H5 + CH3 <=> C6H5CH3  # Reaction 191
+#   rate-constant: {A: 1.38e+13, b: 0.0, Ea: 46.0}
+# - equation: C6H5CH3 + H <=> C6H6 + CH3  # Reaction 192
+#   rate-constant: {A: 1.93e+06, b: 2.17, Ea: 4163.0}
+# - equation: C6H5 + H (+ M) <=> C6H6 (+ M)  # Reaction 193
+#   type: falloff
+#   low-P-rate-constant: {A: 6.6e+75, b: -16.3, Ea: 7000.0}
+#   high-P-rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
+#   Troe: {A: 1.0, T3: 0.1, T1: 584.9, T2: 6113.0}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: C6H6 + OH <=> C6H5 + H2O  # Reaction 194
+#   rate-constant: {A: 3.985e+05, b: 2.286, Ea: 1058.0}
+# - equation: C6H6 + O <=> C6H5O + H  # Reaction 195
+#   rate-constant: {A: 1.39e+13, b: 0.0, Ea: 4910.0}
+# - equation: C6H6 + O <=> C5H5 + HCO  # Reaction 196
+#   rate-constant: {A: 1.39e+13, b: 0.0, Ea: 4530.0}
+# - equation: C6H5 + H2 <=> C6H6 + H  # Reaction 197
+#   rate-constant: {A: 5.707e+04, b: 2.43, Ea: 6273.0}
+# - equation: C6H5 + O2 <=> C6H5O + O  # Reaction 198
+#   rate-constant: {A: 2.6e+13, b: 0.0, Ea: 6120.0}
+# - equation: C6H5 + O <=> C5H5 + CO  # Reaction 199
+#   rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
+# - equation: C6H5 + OH <=> C6H5O + H  # Reaction 200
+#   rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
+# - equation: C6H5 + HO2 <=> C6H5O + OH  # Reaction 201
+#   rate-constant: {A: 3.0e+13, b: 0.0, Ea: 0.0}
+# - equation: C6H5 + HO2 <=> C6H6 + O2  # Reaction 202
+#   rate-constant: {A: 1.0e+12, b: 0.0, Ea: 0.0}
+# - equation: C6H5 + CH4 <=> C6H6 + CH3  # Reaction 203
+#   rate-constant: {A: 3.89e-03, b: 4.57, Ea: 5256.0}
+# - equation: C6H5 + CH2O <=> C6H6 + HCO  # Reaction 204
+#   rate-constant: {A: 8.55e+04, b: 2.19, Ea: 38.0}
+# - equation: C6H5O + H <=> C5H5 + HCO  # Reaction 205
+#   rate-constant: {A: 1.0e+13, b: 0.0, Ea: 1.2e+04}
+# - equation: C6H5O + H <=> C5H6 + CO  # Reaction 206
+#   rate-constant: {A: 5.0e+13, b: 0.0, Ea: 0.0}
+# - equation: C6H5O <=> CO + C5H5  # Reaction 207
+#   rate-constant: {A: 3.76e+54, b: -12.06, Ea: 7.28e+04}
+# - equation: C5H6 + H <=> C2H2 + aC3H5  # Reaction 208
+#   rate-constant: {A: 7.74e+36, b: -6.18, Ea: 3.289e+04}
+# - equation: C5H6 + H <=> C5H5 + H2  # Reaction 209
+#   rate-constant: {A: 3.03e+08, b: 1.71, Ea: 5590.0}
+# - equation: C5H6 + O <=> C5H5 + OH  # Reaction 210
+#   rate-constant: {A: 4.77e+04, b: 2.71, Ea: 1106.0}
+# - equation: C5H6 + OH <=> C5H5 + H2O  # Reaction 211
+#   rate-constant: {A: 3.08e+06, b: 2.0, Ea: 0.0}
+# - equation: C5H6 + HO2 <=> C5H5 + H2O2  # Reaction 212
+#   rate-constant: {A: 1.1e+04, b: 2.6, Ea: 1.29e+04}
+# - equation: C5H6 + O2 <=> C5H5 + HO2  # Reaction 213
+#   rate-constant: {A: 4.0e+13, b: 0.0, Ea: 3.715e+04}
+# - equation: C5H6 + HCO <=> C5H5 + CH2O  # Reaction 214
+#   rate-constant: {A: 1.08e+08, b: 1.9, Ea: 1.6e+04}
+# - equation: C5H6 + CH3 <=> C5H5 + CH4  # Reaction 215
+#   rate-constant: {A: 0.18, b: 4.0, Ea: 0.0}
+# - equation: C5H5 + H (+ M) <=> C5H6 (+ M)  # Reaction 216
+#   type: falloff
+#   low-P-rate-constant: {A: 4.4e+80, b: -18.28, Ea: 1.2994e+04}
+#   high-P-rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
+#   Troe: {A: 0.068, T3: 400.7, T1: 4135.8, T2: 5501.9}
+#   efficiencies: {H2: 2.0, CH4: 2.0, H2O: 6.0, CO2: 2.0, CO: 1.5}
+# - equation: C5H5 + O2 <=> C5H5O(2,4) + O  # Reaction 217
+#   rate-constant: {A: 7.78e+15, b: -0.73, Ea: 4.874e+04}
+# - equation: C5H5 + O <=> C5H5O(2,4)  # Reaction 218
+#   rate-constant: {A: 1.12e-12, b: 5.87, Ea: -1.731e+04}
+# - equation: C5H5 + O <=> C5H4O + H  # Reaction 219
+#   rate-constant: {A: 5.81e+13, b: -0.02, Ea: 20.0}
+# - equation: C5H5 + OH <=> C5H5O(2,4) + H  # Reaction 220
+#   rate-constant: {A: 1.36e+51, b: -10.46, Ea: 5.71e+04}
+# - equation: C5H5 + HO2 <=> C5H5O(2,4) + OH  # Reaction 221
+#   rate-constant: {A: 6.27e+29, b: -4.69, Ea: 1.165e+04}
+# - equation: C5H5 + O2 <=> C5H4O + OH  # Reaction 222
+#   rate-constant: {A: 1.8e+12, b: 0.08, Ea: 1.8e+04}
+# - equation: C5H5O(2,4) <=> C5H4O + H  # Reaction 223
+#   rate-constant: {A: 2.0e+13, b: 0.0, Ea: 3.0e+04}
+# - equation: C5H5O(2,4) + O2 <=> C5H4O + HO2  # Reaction 224
+#   rate-constant: {A: 1.0e+11, b: 0.0, Ea: 0.0}
+# - equation: C5H4O <=> 2 C2H2 + CO  # Reaction 225
+#   rate-constant: {A: 6.2e+41, b: -7.87, Ea: 9.87e+04}
+# - equation: C5H4O + H <=> CO + c-C4H5  # Reaction 226
+#   rate-constant: {A: 4.3e+09, b: 1.45, Ea: 3900.0}
+# - equation: C5H4O + O <=> CO + HCO + C3H3  # Reaction 227
+#   rate-constant: {A: 6.2e+08, b: 1.45, Ea: -858.0}
+# - equation: c-C4H5 + H <=> C2H4 + C2H2  # Reaction 228
+#   rate-constant: {A: 1.0e+13, b: 0.0, Ea: 0.0}
+# - equation: c-C4H5 + O <=> CH2CHO + C2H2  # Reaction 229
+#   rate-constant: {A: 1.0e+14, b: 0.0, Ea: 0.0}
+# - equation: c-C4H5 + O2 <=> CH2CHO + CH2CO  # Reaction 230
+#   rate-constant: {A: 4.8e+11, b: 0.0, Ea: 1.9e+04}
+# - equation: c-C4H5 <=> C2H3 + C2H2  # Reaction 231
+#   rate-constant: {A: 2.0e+12, b: 0.0, Ea: 5.8e+04}
+# - equation: aC3H5 + C3H6 => C5H6 + H2 + CH3  # Reaction 232
+#   rate-constant: {A: 2.0e+13, b: 0.0, Ea: 1.1e+04}

@@ -1,82 +1,53 @@
-function wdot_func(T, C, S0, h_mole)
-    _kf = kf_func.(1:gas.n_reactions; T, C)
-    ΔS_R = vk' * S0 / R
-    ΔH_RT = vk' * h_mole / (R * T)
-    Keq = exp.(ΔS_R .- ΔH_RT .+ log(one_atm / R / T) .* sum(vk, dims = 1)[1, :])
-    _kr = @. _kf / Keq * reaction.is_reversible
-    _qdot = qdot_func.(1:gas.n_reactions; _kf, _kr, C)
-    return vk * _qdot  #, _qdot, _kf, _kr
-end
+function wdot_func(reaction, T, C, S0, h_mole)
 
-function kf_func(i; T, C)
-    kfi = Arrhenius_coeffs[i, 1] * T^Arrhenius_coeffs[i, 2] *
-            exp(-Arrhenius_coeffs[i, 3] * (4184.0 / R / T))
+    @inbounds _kf = @. @view(reaction.Arrhenius_coeffs[:, 1]) * exp(
+        @view(reaction.Arrhenius_coeffs[:, 2]) * log(T) -
+        @view(reaction.Arrhenius_coeffs[:, 3]) * (4184.0 / R / T),
+    )
 
-    if i in reaction.index_three_body
-        kfi *= dot(@view(reaction.efficiencies_coeffs[:, i]), C)
+    for i in reaction.index_three_body
+        @inbounds _kf[i] *= dot(@view(reaction.efficiencies_coeffs[:, i]), C)
     end
 
-    if i in reaction.index_falloff
-
-        j = findfirst(reaction.index_falloff .== i)
-
-        A0 = reaction.Arrhenius_A0[j]
-        b0 = reaction.Arrhenius_b0[j]
-        Ea0 = reaction.Arrhenius_Ea0[j]
-        k0 = A0 * exp(b0 * log(T) - Ea0 * 4184.0 / R / T)
-        Pr = k0 * dot(@view(reaction.efficiencies_coeffs[:, i]), C) / kfi
+    for (j, i) in enumerate(reaction.index_falloff)
+        @inbounds A0 = reaction.Arrhenius_A0[j]
+        @inbounds b0 = reaction.Arrhenius_b0[j]
+        @inbounds Ea0 = reaction.Arrhenius_Ea0[j]
+        @inbounds k0 = A0 * exp(b0 * log(T) - Ea0 * 4184.0 / R / T)
+        @inbounds Pr =
+            k0 * dot(@view(reaction.efficiencies_coeffs[:, i]), C) / _kf[i]
         lPr = log10(Pr)
+        _kf[i] *= (Pr / (1 + Pr))
 
-        kfi *= (Pr / (1 + Pr))
-
-        if !(i in reaction.list_type4_noTroe)
-            jj = j - length(findall(reaction.list_type4_noTroe .< i)) + 1
-            F_cent =
-                (1 - reaction.Troe_A[jj]) * exp(-T / reaction.Troe_T3[jj]) +
-                reaction.Troe_A[jj] * exp(-T / reaction.Troe_T1[jj]) +
-                exp(-reaction.Troe_T2[jj] / T)
+        if reaction.Troe_A[j] > 1.e-12
+            @inbounds F_cent =
+                (1 - reaction.Troe_A[j]) * exp(-T / reaction.Troe_T3[j]) +
+                reaction.Troe_A[j] * exp(-T / reaction.Troe_T1[j]) +
+                exp(-reaction.Troe_T2[j] / T)
             lF_cent = log10(F_cent)
             _C = -0.4 - 0.67 * lF_cent
             N = 0.75 - 1.27 * lF_cent
-            f1 = (lPr + _C) / (N - 0.14 * (lPr + _C))
-            kfi *= exp(log(10.0) * lF_cent / (1 + f1^2))
+            @inbounds f1 = (lPr + _C) / (N - 0.14 * (lPr + _C))
+            @inbounds _kf[i] *= exp(log(10.0) * lF_cent / (1 + f1^2))
         end
     end
-    kfi
-end
 
-function qdot_func(i; _kf, _kr, C)
-    rop_f = _kf[i]
-    for j in i_reactant[i]
-        rop_f *= C[j]^reactant_orders[j, i]
-    end
-    if reaction.is_reversible[i]
-        rop_r = _kr[i]
-        for j in i_product[i]
-            rop_r *= C[j]^product_stoich_coeffs[j, i]
+    @inbounds ΔS_R = reaction.vk' * S0 / R
+    @inbounds ΔH_RT = reaction.vk' * h_mole / (R * T)
+    @inbounds Keq =
+        @. exp(ΔS_R - ΔH_RT + log(one_atm / R / T) * reaction.vk_sum)
+    @inbounds _kr = @. _kf / Keq * reaction.is_reversible
+
+    for i = 1:reaction.n_reactions
+        @inbounds for j in reaction.i_reactant[i]
+            @inbounds _kf[i] *= C[j]^reaction.reactant_orders[j, i]
         end
-        rop_f -= rop_r
+        if reaction.is_reversible[i]
+            @inbounds for j in reaction.i_product[i]
+                @inbounds _kr[i] *= C[j]^reaction.product_stoich_coeffs[j, i]
+            end
+        end
     end
-    rop_f
-end
 
-    # _qdot = _kf * 1.0
-    # _qdot = []
-    # for i = 1:gas.n_reactions
-    #     rop_f = _kf[i]
-    #     for j in i_reactant[i]
-    #         rop_f *= C[j]^reactant_orders[j, i]
-    #     end
-    #
-    #     if reaction.is_reversible[i]
-    #         rop_r = _kr[i]
-    #         for j in i_product[i]
-    #             rop_r *= C[j]^product_stoich_coeffs[j, i]
-    #         end
-    #         # _qdot[i] = rop_f - rop_r
-    #         push!(_qdot, rop_f - rop_r)
-    #     else
-    #         # _qdot[i] = rop_f
-    #         push!(_qdot, rop_f)
-    #     end
-    # end
+    return reaction.vk * (_kf - _kr)
+end

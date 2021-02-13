@@ -1,15 +1,15 @@
-function set_states(T, P, Y)
-    mean_MW = 1. / dot(Y, 1 ./ gas.MW)
+function set_states(gas::Solution, T, P, Y)
+    mean_MW = 1.0 / dot(Y, 1 ./ gas.MW)
     ρ_mass = P / R / T * mean_MW
-    X = Y2X(Y, mean_MW)
-    C = Y2C(Y, ρ_mass)
-    cp_mole = cp_mole_func(T, X)
-    cp_mass = cp_mass_func(cp_mole, mean_MW)
-    H_mole, h_mole = H_mole_func(T, X)
-    H_mass = H_mass_func(h_mole, Y)
-    S_mole, s_mole, S0 = S_mole_func(T, P, X)
-    S_mass = S_mass_func(s_mole, Y)
-    return wdot_func(T, C, S0, h_mole)
+    X = Y2X(gas, Y, mean_MW)
+    C = Y2C(gas, Y, ρ_mass)
+    cp_mole = cp_mole_func(gas, T, X)
+    cp_mass = cp_mass_func(gas, cp_mole, mean_MW)
+    H_mole, h_mole = H_mole_func(gas, T, X)
+    H_mass = H_mass_func(gas, h_mole, Y)
+    S_mole, s_mole, S0 = S_mole_func(gas, T, P, X)
+    S_mass = S_mass_func(gas, s_mole, Y)
+    return wdot_func(gas.reaction, T, C, S0, h_mole)
 end
 
 function CreateSolution(mech)
@@ -36,15 +36,24 @@ function CreateSolution(mech)
     reactant_stoich_coeffs = npz["reactant_stoich_coeffs"]
     reactant_orders = npz["reactant_orders"]
     is_reversible = npz["is_reversible"]
-    list_type4_noTroe = npz["list_type4_noTroe"]
     Arrhenius_coeffs = npz["Arrhenius_coeffs"]
-    Arrhenius_A0 = npz["Arrhenius_A0"]
-    Arrhenius_b0 = npz["Arrhenius_b0"]
-    Arrhenius_Ea0 = npz["Arrhenius_Ea0"]
-    Troe_A = npz["Troe_A"]
-    Troe_T1 = npz["Troe_T1"]
-    Troe_T2 = npz["Troe_T2"]
-    Troe_T3 = npz["Troe_T3"]
+    if haskey(npz, "Arrhenius_A0")
+        Arrhenius_A0 = npz["Arrhenius_A0"]
+        Arrhenius_b0 = npz["Arrhenius_b0"]
+        Arrhenius_Ea0 = npz["Arrhenius_Ea0"]
+        Troe_A = npz["Troe_A"]
+        Troe_T1 = npz["Troe_T1"]
+        Troe_T2 = npz["Troe_T2"]
+        Troe_T3 = npz["Troe_T3"]
+    else
+        Arrhenius_A0 = []
+        Arrhenius_b0 = []
+        Arrhenius_Ea0 = []
+        Troe_A = []
+        Troe_T1 = []
+        Troe_T2 = []
+        Troe_T3 = []
+    end
 
     index_three_body = []
     index_falloff = []
@@ -62,25 +71,37 @@ function CreateSolution(mech)
 
     i_reactant = []
     i_product = []
-    for i in 1:n_reactions
+    for i = 1:n_reactions
         push!(i_reactant, findall(reactant_orders[:, i] .> 0.01))
         push!(i_product, findall(product_stoich_coeffs[:, i] .> 0.01))
     end
 
-    reaction = Reaction(product_stoich_coeffs, reactant_stoich_coeffs, reactant_orders,
-                        is_reversible, list_type4_noTroe,
-                        Arrhenius_coeffs, Arrhenius_A0, Arrhenius_b0, Arrhenius_Ea0,
-                        Troe_A, Troe_T1, Troe_T2, Troe_T3,
-                        index_three_body, index_falloff, efficiencies_coeffs,
-                        i_reactant, i_product)
+    vk = product_stoich_coeffs - reactant_stoich_coeffs
+    vk_sum = sum(vk, dims = 1)[1, :]
+
+    reaction = Reaction(
+        product_stoich_coeffs,
+        reactant_stoich_coeffs,
+        reactant_orders,
+        is_reversible,
+        Arrhenius_coeffs,
+        Arrhenius_A0,
+        Arrhenius_b0,
+        Arrhenius_Ea0,
+        Troe_A,
+        Troe_T1,
+        Troe_T2,
+        Troe_T3,
+        index_three_body,
+        index_falloff,
+        efficiencies_coeffs,
+        i_reactant,
+        i_product,
+        n_reactions,
+        vk,
+        vk_sum
+    )
 
     gas = Solution(n_species, n_reactions, MW, species_names, thermo, reaction)
-
-    global vk = product_stoich_coeffs - reactant_stoich_coeffs
-    global reaction
-    global reactant_orders, product_stoich_coeffs, i_reactant, i_product
-    global Arrhenius_coeffs
-    global gas
-
     return gas
 end
