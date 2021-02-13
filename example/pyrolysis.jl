@@ -20,7 +20,6 @@ T0 = 1200.0
 P = one_atm
 
 u0 = vcat(Y0, T0)
-
 function dudt!(du, u, p, t)
     T = u[end]
     Y = u[1:ns]
