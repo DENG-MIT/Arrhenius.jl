@@ -10,7 +10,9 @@ module Arrhenius
     include("Thermo.jl")
     include("Kinetics.jl")
 end
-
+```
+Following codes are used during development phase only.
+```
 # using LinearAlgebra
 # using DifferentialEquations
 # using Sundials

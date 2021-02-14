@@ -1,3 +1,4 @@
+"get specific of heat capacity"
 function get_cp(gas, T, X, mean_MW)
     if T <= 1000.0
         cp = @view(gas.thermo.nasa_low[:, 1:5]) * [1.0, T, T^2, T^3, T^4]
@@ -10,6 +11,7 @@ function get_cp(gas, T, X, mean_MW)
 end
 export get_cp
 
+"get enthaphy (H) per mole"
 function get_H(gas, T, Y, X)
     H_T = [1.0, T / 2.0, T^2 / 3.0, T^3 / 4.0, T^4 / 5.0, 1.0 / T]
     if T <= 1000.0
@@ -27,6 +29,7 @@ function H_mass_func(gas, h_mole, Y)
 end
 export H_mass_func
 
+"get entropy (S)"
 function get_S(gas, T, P, X)
     S_T = [log(T), T, T^2 / 2.0, T^3 / 3.0, T^4 / 4.0, 1.0]
     if T <= 1000.0

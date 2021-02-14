@@ -1,3 +1,4 @@
+"compute reaction source term `dC/dt`"
 function wdot_func(reaction, T, C, S0, h_mole)
 
     @inbounds _kf = @. @view(reaction.Arrhenius_coeffs[:, 1]) * exp(

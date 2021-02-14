@@ -11,6 +11,9 @@ function set_states(gas::Solution, T, P, Y)
 end
 export set_states
 
+"Reaction mechanism is interepreted here. Part of the infomation are read in
+from the yaml file, pary of them are from the pre-processed .npz file from
+ReacTorch and Cantera"
 function CreateSolution(mech)
     yaml = YAML.load_file(mech)
     n_species = length(yaml["species"])
