@@ -31,11 +31,11 @@ np.savez(mech_yaml,
          is_reversible=sol.is_reversible,
          Arrhenius_coeffs=Arrhenius_coeffs,
          efficiencies_coeffs=efficiencies_coeffs,
-        #  Arrhenius_A0=sol.Arrhenius_A0,
-        #  Arrhenius_b0=sol.Arrhenius_b0,
-        #  Arrhenius_Ea0=sol.Arrhenius_Ea0,
-        #  Troe_A=sol.Troe_A,
-        #  Troe_T1=sol.Troe_T1,
-        #  Troe_T2=sol.Troe_T2,
-        #  Troe_T3=sol.Troe_T3
+         Arrhenius_A0=sol.Arrhenius_A0,
+         Arrhenius_b0=sol.Arrhenius_b0,
+         Arrhenius_Ea0=sol.Arrhenius_Ea0,
+         Troe_A=sol.Troe_A,
+         Troe_T1=sol.Troe_T1,
+         Troe_T2=sol.Troe_T2,
+         Troe_T3=sol.Troe_T3
          )
