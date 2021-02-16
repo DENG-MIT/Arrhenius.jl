@@ -6,7 +6,8 @@ import reactorch as rt
 
 import json
 
-mech_yaml = 'JP10skeletal.yaml'
+mech_yaml = 'gri30.yaml'
+# mech_yaml = 'JP10skeletal.yaml'
 # mech_yaml = 'h2o2.yaml'
 
 sol = rt.Solution(mech_yaml=mech_yaml, device=torch.device('cpu'),
