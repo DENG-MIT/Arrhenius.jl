@@ -22,8 +22,8 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
 > Currently, the package relies on [`Cantera`](https://github.com/Cantera/cantera) and [`ReacTorch`](https://github.com/DENG-MIT/reactorch) for interpreting the reaction mechanism. If you want to have a try, you don't need to install Cantera and ReacTorch, since there are already some pre-compiled reaction mechanisms under the folder of `mechanism`. Otherwise, you can install [`Cantera`](https://github.com/Cantera/cantera) and [`ReacTorch`](https://github.com/DENG-MIT/reactorch) to compile it using the python script `interpreter.py` under the folder of `mechanism`. You can also ask for help in the discussion forum and our developers can compile the model for you.
 
 **Examples**
-  + [Pyrolysis of JP10](https://github.com/DENG-MIT/Arrhenius.jl/blob/61797953108be35edf9b04f506adcb565411088b/example/pyrolysis.jl#L1)
-  + [Perfect Stirrred Reactor](https://github.com/DENG-MIT/Arrhenius.jl/issues/6)
+  + [Pyrolysis of JP10](./example/pyrolysis/pyrolysis.ipynb)
+  + [Perfect Stirred Reactor](./example/perfect_stirred_reactor)
 
 
 ## Validation with Cantera
