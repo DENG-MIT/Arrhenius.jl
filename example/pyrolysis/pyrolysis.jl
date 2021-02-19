@@ -8,13 +8,13 @@ using Plots
 using DelimitedFiles
 using Profile
 
-cd("example")
+cd("./example/pyrolysis")
 cantera_data = readdlm("pyrolysis.dat")
 ct_ts= cantera_data[:, 1]
 ct_T = cantera_data[:, 2]
 ct_Y = cantera_data[:, 3:end]
 
-gas = CreateSolution("../mechanism/JP10skeletal.yaml")
+gas = CreateSolution("../../mechanism/JP10skeletal.yaml")
 ns = gas.n_species
 
 Y0 = zeros(ns)
