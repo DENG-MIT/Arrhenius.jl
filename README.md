@@ -4,10 +4,10 @@ Inspired by [`ReactionMechanismSimulator.jl`](https://github.com/ReactionMechani
 
 `Arrhenius.jl` is designed with following in mind:
 
-* combustion software 2.0
-* differential programing
-* combustion physics informed machine learning
-* combustion simulation education.
+* Combustion software 2.0
+* Differential programing
+* Physics informed machine learning
+* Combustion simulation education.
 
 We are in an early-development. Expect some adventures and rough edges.
 
@@ -29,4 +29,5 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
 ## Validation with Cantera
 
 In the example of pyrolysis.jl, we compare the results with Cantera. The example involves solving the equations of mass fractions and temperature under constant pressure.
-![val](./example/JP10_pyrolysis.png)
+
+![JP10_pyrolysis_vs_cantera](./example/pyrolysis/JP10_pyrolysis.png)
