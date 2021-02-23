@@ -24,6 +24,7 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
 **Examples**
   + [Pyrolysis of JP10](./example/pyrolysis/pyrolysis.ipynb)
   + [Perfect Stirred Reactor](./example/perfect_stirred_reactor)
+  + [Compute Jacobian matrix using auto-differentiation](https://gist.github.com/jiweiqi/21b8d149bd95b97d9ae948ab92e446df)
 
 
 ## Validation with Cantera
