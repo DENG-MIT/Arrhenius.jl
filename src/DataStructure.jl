@@ -31,6 +31,7 @@ struct Solution
     n_reactions::Int64
     MW::Vector{Float64}
     species_names::Vector{String}
+    elements::Vector{String}
     thermo::Thermo
     reaction::Reaction
 end

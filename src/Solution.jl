@@ -19,6 +19,7 @@ function CreateSolution(mech)
     n_species = length(yaml["species"])
     n_reactions = length(yaml["reactions"])
     species_names = yaml["phases"][1]["species"]
+    elements = yaml["phases"][1]["elements"]
 
     nasa_low = zeros(n_species, 7)
     nasa_high = zeros(n_species, 7)
@@ -104,7 +105,7 @@ function CreateSolution(mech)
         vk_sum
     )
 
-    gas = Solution(n_species, n_reactions, MW, species_names, thermo, reaction)
+    gas = Solution(n_species, n_reactions, MW, species_names, elements, thermo, reaction)
     return gas
 end
 
