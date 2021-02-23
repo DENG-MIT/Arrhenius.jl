@@ -20,14 +20,24 @@ function CreateSolution(mech)
     n_reactions = length(yaml["reactions"])
     species_names = yaml["phases"][1]["species"]
     elements = yaml["phases"][1]["elements"]
+    n_elements = length(elements)
+
+    ele_matrix = zeros(n_elements, n_species)
 
     nasa_low = zeros(n_species, 7)
     nasa_high = zeros(n_species, 7)
 
     for species in species_names
         j = findfirst(x -> x == species, yaml["phases"][1]["species"])
-        nasa_low[j, :] = yaml["species"][j]["thermo"]["data"][1]
-        nasa_high[j, :] = yaml["species"][j]["thermo"]["data"][2]
+        spec = yaml["species"][j]
+        nasa_low[j, :] = spec["thermo"]["data"][1]
+        nasa_high[j, :] = spec["thermo"]["data"][2]
+
+        for i = 1:n_elements
+            if haskey(spec["composition"], elements[i])
+                ele_matrix[i, j] = spec["composition"][elements[i]]
+            end
+        end
     end
 
     thermo = Thermo(nasa_low, nasa_high)
@@ -102,10 +112,19 @@ function CreateSolution(mech)
         i_product,
         n_reactions,
         vk,
-        vk_sum
+        vk_sum,
     )
 
-    gas = Solution(n_species, n_reactions, MW, species_names, elements, thermo, reaction)
+    gas = Solution(
+        n_species,
+        n_reactions,
+        MW,
+        species_names,
+        elements,
+        ele_matrix,
+        thermo,
+        reaction,
+    )
     return gas
 end
 

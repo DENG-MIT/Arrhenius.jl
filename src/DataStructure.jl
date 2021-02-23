@@ -32,6 +32,7 @@ struct Solution
     MW::Vector{Float64}
     species_names::Vector{String}
     elements::Vector{String}
+    ele_matrix::Array{Float64, 2}
     thermo::Thermo
     reaction::Reaction
 end
