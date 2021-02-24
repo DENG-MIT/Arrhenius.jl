@@ -16,7 +16,7 @@ from the yaml file, pary of them are from the pre-processed .npz file from
 ReacTorch and Cantera"
 function CreateSolution(mech)
     yaml = YAML.load_file(mech)
-    n_species = length(yaml["species"])
+    n_species = length(yaml["phases"][1]["species"])
     n_reactions = length(yaml["reactions"])
     species_names = yaml["phases"][1]["species"]
     elements = yaml["phases"][1]["elements"]
