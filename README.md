@@ -5,8 +5,8 @@ Inspired by [`ReactionMechanismSimulator.jl`](https://github.com/ReactionMechani
 `Arrhenius.jl` is designed with following in mind:
 
 * Combustion software 2.0
-* Differential programing
-* Physics informed machine learning
+* [Differential programing](https://github.com/Cantera/enhancements/issues/82)
+* [Physics informed machine learning](https://github.com/Cantera/enhancements/issues/82)
 * Combustion simulation education.
 
 We are in an early-development. Expect some adventures and rough edges.
@@ -24,6 +24,7 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
 **Examples**
   + [Pyrolysis of JP10](./example/pyrolysis/pyrolysis.ipynb)
   + [Perfect Stirred Reactor](./example/perfect_stirred_reactor)
+  + [Auto-ignition](https://github.com/DENG-MIT/NN-Ignition) (currently failed)
   + [Compute Jacobian matrix using auto-differentiation](https://gist.github.com/jiweiqi/21b8d149bd95b97d9ae948ab92e446df)
 
 
