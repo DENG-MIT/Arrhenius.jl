@@ -27,15 +27,16 @@ function CreateSolution(mech)
     nasa_low = zeros(n_species, 7)
     nasa_high = zeros(n_species, 7)
 
-    for species in species_names
-        j = findfirst(x -> x == species, yaml["phases"][1]["species"])
-        spec = yaml["species"][j]
-        nasa_low[j, :] = spec["thermo"]["data"][1]
-        nasa_high[j, :] = spec["thermo"]["data"][2]
+    _species_names = [yaml["species"][i]["name"] for i in 1:length(yaml["species"])]
 
-        for i = 1:n_elements
-            if haskey(spec["composition"], elements[i])
-                ele_matrix[i, j] = spec["composition"][elements[i]]
+    for (i, species) in enumerate(species_names)
+        spec = yaml["species"][findfirst(x -> x == species, _species_names)]
+        nasa_low[i, :] = spec["thermo"]["data"][1]
+        nasa_high[i, :] = spec["thermo"]["data"][2]
+
+        for j = 1:n_elements
+            if haskey(spec["composition"], elements[j])
+                ele_matrix[j, i] = spec["composition"][elements[j]]
             end
         end
     end
