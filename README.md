@@ -24,7 +24,9 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
 **Examples**
   + [Pyrolysis of JP10](./example/pyrolysis/pyrolysis.ipynb)
   + [Perfect Stirred Reactor](./example/perfect_stirred_reactor)
-  + [Auto-ignition](https://github.com/DENG-MIT/NN-Ignition): sensitivity to prefactor A and activation function using AD
+  + [Auto-ignition](https://github.com/DENG-MIT/NN-Ignition): 
+      + adjoint sensitivity to prefactor A and activation function using AD
+      + sensitivity using BVP methods and AD flies with @distributed parallization (orders of magnitute faster)
   + [Compute Jacobian using AD](https://gist.github.com/jiweiqi/21b8d149bd95b97d9ae948ab92e446df)
 
 
