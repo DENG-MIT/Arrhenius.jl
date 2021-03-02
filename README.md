@@ -28,6 +28,7 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
       + adjoint sensitivity to prefactor A and activation function using AD
       + sensitivity using BVP methods and AD flies with @distributed parallization (orders of magnitute faster)
   + [Compute Jacobian using AD](https://gist.github.com/jiweiqi/21b8d149bd95b97d9ae948ab92e446df)
+  + [Couple with CRNN and Neural ODEs](https://github.com/DENG-MIT/CRNN_HyChem)
 
 
 ## Validation with Cantera
