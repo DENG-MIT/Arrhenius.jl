@@ -4,7 +4,7 @@ Inspired by [`ReactionMechanismSimulator.jl`](https://github.com/ReactionMechani
 
 `Arrhenius.jl` is designed with following in mind:
 
-* Combustion software 2.0
+* [Combustion software 2.0](https://www.linkedin.com/pulse/arrheniusjl-combustion-software-20-weiqi-ji/)
 * [Differential programing](https://github.com/Cantera/enhancements/issues/82)
 * [Physics informed machine learning](https://github.com/Cantera/enhancements/issues/82)
 * Combustion simulation education.
