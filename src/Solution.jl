@@ -1,16 +1,3 @@
-function set_states(gas::Solution, T, P, Y)
-    mean_MW = 1.0 / dot(Y, 1 ./ gas.MW)
-    ρ_mass = P / R / T * mean_MW
-    X = Y2X(gas, Y, mean_MW)
-    C = Y2C(gas, Y, ρ_mass)
-    cp_mole, cp_mass = get_cp(gas, T, X, mean_MW)
-    h_mole = get_H(gas, T, Y, X)
-    S0 = get_S(gas, T, P, X)
-    wdot = wdot_func(gas.reaction, T, C, S0, h_mole)
-    return wdot
-end
-export set_states
-
 "Reaction mechanism is interepreted here. Part of the infomation are read in
 from the yaml file, pary of them are from the pre-processed .npz file from
 ReacTorch and Cantera"
@@ -71,6 +58,7 @@ function CreateSolution(mech)
 
     index_three_body = []
     index_falloff = []
+    index_falloff_troe = []
     for i = 1:n_reactions
         reaction = yaml["reactions"][i]
         if haskey(reaction, "type")
@@ -79,6 +67,9 @@ function CreateSolution(mech)
             end
             if yaml["reactions"][i]["type"] == "falloff"
                 push!(index_falloff, i)
+                if haskey(yaml["reactions"][i], "Troe")
+                    push!(index_falloff_troe, i)
+                end
             end
         end
     end
@@ -91,7 +82,7 @@ function CreateSolution(mech)
     end
 
     vk = product_stoich_coeffs - reactant_stoich_coeffs
-    vk_sum = sum(vk, dims = 1)[1, :]
+    vk_sum = sum(vk, dims=1)[1, :]
 
     reaction = Reaction(
         product_stoich_coeffs,
@@ -108,6 +99,7 @@ function CreateSolution(mech)
         Troe_T3,
         index_three_body,
         index_falloff,
+        index_falloff_troe,
         efficiencies_coeffs,
         i_reactant,
         i_product,
