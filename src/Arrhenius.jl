@@ -1,14 +1,14 @@
 module Arrhenius
-using YAML
-using NPZ
-using LinearAlgebra
+    using YAML
+    using NPZ
+    using LinearAlgebra
 
-include("Constants.jl")
-include("DataStructure.jl")
-include("Solution.jl")
-include("Magic.jl")
-include("Thermo.jl")
-include("Kinetics.jl")
+    include("Constants.jl")
+    include("DataStructure.jl")
+    include("Solution.jl")
+    include("Magic.jl")
+    include("Thermo.jl")
+    include("Kinetics.jl")
 end
 ```
 Following codes are used during development phase only.
@@ -37,13 +37,13 @@ Following codes are used during development phase only.
 #     # Arrhenius.set_states(gas, u[end], P, u[1:ns])[10]
 #     T = u[end]
 #     Y = @view(u[1:ns])
-#     mean_MW = 1.0 / dot(Y, 1 ./ gas.MW)
+#     mean_MW = 1. / dot(Y, 1 ./ gas.MW)
 #     ρ_mass = P / R / T * mean_MW
-#     X = Arrhenius.Y2X(gas, Y, mean_MW)
-#     C = Arrhenius.Y2C(gas, Y, ρ_mass)
-#     cp_mole, cp_mass = Arrhenius.get_cp(gas, T, X, mean_MW)
-#     h_mole = Arrhenius.get_H(gas, T, Y, X)
-#     S0 = Arrhenius.get_S(gas, T, P, X)
+#     X =  Arrhenius.Y2X(gas, Y, mean_MW)
+#     C =  Arrhenius.Y2C(gas, Y, ρ_mass)
+#     cp_mole, cp_mass =  Arrhenius.get_cp(gas, T, X, mean_MW)
+#     h_mole =  Arrhenius.get_H(gas, T, Y, X)
+#     S0 =  Arrhenius.get_S(gas, T, P, X)
 #     wdot = Arrhenius.wdot_func(gas.reaction, T, C, S0, h_mole)
 #     return wdot[end]
 # end
