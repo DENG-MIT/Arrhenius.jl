@@ -19,11 +19,10 @@ Following codes are used during development phase only.
 # using Profile
 # using ForwardDiff
 # using Zygote
-# using ReverseDiff
-#
-# gas = Arrhenius.CreateSolution("./mechanism/chem_peters.yaml")
+
+# gas = Arrhenius.CreateSolution("./mechanism/gri30.yaml")
 # ns = gas.n_species
-# @show gas.thermo.nasa_high[Arrhenius.species_index(gas, "o2"), :]
+# @show gas.thermo.nasa_high[Arrhenius.species_index(gas, "O2"), :]
 # Y0 = zeros(ns)
 # Y0[1] = 0.9
 # Y0[Arrhenius.species_index(gas, "N2")] = 0.1
@@ -31,7 +30,7 @@ Following codes are used during development phase only.
 # P = Arrhenius.one_atm
 # wdot = Arrhenius.set_states(gas, T0, P, Y0)
 # @show wdot
-#
+
 # function profile_test(n)
 #     for i = 1:n
 #         Arrhenius.set_states(gas, T0, P, Y0)

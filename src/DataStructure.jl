@@ -13,6 +13,7 @@ struct Reaction
     Troe_T3::Array{Float64, 1}
     index_three_body::Array{Int64, 1}
     index_falloff::Array{Int64, 1}
+    index_falloff_troe::Array{Int64, 1}
     efficiencies_coeffs::Array{Float64, 2}
     i_reactant::Array{Array{Int64, 1},1}
     i_product::Array{Array{Int64, 1},1}
