@@ -13,13 +13,16 @@ function CreateSolution(mech)
 
     nasa_low = zeros(n_species, 7)
     nasa_high = zeros(n_species, 7)
+    Trange = zeros(n_species, 3)
 
-    _species_names = [yaml["species"][i]["name"] for i in 1:length(yaml["species"])]
+    _species_names =
+        [yaml["species"][i]["name"] for i = 1:length(yaml["species"])]
 
     for (i, species) in enumerate(species_names)
         spec = yaml["species"][findfirst(x -> x == species, _species_names)]
         nasa_low[i, :] = spec["thermo"]["data"][1]
         nasa_high[i, :] = spec["thermo"]["data"][2]
+        Trange[i, :] .= spec["thermo"]["temperature-ranges"]
 
         for j = 1:n_elements
             if haskey(spec["composition"], elements[j])
@@ -28,7 +31,9 @@ function CreateSolution(mech)
         end
     end
 
-    thermo = Thermo(nasa_low, nasa_high)
+    isTcommon = (maximum(Trange[:, 2]) - minimum(Trange[:, 2])) < 0.01
+
+    thermo = Thermo(nasa_low, nasa_high, Trange, isTcommon)
 
     npz = npzread("$mech.npz")
     MW = npz["molecular_weights"]
@@ -82,7 +87,7 @@ function CreateSolution(mech)
     end
 
     vk = product_stoich_coeffs - reactant_stoich_coeffs
-    vk_sum = sum(vk, dims=1)[1, :]
+    vk_sum = sum(vk, dims = 1)[1, :]
 
     reaction = Reaction(
         product_stoich_coeffs,

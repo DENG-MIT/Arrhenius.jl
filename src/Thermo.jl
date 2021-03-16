@@ -1,9 +1,16 @@
 "get specific of heat capacity"
 function get_cp(gas, T, X, mean_MW)
+    cp_T = [1.0, T, T^2, T^3, T^4]
     if T <= 1000.0
-        cp = @view(gas.thermo.nasa_low[:, 1:5]) * [1.0, T, T^2, T^3, T^4]
+        cp = @view(gas.thermo.nasa_low[:, 1:5]) * cp_T
     else
-        cp = @view(gas.thermo.nasa_high[:, 1:5]) * [1.0, T, T^2, T^3, T^4]
+        cp = @view(gas.thermo.nasa_high[:, 1:5]) * cp_T
+    end
+    # TODO: not sure if inplace operation will be an issue for AD
+    if !gas.thermo.isTcommon
+        ind_correction = @. (T > 1000.0) & (T < gas.thermo.Trange[:, 2])
+        cp[ind_correction] .=
+            @view(gas.thermo.nasa_low[ind_correction, 1:5]) * cp_T
     end
     cp_mole = dot(cp, X) * R
     cp_mass = cp_mole / mean_MW
@@ -18,6 +25,11 @@ function get_H(gas, T, Y, X)
         h_mole = @view(gas.thermo.nasa_low[:, 1:6]) * H_T * R * T
     else
         h_mole = @view(gas.thermo.nasa_high[:, 1:6]) * H_T * R * T
+    end
+    if !gas.thermo.isTcommon
+        ind_correction = @. (T > 1000.0) & (T < gas.thermo.Trange[:, 2])
+        h_mole[ind_correction] .=
+            @view(gas.thermo.nasa_low[ind_correction, 1:6]) * H_T * R * T
     end
     # H_mole = dot(h_mole, X)
     return h_mole
@@ -36,6 +48,13 @@ function get_S(gas, T, P, X)
         S0 = @view(gas.thermo.nasa_low[:, [1, 2, 3, 4, 5, 7]]) * S_T * R
     else
         S0 = @view(gas.thermo.nasa_high[:, [1, 2, 3, 4, 5, 7]]) * S_T * R
+    end
+    if !gas.thermo.isTcommon
+        ind_correction = @. (T > 1000.0) & (T < gas.thermo.Trange[:, 2])
+        S0[ind_correction] .=
+            @view(gas.thermo.nasa_low[ind_correction, [1, 2, 3, 4, 5, 7]]) *
+            S_T *
+            R
     end
     # _X = @. S0 - R * log(clamp(X, 1.e-30, Inf))
     # s_mole = _X .- R * (P / one_atm)
