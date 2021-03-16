@@ -1,12 +1,19 @@
+import argparse
+
 import cantera as ct
-import torch
 import numpy as np
-
 import reactorch as rt
+import torch
 
-import json
+parser = argparse.ArgumentParser()
 
-mech_yaml = 'gri30.yaml'
+parser.add_argument('-i', '--yaml', required=True, help="yaml mech file")
+
+args = parser.parse_args()
+
+print(f'Processing mechanism {args.yaml}')
+
+mech_yaml = args.yaml
 
 sol = rt.Solution(mech_yaml=mech_yaml, device=torch.device('cpu'),
                   vectorize=True,

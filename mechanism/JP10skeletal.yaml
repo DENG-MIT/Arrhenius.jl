@@ -821,7 +821,6 @@ reactions:
   type: falloff
   low-P-rate-constant: {A: 1.173e+24, b: -2.79, Ea: 4191.0}
   high-P-rate-constant: {A: 1.362e+10, b: 0.0, Ea: 2384.0}
-  Troe: {A: 1e-16, T3: 1e-16, T1: 1e-16, T2: 1e-16}
   efficiencies: {H2: 2.0, H2O: 12.0, CO2: 3.6, CO: 1.75}
 - equation: CO + OH <=> CO2 + H  # Reaction 38
   rate-constant: {A: 7.046e+04, b: 2.053, Ea: -355.67}
