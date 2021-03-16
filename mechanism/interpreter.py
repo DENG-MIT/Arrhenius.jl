@@ -1,14 +1,12 @@
-import cantera as ct
-import torch
-import numpy as np
-
-import reactorch as rt
-
-import json
 import argparse
 
+import cantera as ct
+import numpy as np
+import reactorch as rt
+import torch
+
 parser = argparse.ArgumentParser()
-   
+
 parser.add_argument('-i', '--yaml', required=True, help="yaml mech file")
 
 args = parser.parse_args()
