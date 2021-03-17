@@ -18,7 +18,7 @@ function wdot_func(reaction, T, C, S0, h_mole; get_qdot=false)
         lPr = log10(Pr)
         _kf[i] *= (Pr / (1 + Pr))
 
-        if (reaction.Troe_[jj, 1] > 1.e-12)
+        if (reaction.Troe_[j, 1] > 1.e-12)
             @inbounds F_cent =
                 (1 - reaction.Troe_[j, 1]) * exp(-T / reaction.Troe_[j, 4]) +
                 reaction.Troe_[j, 1] * exp(-T / reaction.Troe_[j, 2]) +
