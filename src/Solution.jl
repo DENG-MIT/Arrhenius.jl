@@ -47,19 +47,25 @@ function CreateSolution(mech)
         Arrhenius_A0 = npz["Arrhenius_A0"]
         Arrhenius_b0 = npz["Arrhenius_b0"]
         Arrhenius_Ea0 = npz["Arrhenius_Ea0"]
+    else
+        Arrhenius_A0 = []
+        Arrhenius_b0 = []
+        Arrhenius_Ea0 = []
+    end
+
+    if haskey(npz, "Troe_A")
         Troe_A = npz["Troe_A"]
         Troe_T1 = npz["Troe_T1"]
         Troe_T2 = npz["Troe_T2"]
         Troe_T3 = npz["Troe_T3"]
     else
-        Arrhenius_A0 = []
-        Arrhenius_b0 = []
-        Arrhenius_Ea0 = []
         Troe_A = []
         Troe_T1 = []
         Troe_T2 = []
         Troe_T3 = []
     end
+    Arrhenius_0 = hcat(Arrhenius_A0, Arrhenius_b0, Arrhenius_Ea0)
+    Troe_ = hcat(Troe_A, Troe_T1, Troe_T2, Troe_T3)
 
     index_three_body = []
     index_falloff = []
@@ -79,6 +85,12 @@ function CreateSolution(mech)
         end
     end
 
+    if length(index_falloff) > length(index_falloff_troe)
+        _Troe = zeros(length(index_falloff_troe), 4) .+ 1.e-16
+        _Troe[index_falloff_troe, :] .= Troe_
+        Troe_ = _Troe
+    end
+
     i_reactant = []
     i_product = []
     for i = 1:n_reactions
@@ -95,13 +107,8 @@ function CreateSolution(mech)
         reactant_orders,
         is_reversible,
         Arrhenius_coeffs,
-        Arrhenius_A0,
-        Arrhenius_b0,
-        Arrhenius_Ea0,
-        Troe_A,
-        Troe_T1,
-        Troe_T2,
-        Troe_T3,
+        Arrhenius_0,
+        Troe_,
         index_three_body,
         index_falloff,
         index_falloff_troe,

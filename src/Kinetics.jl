@@ -10,29 +10,24 @@ function wdot_func(reaction, T, C, S0, h_mole; get_qdot=false)
         @inbounds _kf[i] *= dot(@view(reaction.efficiencies_coeffs[:, i]), C)
     end
 
-    j = 1
-    for i in reaction.index_falloff
-        @inbounds A0 = reaction.Arrhenius_A0[j]
-        @inbounds b0 = reaction.Arrhenius_b0[j]
-        @inbounds Ea0 = reaction.Arrhenius_Ea0[j]
+    for (j, i) in enumerate(reaction.index_falloff)
+        @inbounds A0, b0, Ea0 = reaction.Arrhenius_lowP[j, :]
         @inbounds k0 = A0 * exp(b0 * log(T) - Ea0 * 4184.0 / R / T)
         @inbounds Pr =
             k0 * dot(@view(reaction.efficiencies_coeffs[:, i]), C) / _kf[i]
         lPr = log10(Pr)
         _kf[i] *= (Pr / (1 + Pr))
 
-        if (i in reaction.index_falloff_troe) & (reaction.Troe_A[j] > 1.e-12)
-            # TODO: (reaction.Troe_A[j] > 1.e-12) is for compatity, will be removed
+        if (reaction.Troe_[jj, 1] > 1.e-12)
             @inbounds F_cent =
-                (1 - reaction.Troe_A[j]) * exp(-T / reaction.Troe_T3[j]) +
-                reaction.Troe_A[j] * exp(-T / reaction.Troe_T1[j]) +
-                exp(-reaction.Troe_T2[j] / T)
+                (1 - reaction.Troe_[j, 1]) * exp(-T / reaction.Troe_[j, 4]) +
+                reaction.Troe_[j, 1] * exp(-T / reaction.Troe_[j, 2]) +
+                exp(-reaction.Troe_[j, 3] / T)
             lF_cent = log10(F_cent)
             _C = -0.4 - 0.67 * lF_cent
             N = 0.75 - 1.27 * lF_cent
             @inbounds f1 = (lPr + _C) / (N - 0.14 * (lPr + _C))
             @inbounds _kf[i] *= exp(log(10.0) * lF_cent / (1 + f1^2))
-            j = j + 1
         end
     end
 
