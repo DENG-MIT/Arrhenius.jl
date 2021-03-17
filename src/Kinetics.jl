@@ -11,7 +11,7 @@ function wdot_func(reaction, T, C, S0, h_mole; get_qdot=false)
     end
 
     for (j, i) in enumerate(reaction.index_falloff)
-        @inbounds A0, b0, Ea0 = reaction.Arrhenius_lowP[j, :]
+        @inbounds A0, b0, Ea0 = reaction.Arrhenius_0[j, :]
         @inbounds k0 = A0 * exp(b0 * log(T) - Ea0 * 4184.0 / R / T)
         @inbounds Pr =
             k0 * dot(@view(reaction.efficiencies_coeffs[:, i]), C) / _kf[i]
