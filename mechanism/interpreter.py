@@ -1,14 +1,19 @@
+import argparse
+
 import cantera as ct
-import torch
 import numpy as np
-
 import reactorch as rt
+import torch
 
-import json
+parser = argparse.ArgumentParser()
 
-mech_yaml = 'gri30.yaml'
-# mech_yaml = 'JP10skeletal.yaml'
-# mech_yaml = 'h2o2.yaml'
+parser.add_argument('-i', '--yaml', required=True, help="yaml mech file")
+
+args = parser.parse_args()
+
+print(f'Processing mechanism {args.yaml}')
+
+mech_yaml = args.yaml
 
 sol = rt.Solution(mech_yaml=mech_yaml, device=torch.device('cpu'),
                   vectorize=True,
@@ -24,19 +29,30 @@ product_stoich_coeffs = gas.product_stoich_coeffs()
 Arrhenius_coeffs = sol.Arrhenius_coeffs
 efficiencies_coeffs = sol.efficiencies_coeffs
 
-np.savez(mech_yaml,
-         molecular_weights=molecular_weights,
-         reactant_stoich_coeffs=reactant_stoich_coeffs,
-         product_stoich_coeffs=product_stoich_coeffs,
-         reactant_orders=sol.reactant_orders,
-         is_reversible=sol.is_reversible,
-         Arrhenius_coeffs=Arrhenius_coeffs,
-         efficiencies_coeffs=efficiencies_coeffs,
-         Arrhenius_A0=sol.Arrhenius_A0,
-         Arrhenius_b0=sol.Arrhenius_b0,
-         Arrhenius_Ea0=sol.Arrhenius_Ea0,
-         Troe_A=sol.Troe_A,
-         Troe_T1=sol.Troe_T1,
-         Troe_T2=sol.Troe_T2,
-         Troe_T3=sol.Troe_T3
-         )
+if len(sol.list_reaction_type4_Troe) == 0:
+    np.savez(mech_yaml,
+             molecular_weights=molecular_weights,
+             reactant_stoich_coeffs=reactant_stoich_coeffs,
+             product_stoich_coeffs=product_stoich_coeffs,
+             reactant_orders=sol.reactant_orders,
+             is_reversible=sol.is_reversible,
+             Arrhenius_coeffs=Arrhenius_coeffs,
+             efficiencies_coeffs=efficiencies_coeffs,
+             )
+else:
+    np.savez(mech_yaml,
+             molecular_weights=molecular_weights,
+             reactant_stoich_coeffs=reactant_stoich_coeffs,
+             product_stoich_coeffs=product_stoich_coeffs,
+             reactant_orders=sol.reactant_orders,
+             is_reversible=sol.is_reversible,
+             Arrhenius_coeffs=Arrhenius_coeffs,
+             efficiencies_coeffs=efficiencies_coeffs,
+             Arrhenius_A0=sol.Arrhenius_A0,
+             Arrhenius_b0=sol.Arrhenius_b0,
+             Arrhenius_Ea0=sol.Arrhenius_Ea0,
+             Troe_A=sol.Troe_A,
+             Troe_T1=sol.Troe_T1,
+             Troe_T2=sol.Troe_T2,
+             Troe_T3=sol.Troe_T3
+             )
