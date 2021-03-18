@@ -89,12 +89,6 @@ function CreateSolution(mech)
         end
     end
 
-    if length(index_falloff) > length(index_falloff_troe)
-        _Troe = zeros(length(index_falloff), 4) .+ 1.e-16
-        _Troe[_ind_troe, :] .= Troe_
-        Troe_ = _Troe
-    end
-
     i_reactant = []
     i_product = []
     for i = 1:n_reactions
