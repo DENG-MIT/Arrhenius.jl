@@ -69,14 +69,8 @@ function CreateSolution(mech)
 
     index_three_body = []
     index_falloff = []
-<<<<<<< HEAD
     index_falloff_Troe = []
     j = 1
-=======
-    index_falloff_troe = []
-    _ind_troe = []
-    j = 0
->>>>>>> a51b3554919e2607df30494f0f3155e8e1542c62
     for i = 1:n_reactions
         reaction = yaml["reactions"][i]
         if haskey(reaction, "type")
