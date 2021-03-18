@@ -121,11 +121,7 @@ function CreateSolution(mech)
         Troe_,
         index_three_body,
         index_falloff,
-<<<<<<< HEAD
         index_falloff_Troe,
-=======
-        index_falloff_troe,
->>>>>>> a51b3554919e2607df30494f0f3155e8e1542c62
         efficiencies_coeffs,
         i_reactant,
         i_product,
