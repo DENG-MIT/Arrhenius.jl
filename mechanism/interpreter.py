@@ -38,7 +38,7 @@ if len(sol.list_reaction_type4_Troe) == 0:
              is_reversible=sol.is_reversible,
              Arrhenius_coeffs=Arrhenius_coeffs,
              efficiencies_coeffs=efficiencies_coeffs,
-             )
+    )
 else:
     np.savez(mech_yaml,
              molecular_weights=molecular_weights,
@@ -55,4 +55,4 @@ else:
              Troe_T1=sol.Troe_T1,
              Troe_T2=sol.Troe_T2,
              Troe_T3=sol.Troe_T3
-             )
+    )

@@ -69,30 +69,24 @@ function CreateSolution(mech)
 
     index_three_body = []
     index_falloff = []
-    index_falloff_troe = []
-    _ind_troe = []
-    j = 0
+    index_falloff_Troe = []
+    j = 1
     for i = 1:n_reactions
         reaction = yaml["reactions"][i]
         if haskey(reaction, "type")
-            if yaml["reactions"][i]["type"] == "three-body"
+            if reaction["type"] == "three-body"
                 push!(index_three_body, i)
             end
-            if yaml["reactions"][i]["type"] == "falloff"
+            if reaction["type"] == "falloff"
                 push!(index_falloff, i)
-                j = j + 1
-                if haskey(yaml["reactions"][i], "Troe")
-                    push!(index_falloff_troe, i)
-                    push!(_ind_troe, j)
+                if haskey(reaction, "Troe")
+                    push!(index_falloff_Troe, j)
+                    j = j + 1
+                else
+                    push!(index_falloff_Troe, -1)
                 end
             end
         end
-    end
-
-    if length(index_falloff) > length(index_falloff_troe)
-        _Troe = zeros(length(index_falloff), 4) .+ 1.e-16
-        _Troe[_ind_troe, :] .= Troe_
-        Troe_ = _Troe
     end
 
     i_reactant = []
@@ -115,7 +109,7 @@ function CreateSolution(mech)
         Troe_,
         index_three_body,
         index_falloff,
-        index_falloff_troe,
+        index_falloff_Troe,
         efficiencies_coeffs,
         i_reactant,
         i_product,
