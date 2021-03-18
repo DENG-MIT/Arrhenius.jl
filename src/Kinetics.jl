@@ -17,15 +17,16 @@ function wdot_func(reaction, T, C, S0, h_mole; get_qdot=false)
             k0 * dot(@view(reaction.efficiencies_coeffs[:, i]), C) / _kf[i]
         lPr = log10(Pr)
         _kf[i] *= (Pr / (1 + Pr))
-        
+
         # reference:
         # http://web.mit.edu/2.62/cantera/doc/html/classCantera_1_1Troe4.html#a38aa787421d426dfd0a587fd6fc8108e
         if reaction.index_falloff_Troe[j] > 0
             k = reaction.index_falloff_Troe[j]
             @inbounds F_cent =
-                (1 - reaction.Troe_A[k]) * exp(-T / reaction.Troe_T3[k]) +
-                reaction.Troe_A[k] * exp(-T / reaction.Troe_T1[k]) +
-                exp(-reaction.Troe_T2[k] / T)
+                (1 - reaction.Troe_[k, 1]) * exp(-T / reaction.Troe_[k, 4]) +
+                reaction.Troe_[k, 1] * exp(-T / reaction.Troe_[k, 2]) +
+                exp(-reaction.Troe_[k, 3] / T)
+
             lF_cent = log10(F_cent)
             _C = -0.4 - 0.67 * lF_cent
             N = 0.75 - 1.27 * lF_cent
