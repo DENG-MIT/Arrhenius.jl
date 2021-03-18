@@ -4,13 +4,8 @@ struct Reaction
     reactant_orders::Array{Float64, 2}
     is_reversible::Array{Bool, 1}
     Arrhenius_coeffs::Array{Float64, 2}
-    Arrhenius_A0::Array{Float64, 1}
-    Arrhenius_b0::Array{Float64, 1}
-    Arrhenius_Ea0::Array{Float64, 1}
-    Troe_A::Array{Float64, 1}
-    Troe_T1::Array{Float64, 1}
-    Troe_T2::Array{Float64, 1}
-    Troe_T3::Array{Float64, 1}
+    Arrhenius_0::Array{Float64, 2}
+    Troe_::Array{Float64, 2}
     index_three_body::Array{Int64, 1}
     index_falloff::Array{Int64, 1}
     index_falloff_Troe::Array{Int64, 1}
@@ -25,6 +20,8 @@ end
 struct Thermo
     nasa_low::Array{Float64, 2}
     nasa_high::Array{Float64, 2}
+    Trange::Array{Float64, 2}
+    isTcommon::Bool
 end
 
 struct Solution

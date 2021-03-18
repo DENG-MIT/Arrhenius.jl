@@ -1,5 +1,5 @@
 "compute reaction source term `dC/dt`"
-function wdot_func(reaction, T, C, S0, h_mole; get_qdot = false)
+function wdot_func(reaction, T, C, S0, h_mole; get_qdot=false)
 
     @inbounds _kf = @. @view(reaction.Arrhenius_coeffs[:, 1]) * exp(
         @view(reaction.Arrhenius_coeffs[:, 2]) * log(T) -
@@ -11,15 +11,13 @@ function wdot_func(reaction, T, C, S0, h_mole; get_qdot = false)
     end
 
     for (j, i) in enumerate(reaction.index_falloff)
-        @inbounds A0 = reaction.Arrhenius_A0[j]
-        @inbounds b0 = reaction.Arrhenius_b0[j]
-        @inbounds Ea0 = reaction.Arrhenius_Ea0[j]
+        @inbounds A0, b0, Ea0 = reaction.Arrhenius_0[j, :]
         @inbounds k0 = A0 * exp(b0 * log(T) - Ea0 * 4184.0 / R / T)
         @inbounds Pr =
             k0 * dot(@view(reaction.efficiencies_coeffs[:, i]), C) / _kf[i]
         lPr = log10(Pr)
         _kf[i] *= (Pr / (1 + Pr))
-
+        
         # reference:
         # http://web.mit.edu/2.62/cantera/doc/html/classCantera_1_1Troe4.html#a38aa787421d426dfd0a587fd6fc8108e
         if reaction.index_falloff_Troe[j] > 0
