@@ -31,7 +31,7 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
       + sensitivity using BVP methods and AD flies with @distributed parallization (orders of magnitute faster)
   + [Compute Jacobian using AD](https://gist.github.com/jiweiqi/21b8d149bd95b97d9ae948ab92e446df)
   + [Couple with CRNN and Neural ODEs](https://github.com/DENG-MIT/CRNN_HyChem)
-  + [Deep Reduction: Two-stages mechanism reduction with deep learning]
+  + Deep Reduction: Two-stages mechanism reduction with deep learning
 
 
 ## Validation with Cantera
