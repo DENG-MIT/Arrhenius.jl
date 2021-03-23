@@ -24,6 +24,7 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
 **Examples**
 
 > Note that some of the examples are in development and you can have early access by contacting [Weiqi Ji](mailto:weiqiji@mit.edu)
+  + [Active Subspace of Reaction Mechanism](https://github.com/DENG-MIT/ArrheniusActiveSubspace)
   + [Pyrolysis of JP10](./example/pyrolysis/pyrolysis.ipynb)
   + [Perfect Stirred Reactor](./example/perfect_stirred_reactor)
   + [Auto-ignition](https://github.com/DENG-MIT/NN-Ignition): 
