@@ -11,6 +11,8 @@ Inspired by [`ReactionMechanismSimulator.jl`](https://github.com/ReactionMechani
 
 We are in an early-development. Expect some adventures and rough edges.
 
+![schem](https://user-images.githubusercontent.com/8445647/112392698-3bd78b80-8cd0-11eb-9b74-4fa92935298c.png)
+
 ## Installation
 
 > pkg> add https://github.com/DENG-MIT/Arrhenius.jl
