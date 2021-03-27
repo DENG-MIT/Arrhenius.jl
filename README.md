@@ -11,6 +11,8 @@ Inspired by [`ReactionMechanismSimulator.jl`](https://github.com/ReactionMechani
 
 We are in an early-development. Expect some adventures and rough edges.
 
+![schem](https://user-images.githubusercontent.com/8445647/112392698-3bd78b80-8cd0-11eb-9b74-4fa92935298c.png)
+
 ## Installation
 
 > pkg> add https://github.com/DENG-MIT/Arrhenius.jl
@@ -24,6 +26,7 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
 **Examples**
 
 > Note that some of the examples are in development and you can have early access by contacting [Weiqi Ji](mailto:weiqiji@mit.edu)
+  + [Active Subspace of Reaction Mechanism](https://github.com/DENG-MIT/ArrheniusActiveSubspace)
   + [Pyrolysis of JP10](./example/pyrolysis/pyrolysis.ipynb)
   + [Perfect Stirred Reactor](./example/perfect_stirred_reactor)
   + [Auto-ignition](https://github.com/DENG-MIT/NN-Ignition): 
@@ -31,6 +34,7 @@ You can start from the example of pyrolysis of JP10 (an aviation fuel power the 
       + sensitivity using BVP methods and AD flies with @distributed parallization (orders of magnitute faster)
   + [Compute Jacobian using AD](https://gist.github.com/jiweiqi/21b8d149bd95b97d9ae948ab92e446df)
   + [Couple with CRNN and Neural ODEs](https://github.com/DENG-MIT/CRNN_HyChem)
+  + Deep Reduction: Two-stages mechanism reduction with deep learning
 
 
 ## Validation with Cantera
