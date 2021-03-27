@@ -2,6 +2,7 @@ module Arrhenius
     using YAML
     using NPZ
     using LinearAlgebra
+    using SparseArrays
 
     include("Constants.jl")
     include("DataStructure.jl")
@@ -18,14 +19,15 @@ Following codes are used during development phase only.
 # using Sundials
 # using Profile
 # using ForwardDiff
-# using Zygote
+# using SparseArrays
 #
-# gas = Arrhenius.CreateSolution("./mechanism/gri30.yaml")
-# ns = gas.n_species
+# gas = Arrhenius.CreateSolution("./mechanism/nc7_ver3.1_mech.yaml")
+# const ns = gas.n_species
 # @show gas.thermo.nasa_high[Arrhenius.species_index(gas, "O2"), :]
 # Y0 = zeros(ns)
-# Y0[1] = 0.9
-# Y0[Arrhenius.species_index(gas, "N2")] = 0.1
+# Y0[Arrhenius.species_index(gas, "NC7H16")] = 0.1
+# Y0[Arrhenius.species_index(gas, "O2")] = 0.2
+# Y0[Arrhenius.species_index(gas, "N2")] = 0.7
 # T0 = 1200.0
 # P = Arrhenius.one_atm
 # wdot = Arrhenius.set_states(gas, T0, P, Y0)
@@ -44,9 +46,12 @@ Following codes are used during development phase only.
 #     cp_mole, cp_mass =  Arrhenius.get_cp(gas, T, X, mean_MW)
 #     h_mole =  Arrhenius.get_H(gas, T, Y, X)
 #     S0 =  Arrhenius.get_S(gas, T, P, X)
-#     wdot = Arrhenius.wdot_func(gas.reaction, T, C, S0, h_mole)
+#     wdot = Arrhenius.wdot_func(gas.reaction, T, C, S0, h_mole; get_qdot=false)
+#     # wdot = gas.reaction.vk * qdot
 #     return wdot[end]
 # end
+#
+# @time f(u0)
 # @time grad = ForwardDiff.gradient(f, u0)
 
 # function profile_test(n)
