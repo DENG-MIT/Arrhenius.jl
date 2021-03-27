@@ -1,7 +1,7 @@
 struct Reaction
-    product_stoich_coeffs::Array{Float64, 2}
-    reactant_stoich_coeffs::Array{Float64, 2}
-    reactant_orders::Array{Float64, 2}
+    product_stoich_coeffs::SparseMatrixCSC{Float64, Int64}
+    reactant_stoich_coeffs::SparseMatrixCSC{Float64, Int64}
+    reactant_orders::SparseMatrixCSC{Float64, Int64}
     is_reversible::Array{Bool, 1}
     Arrhenius_coeffs::Array{Float64, 2}
     Arrhenius_0::Array{Float64, 2}
@@ -9,11 +9,11 @@ struct Reaction
     index_three_body::Array{Int64, 1}
     index_falloff::Array{Int64, 1}
     index_falloff_Troe::Array{Int64, 1}
-    efficiencies_coeffs::Array{Float64, 2}
+    efficiencies_coeffs::SparseMatrixCSC{Float64, Int64}
     i_reactant::Array{Array{Int64, 1},1}
     i_product::Array{Array{Int64, 1},1}
     n_reactions::Int64
-    vk::Array{Float64, 2}
+    vk::SparseMatrixCSC{Float64, Int64}
     vk_sum::Array{Float64, 1}
 end
 

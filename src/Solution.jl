@@ -37,10 +37,10 @@ function CreateSolution(mech)
 
     npz = npzread("$mech.npz")
     MW = npz["molecular_weights"]
-    efficiencies_coeffs = npz["efficiencies_coeffs"]
-    product_stoich_coeffs = npz["product_stoich_coeffs"]
-    reactant_stoich_coeffs = npz["reactant_stoich_coeffs"]
-    reactant_orders = npz["reactant_orders"]
+    efficiencies_coeffs_full = npz["efficiencies_coeffs"]
+    product_stoich_coeffs = sparse(npz["product_stoich_coeffs"])
+    reactant_stoich_coeffs = sparse(npz["reactant_stoich_coeffs"])
+    reactant_orders = sparse(npz["reactant_orders"])
     is_reversible = npz["is_reversible"]
     Arrhenius_coeffs = npz["Arrhenius_coeffs"]
     if haskey(npz, "Arrhenius_A0")
@@ -96,8 +96,15 @@ function CreateSolution(mech)
         push!(i_product, findall(product_stoich_coeffs[:, i] .> 0.01))
     end
 
-    vk = product_stoich_coeffs - reactant_stoich_coeffs
+    vk = sparse(product_stoich_coeffs - reactant_stoich_coeffs)
     vk_sum = sum(vk, dims = 1)[1, :]
+
+    for i in 1:n_reactions
+        if !((i in index_three_body) | (i in index_falloff))
+            efficiencies_coeffs_full[:, i] .= 0.0
+        end
+    end
+    efficiencies_coeffs = sparse(efficiencies_coeffs_full)
 
     reaction = Reaction(
         product_stoich_coeffs,
