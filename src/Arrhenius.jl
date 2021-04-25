@@ -20,31 +20,31 @@ Following codes are used during development phase only.
 # using Profile
 # using ForwardDiff
 # using SparseArrays
-#
+
 # R = Arrhenius.R
 # one_atm = Arrhenius.one_atm
-#
-# # gas = Arrhenius.CreateSolution("./mechanism/nc7_ver3.1_mech.yaml")
+
+# # gas = Arrhenius.CreateSolution("../mechanism/nc7_ver3.1_mech.yaml")
 # # const ns = gas.n_species
 # # @show gas.thermo.nasa_high[Arrhenius.species_index(gas, "O2"), :]
 # # Y0 = zeros(ns)
 # # Y0[Arrhenius.species_index(gas, "NC7H16")] = 0.1
 # # Y0[Arrhenius.species_index(gas, "O2")] = 0.2
 # # Y0[Arrhenius.species_index(gas, "N2")] = 0.7
-#
-# gas = Arrhenius.CreateSolution("./mechanism/gri30.yaml")
+
+# gas = Arrhenius.CreateSolution("../mechanism/gri30.yaml")
 # const ns = gas.n_species
 # @show gas.thermo.nasa_high[Arrhenius.species_index(gas, "O2"), :]
 # Y0 = zeros(ns)
 # Y0[Arrhenius.species_index(gas, "CH4")] = 0.1
 # Y0[Arrhenius.species_index(gas, "O2")] = 0.2
 # Y0[Arrhenius.species_index(gas, "N2")] = 0.7
-#
+
 # T0 = 1200.0
 # P = Arrhenius.one_atm
 # wdot = Arrhenius.set_states(gas, T0, P, Y0)
 # @show wdot
-#
+
 # T = T0
 # Y = Y0
 # mean_MW = 1. / dot(Y, 1 ./ gas.MW)
