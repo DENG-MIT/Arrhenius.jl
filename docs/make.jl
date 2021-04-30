@@ -10,5 +10,5 @@ makedocs(sitename="Arrhenius.jl",
                ])
 
 deploydocs(;
-    repo="github.com/DENG-MIT/Arrhenius.jl",
+    repo="github.com/SuXY15/Arrhenius.jl",
 )
