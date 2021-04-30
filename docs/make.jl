@@ -11,4 +11,5 @@ makedocs(sitename="Arrhenius.jl",
 
 deploydocs(;
     repo="github.com/DENG-MIT/Arrhenius.jl",
+    devbranch = "main"
 )
