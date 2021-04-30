@@ -1,3 +1,4 @@
 Manifest.toml
 
 *.npz
+/docs/build
