@@ -13,6 +13,5 @@ makedocs(
 )
 
 deploydocs(;
-    repo = "github.com/SuXY15/Arrhenius.jl",
-    target = "build",
+    repo = "github.com/SuXY15/Arrhenius.jl"
 )
