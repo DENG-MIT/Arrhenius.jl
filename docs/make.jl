@@ -13,5 +13,9 @@ makedocs(
 )
 
 deploydocs(;
-    repo = "github.com/SuXY15/Arrhenius.jl"
+    repo = "github.com/SuXY15/Arrhenius.jl",
+    target = "build",
+    branch = "gh-pages",
+    devbranch = "main",
+    devurl = "dev",
 )
