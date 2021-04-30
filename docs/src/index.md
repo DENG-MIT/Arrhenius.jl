@@ -6,7 +6,7 @@
 ## Functions
 
 ```@docs
-CreateSolution(x)
+CreateSolution
 ```
 
 ## Index

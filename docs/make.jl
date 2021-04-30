@@ -1,4 +1,7 @@
-using Documenter, Arrhenius
+push!(LOAD_PATH, "../src/")
+
+using Documenter
+using Arrhenius
 
 makedocs(sitename="Arrhenius.jl",
          modules  = [Arrhenius],
@@ -7,5 +10,5 @@ makedocs(sitename="Arrhenius.jl",
                ])
 
 deploydocs(;
-    repo="github.com/USERNAME/Arrhenius.jl",
+    repo="github.com/DENG-MIT/Arrhenius.jl",
 )
