@@ -3,13 +3,16 @@ push!(LOAD_PATH, "../src/")
 using Documenter
 using Arrhenius
 
-makedocs(sitename="Arrhenius.jl",
-         modules  = [Arrhenius],
-         pages=[
-                "Home" => "index.md"
-               ])
+makedocs(
+    format = Documenter.HTML(),
+    sitename = "Arrhenius.jl",
+    modules  = [Arrhenius],
+    pages = [
+        "Home" => "index.md"
+    ]
+)
 
 deploydocs(;
-    repo="github.com/DENG-MIT/Arrhenius.jl",
+    repo="github.com/SuXY15/Arrhenius.jl",
     devbranch = "main"
 )
