@@ -1,11 +1,18 @@
-using Documenter, Arrhenius
+push!(LOAD_PATH, "../src/")
 
-makedocs(sitename="Arrhenius.jl",
-         modules  = [Arrhenius],
-         pages=[
-                "Home" => "index.md"
-               ])
+using Documenter
+using Arrhenius
+
+makedocs(
+    format = Documenter.HTML(),
+    sitename = "Arrhenius.jl",
+    modules  = [Arrhenius],
+    pages = [
+        "Home" => "index.md"
+    ]
+)
 
 deploydocs(;
-    repo="github.com/USERNAME/Arrhenius.jl",
+    repo="github.com/SuXY15/Arrhenius.jl",
+    devbranch = "main"
 )
