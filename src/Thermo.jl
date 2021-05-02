@@ -75,8 +75,7 @@ function get_S(gas, T, P, X)
         ind_correction = @. (T > 1000.0) & (T < gas.thermo.Trange[:, 2])
         S0[ind_correction] .=
             @view(gas.thermo.nasa_low[ind_correction, [1, 2, 3, 4, 5, 7]]) *
-            S_T *
-            R
+            S_T * R
     end
     # _X = @. S0 - R * log(clamp(X, 1.e-30, Inf))
     # s_mole = _X .- R * (P / one_atm)
@@ -85,13 +84,13 @@ function get_S(gas, T, P, X)
 end
 export get_S(gas, T, P, X)
 
-"Returns the Mean molar entropy"
+"Returns the Mean molar entro"
 function get_S_Mean(gas, T, P, X)
     S0 = get_S(gas, T, P, X)
     _X = @. S0 - R * log(clamp(X, 1.e-30, Inf))
     s_mole = _X .- R * (P / one_atm)
     S_mole = dot(s_mole, X)
-    return S0
+    return S_mole
 end
 export get_S_Mean(gas, T, P, X)    
 
