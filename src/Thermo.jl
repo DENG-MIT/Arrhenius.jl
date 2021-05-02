@@ -82,7 +82,7 @@ function get_S(gas, T, P, X)
     # S_mole = dot(s_mole, X)
     return S0
 end
-export get_S(gas, T, P, X)
+export get_S
 
 "Returns the Mean molar entro"
 function get_S_Mean(gas, T, P, X)
@@ -92,7 +92,7 @@ function get_S_Mean(gas, T, P, X)
     S_mole = dot(s_mole, X)
     return S_mole
 end
-export get_S_Mean(gas, T, P, X)    
+export get_S_Mean  
 
 function S_mass_func(gas, s_mole, Y)
     return dot(s_mole ./ gas.MW, Y)
