@@ -83,7 +83,17 @@ function get_S(gas, T, P, X)
     # S_mole = dot(s_mole, X)
     return S0
 end
-export get_S
+export get_S(gas, T, P, X)
+
+"Returns the Mean molar entropy"
+function get_S_Mean(gas, T, P, X)
+    S0 = get_S(gas, T, P, X)
+    _X = @. S0 - R * log(clamp(X, 1.e-30, Inf))
+    s_mole = _X .- R * (P / one_atm)
+    S_mole = dot(s_mole, X)
+    return S0
+end
+export get_S_Mean(gas, T, P, X)    
 
 function S_mass_func(gas, s_mole, Y)
     return dot(s_mole ./ gas.MW, Y)
