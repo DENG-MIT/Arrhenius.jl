@@ -1,7 +1,7 @@
 name = "Arrhenius"
 uuid = "d1b5debe-99ef-4a51-88bd-55361cc46b8b"
 authors = ["jiweiqi <jiweiqi10@gmail.com> and contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
