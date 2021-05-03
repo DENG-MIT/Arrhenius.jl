@@ -23,6 +23,6 @@ makedocs(
 )
 
 deploydocs(;
-    repo="github.com/SuXY15/Arrhenius.jl",
+    repo="github.com/DENG-MIT/Arrhenius.jl",
     devbranch="main"
 )
