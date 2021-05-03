@@ -13,8 +13,10 @@ module Arrhenius
     include("Solution.jl")
     include("Magic.jl")
     include("Thermo.jl")
-    include("Kinetics.jl") 
+    include("Kinetics.jl")
 end
+
+
 ```
 Following codes are used during development phase only.
 ```
@@ -31,10 +33,10 @@ one_atm = Arrhenius.one_atm
 gas = Arrhenius.CreateSolution("../mechanism/gri30.yaml")
 const ns = gas.n_species
 @show gas.thermo.nasa_high[Arrhenius.species_index(gas, "O2"), :]
-Y0 = zeros(ns)
-Y0[Arrhenius.species_index(gas, "CH4")] = 0.1
-Y0[Arrhenius.species_index(gas, "O2")] = 0.2
-Y0[Arrhenius.species_index(gas, "N2")] = 0.7
+Y0 = zeros(ns);
+Y0[Arrhenius.species_index(gas, "CH4")] = 0.1;
+Y0[Arrhenius.species_index(gas, "O2")] = 0.2;
+Y0[Arrhenius.species_index(gas, "N2")] = 0.7;
 
 T0 = 1200.0
 P = Arrhenius.one_atm
