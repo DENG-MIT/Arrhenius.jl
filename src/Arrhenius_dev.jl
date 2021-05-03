@@ -14,6 +14,7 @@ module Arrhenius
     include("Magic.jl")
     include("Thermo.jl")
     include("Kinetics.jl")
+    include("Transport.jl")
 end
 
 
@@ -30,9 +31,9 @@ using SparseArrays
 R = Arrhenius.R
 one_atm = Arrhenius.one_atm
 
-gas = Arrhenius.CreateSolution("../mechanism/gri30.yaml")
+gas = Arrhenius.CreateSolution("../mechanism/gri30.yaml");
 const ns = gas.n_species
-@show gas.thermo.nasa_high[Arrhenius.species_index(gas, "O2"), :]
+@show gas.thermo.nasa_high[Arrhenius.species_index(gas, "O2"), :];
 Y0 = zeros(ns);
 Y0[Arrhenius.species_index(gas, "CH4")] = 0.1;
 Y0[Arrhenius.species_index(gas, "O2")] = 0.2;

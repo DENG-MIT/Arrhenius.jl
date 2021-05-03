@@ -10,4 +10,5 @@ module Arrhenius
     include("Magic.jl")
     include("Thermo.jl")
     include("Kinetics.jl")
+    include("Transport.jl")
 end
