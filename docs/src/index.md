@@ -12,19 +12,22 @@
 
 ## Outline
 
+Documentation comes in following forms:
+
+1. How-to examples
+2. Explanatory guide
+3. Reference docstrings for the entire interface are avaliable in the API Documentation section.
+
+When updating these documents, make sure this is synced with docs/make.jl !!
 
 ## Baiscs
 
-Coming soon
+```@contents
+Pages = ["install.md", "get_started.md", "concepts.md"]
+```
 
-## Tutorials
+## Reference
 
-Coming soon
-
-## Functions
-
-```@docs
-CreateSolution
-get_cp
-get_cv
+```@contents
+Pages = ["faq.md", "api.md"]
 ```
