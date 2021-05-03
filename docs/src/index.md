@@ -20,7 +20,7 @@ Documentation comes in following forms:
 
 When updating these documents, make sure this is synced with docs/make.jl !!
 
-## Baiscs
+### Baiscs
 
 ```@contents
 Pages = ["install.md", "get_started.md", "concepts.md"]
