@@ -1,14 +1,29 @@
 """
-    function mix_trans(gas, T, X)
+    function mix_trans(gas::A, P::B, T::B, X::Q, mean_MW::B) where 
+        {A <: Arrhenius.Solution,B <: Real,Q <: AbstractArray}
 
 Compute the tranposrt properties of a mixture using mixture average formula
-Equations. 5-50/51/52 in https://personal.ems.psu.edu/~radovic/ChemKin_Theory_PaSR.pdf
-Equation 5-46 for diffusion
-See also implementations in ReacTorch 
+
+> Equations Ref. https://personal.ems.psu.edu/~radovic/ChemKin_Theory_PaSR.pdf
+> Equations. 5-50/51/52 for viscosity and thermal conductivity
+
+Pure species viscosities [Pa-s]
+
+Thermal conductivity. [W/m/K].
+
+> Equation 5-46 for diffusion
+
+Mixture-averaged diffusion coefficients [m^2/s] relating the mass-averaged diffusive fluxes 
+(with respect to the mass averaged velocity) to gradients in the species mole fractions.
+
+Test this module in _transport_test.jl
+
+See also implementations in ReacTorch
 """
 
-function mix_trans(gas, P, T, X, mean_MW)
-    
+function mix_trans(gas::A, P::B, T::B, X::Q, mean_MW::B) where 
+    {A <: Arrhenius.Solution,B <: Real,Q <: AbstractArray}
+
     logT = log(T)
     trans_T = [logT^6, logT^5, logT^4, logT^3, logT^2, logT, 1.0]
     
@@ -35,11 +50,12 @@ function mix_trans(gas, P, T, X, mean_MW)
     ## binary_diff_coeffs_func
 
     X_eps = clamp.(X, 1.e-12, Inf)
-    D = reshape(trans_T' * gas.trans.binary_diff_coeffs_poly, gas.n_species, gas.n_species)
+    D = reshape(trans_T' * gas.trans.binary_diff_coeffs_poly, 
+                gas.n_species, gas.n_species)
 
     XjWj = X_eps' * gas.MW .- X_eps .* gas.MW
 
-    XjDjk = X_eps' * (1.0 ./ D) .- (X_eps .* diag(D))'
+    XjDjk = sum(X_eps .* (1.0 ./ D'), dims=1) .- (X_eps ./ diag(D))'
 
     Dkm = XjWj ./ XjDjk' ./ mean_MW / P * one_atm
 
