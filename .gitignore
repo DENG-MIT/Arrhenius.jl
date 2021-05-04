@@ -1,4 +1,4 @@
 Manifest.toml
 
-*.npz
+mechanism/*.npz
 docs/build

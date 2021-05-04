@@ -21,6 +21,7 @@ You can use `name(Arrhenius)` to print a full list of exported namespace by Arrh
 :get_U
 :get_cp
 :get_cv
+:mix_trans
 :one_atm
 :set_states
 :species_index

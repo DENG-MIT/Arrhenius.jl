@@ -18,6 +18,7 @@ function get_cp(gas, T, X, mean_MW)
 end
 export get_cp
 
+
 "get specific of heat capacity"
 function get_cv(cp_mole, cp_mass, mean_MW)
     cv_mole = cp_mole - R
@@ -25,6 +26,7 @@ function get_cv(cp_mole, cp_mass, mean_MW)
     return cv_mole, cv_mass
 end
 export get_cv
+
 
 "get enthaphy (H) per mole"
 function get_H(gas, T, Y, X)
@@ -44,11 +46,13 @@ function get_H(gas, T, Y, X)
 end
 export get_H
 
+
 "get enthaphy (H) per mass"
 function H_mass_func(gas, h_mole, Y)
     return dot(h_mole ./ gas.MW, Y)
 end
 export H_mass_func
+
 
 "get enthaphy (U) per mole"
 function get_U(h_mole, T)
@@ -57,11 +61,13 @@ function get_U(h_mole, T)
 end
 export get_U
 
+
 "get enthaphy (U) per mass"
 function U_mass_func(gas, u_mole, Y)
     return dot(u_mole ./ gas.MW, Y)
 end
 export U_mass_func
+
 
 "get entropy (S)"
 function get_S(gas, T, P, X)
@@ -85,6 +91,7 @@ function get_S(gas, T, P, X)
 end
 export get_S
 
+"get entropy (S) per unit mass"
 function S_mass_func(gas, s_mole, Y)
     return dot(s_mole ./ gas.MW, Y)
 end

@@ -1,5 +1,6 @@
 """
     CreateSolution(mech)
+    
 Reaction mechanism is interepreted here. Part of the infomation are read in
 from the yaml file, pary of them are from the pre-processed .npz file from
 ReacTorch and Cantera
@@ -7,6 +8,10 @@ test for math enviroment
 """
 function CreateSolution(mech)
     yaml = YAML.load_file(mech)
+
+
+    #### Basics
+
     n_species = length(yaml["phases"][1]["species"])
     n_reactions = length(yaml["reactions"])
     species_names = yaml["phases"][1]["species"]
@@ -14,6 +19,9 @@ function CreateSolution(mech)
     n_elements = length(elements)
 
     ele_matrix = zeros(n_elements, n_species)
+
+
+    #### Thermodynamic data
 
     nasa_low = zeros(n_species, 7)
     nasa_high = zeros(n_species, 7)
@@ -38,6 +46,9 @@ function CreateSolution(mech)
     isTcommon = (maximum(Trange[:, 2]) - minimum(Trange[:, 2])) < 0.01
 
     thermo = Thermo(nasa_low, nasa_high, Trange, isTcommon)
+
+
+    #### Kinetic data
 
     npz = npzread("$mech.npz")
     MW = npz["molecular_weights"]
@@ -101,7 +112,7 @@ function CreateSolution(mech)
     end
 
     vk = sparse(product_stoich_coeffs - reactant_stoich_coeffs)
-    vk_sum = sum(vk, dims = 1)[1, :]
+    vk_sum = sum(vk, dims=1)[1, :]
 
     for i in 1:n_reactions
         if !((i in index_three_body) | (i in index_falloff))
@@ -129,6 +140,26 @@ function CreateSolution(mech)
         vk_sum,
     )
 
+
+    #### Transport data
+
+    if haskey(npz, "species_viscosities_poly")
+        species_viscosities_poly = npz["species_viscosities_poly"]
+        thermal_conductivity_poly = npz["thermal_conductivity_poly"]
+        binary_diff_coeffs_poly = npz["binary_diff_coeffs_poly"]
+        poly_order = size(species_viscosities_poly)[1]
+    else
+        species_viscosities_poly = zeros(2, 2)
+        thermal_conductivity_poly = zeros(2, 2)
+        binary_diff_coeffs_poly = zeros(2, 2, 2)
+        poly_order = 6
+    end
+
+    trans = Transport(poly_order,
+                      species_viscosities_poly, 
+                      thermal_conductivity_poly, 
+                      binary_diff_coeffs_poly)
+
     gas = Solution(
         n_species,
         n_reactions,
@@ -137,6 +168,7 @@ function CreateSolution(mech)
         elements,
         ele_matrix,
         thermo,
+        trans,
         reaction,
     )
     return gas
