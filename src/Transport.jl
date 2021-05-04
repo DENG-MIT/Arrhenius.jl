@@ -20,7 +20,6 @@ Test this module in _transport_test.jl
 
 See also implementations in ReacTorch
 """
-
 function mix_trans(gas::A, P::B, T::B, X::Q, mean_MW::B) where 
     {A <: Arrhenius.Solution,B <: Real,Q <: AbstractArray}
 
