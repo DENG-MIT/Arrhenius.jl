@@ -28,7 +28,7 @@ struct Transport
     poly_order::Int64
     species_viscosities_poly::Array{Float64,2}
     thermal_conductivity_poly::Array{Float64,2}
-    binary_diff_coeffs_poly::Array{Float64,3}
+    binary_diff_coeffs_poly::Array{Float64,2}
 end
 
 struct Solution

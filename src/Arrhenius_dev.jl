@@ -44,12 +44,15 @@ P = Arrhenius.one_atm
 wdot = Arrhenius.set_states(gas, T0, P, Y0)
 @show wdot
 
-# T = T0
-# Y = Y0
-# mean_MW = 1. / dot(Y, 1 ./ gas.MW)
-# ρ_mass = P / R / T * mean_MW
-# X =  Arrhenius.Y2X(gas, Y, mean_MW)
-# C =  Arrhenius.Y2C(gas, Y, ρ_mass)
+T = T0
+Y = Y0
+mean_MW = 1. / dot(Y, 1 ./ gas.MW)
+ρ_mass = P / R / T * mean_MW
+X =  Arrhenius.Y2X(gas, Y, mean_MW)
+C =  Arrhenius.Y2C(gas, Y, ρ_mass)
+
+η_mix, λ_mix, Dkm = mix_trans(gas, P, T, X, mean_MW)
+
 # cp_mole, cp_mass =  Arrhenius.get_cp(gas, T, X, mean_MW)
 # cv_mole, cv_mass = Arrhenius.get_cv(cp_mole, cp_mass, mean_MW)
 # 

@@ -148,8 +148,6 @@ function CreateSolution(mech)
         thermal_conductivity_poly = npz["thermal_conductivity_poly"]
         binary_diff_coeffs_poly = npz["binary_diff_coeffs_poly"]
         poly_order = size(species_viscosities_poly)[1]
-        binary_diff_coeffs_poly = reshape(binary_diff_coeffs_poly, 
-                                          n_species, n_species, poly_order)
     else
         species_viscosities_poly = zeros(2, 2)
         thermal_conductivity_poly = zeros(2, 2)
