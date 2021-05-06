@@ -1,5 +1,8 @@
+"""
+    cal_h_RT(gas, T, p, X)
 
-"calculates the dimensionless partial enhtalpy of each species"
+calculates the dimensionless mole based enthalpy (h) for each species
+"""
 function cal_h_RT(gas, T, p, X)
     H_T = [1.0, T / 2.0, T^2 / 3.0, T^3 / 4.0, T^4 / 5.0, 1.0 / T]
     if T <= 1000.0
@@ -16,7 +19,12 @@ function cal_h_RT(gas, T, p, X)
     return h_mole
 end
 
-"calculates the dimensionless entropy of each species at the reference state"
+"""
+    cal_s0_R(gas, T, p, X)
+    cal_s0_R(gas, T)
+
+calculates the dimensionless mole based reference state entropy (s0) for each species
+"""
 function cal_s0_R(gas, T,p, X)
     S_T = [log(T), T, T^2 / 2.0, T^3 / 3.0, T^4 / 4.0, 1.0]
     if T <= 1000.0
@@ -35,26 +43,48 @@ end
 cal_s0_R(gas,T)=cal_s0_R(gas, T, 0, [])
 export cal_s0_R
 
-"calculates the dimensionless entropy of each species"
+"""
+    cal_s_R(gas, T, p, X)
+
+calculates the dimensionless mole based entropy (s) for each species
+"""
 function cal_s_R(gas, T, p, X)
    return cal_s0_R(gas, T) - log.(max.(X,1e-30)) .- log(p/one_atm)
 end
 
-"calculates the dimensionless Gibbs energy of each species"
+"""
+    cal_g_RT(gas, T, p, X)
+
+calculates the dimensionless mole based free gibbs energy (g) for each species
+"""
 function cal_g_RT(gas, T, p, X)
     return cal_h_RT(gas, T, p, X) - cal_s_R(gas, T, p, X)
 end
 
-"calculates the dimensionless internal energy of each species"
+"""
+    cal_u_RT(gas, T, p, X)
+
+calculates the dimensionless mole based internal energy (u) for each species
+"""
 function cal_u_RT(gas, T, p, X)
     return cal_h_RT(gas, T, p, X) .- 1
 end
 
-"calculates the dimensionless Helmholz free energy of each species"
+"""
+    cal_a_RT(gas, T, p, X)
+
+calculates the dimensionless mole based helmholz free energy (a) for each species
+"""
 function cal_a_RT(gas, T, p, X)
     return cal_u_RT(gas, T, p, X) - cal_s_R(gas, T, p, X)
 end
-"calculates the dimensionless heat capacity at constant pressure of each species"
+
+"""
+    cal_cp_R(gas, T, p, X)
+
+calculates the dimensionless mole based heat capacity 
+at constant pressure (cp) for each species
+"""
 function cal_cp_R(gas, T, p, X)
     cp_T = [1.0, T, T^2, T^3, T^4]
     if T <= 1000.0
@@ -71,13 +101,26 @@ function cal_cp_R(gas, T, p, X)
     return cp
 end
 
-"calculates the dimensionless heat capacity at constant volume of each species"
+"""
+    cal_cv_R(gas, T, p, X)
+
+calculates the dimensionless mole based heat capacity 
+at constant volume (cv) for each species
+"""
 function cal_cv_R(gas, T, p, X)
    return cal_cp_R(gas, T, p, X) .- 1
 end
 
 # Metaprogramming loop to generate and export all mass and mean functions
-for phi in [:cv, :cp, :s, :s0, :h, :a, :g, :u]
+property_names=((:cv,"Heat capacity at constant volume (cv)"),
+                (:cp,"Heat capacity at constant pressure (cp)"), 
+                (:s,"entropy (s)"), 
+                (:s0,"reference entropy (s0)"), 
+                (:h,"enthalpy (h)"),
+                (:a,"helmholz free energy (a)"), 
+                (:g,"gibbs free energy (g)"), 
+                (:u,"internal energy"))
+for (phi, doc_name) in property_names
     if phi in (:cv, :cp, :s, :s0)
         dimmless = Symbol(:_R)
         RRT =:(R)
@@ -93,22 +136,38 @@ for phi in [:cv, :cp, :s, :s0, :h, :a, :g, :u]
 
     @eval begin 
         export $cal_phi_dimless
-        "calculates the partial molar phi for each species"
+        """
+            $($cal_phi)(gas, T, p, X)
+
+        calculates the molar $($doc_name) for each species
+        """
         function $cal_phi(gas, T, p, X)
             return $cal_phi_dimless(gas, T, p, X) * $RRT
         end
         export $cal_phi
-        "calculates the mean mole based phi of the mixture"
+        """
+            $($cal_phi_mean)(gas, T, p, X)
+        
+        calculates the mean mole based $($doc_name) of the mixture
+        """
         function $cal_phi_mean(gas, T, p, X)
             return dot(X,$cal_phi_dimless(gas, T, p, X)) * $RRT
         end
         export $cal_phi_mean
-        "calculates the partial mass based phi for each species"
+        """
+            $($cal_phimass)(gas, T, p, X)
+
+        calculates the partial mass based $($doc_name) for each species
+        """
         function $cal_phimass(gas, T, p, X)
             return $cal_phi(gas, T, p, X) ./gas.MW
         end
         export $cal_phimass
-        "calculates the mean mass based phi of the mixture"
+        """
+            $($cal_phimass_mean)(gas, T, p, X)
+
+        calculates the mean mass based $($doc_name) of the mixture
+        """
         function $cal_phimass_mean(gas, T, p, X)
             return $cal_phi_mean(gas, T, p, X) / dot(X,gas.MW)
         end
