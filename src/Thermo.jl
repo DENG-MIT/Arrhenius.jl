@@ -1,3 +1,183 @@
+"""
+    cal_h_RT(gas, T, p, X)
+
+calculates the dimensionless mole based enthalpy (h) for each species
+"""
+function cal_h_RT(gas, T, p, X)
+    H_T = [1.0, T / 2.0, T^2 / 3.0, T^3 / 4.0, T^4 / 5.0, 1.0 / T]
+    if T <= 1000.0
+        h_mole = @view(gas.thermo.nasa_low[:, 1:6]) * H_T 
+    else
+        h_mole = @view(gas.thermo.nasa_high[:, 1:6]) * H_T 
+    end
+    if !gas.thermo.isTcommon
+        ind_correction = @. (T > 1000.0) & (T < gas.thermo.Trange[:, 2])
+        h_mole[ind_correction] .=
+            @view(gas.thermo.nasa_low[ind_correction, 1:6]) * H_T 
+    end
+    # H_mole = dot(h_mole, X)
+    return h_mole
+end
+
+"""
+    cal_s0_R(gas, T, p, X)
+    cal_s0_R(gas, T)
+
+calculates the dimensionless mole based reference state entropy (s0) for each species
+"""
+function cal_s0_R(gas, T,p, X)
+    S_T = [log(T), T, T^2 / 2.0, T^3 / 3.0, T^4 / 4.0, 1.0]
+    if T <= 1000.0
+        S0 = @view(gas.thermo.nasa_low[:, [1, 2, 3, 4, 5, 7]]) * S_T 
+    else
+        S0 = @view(gas.thermo.nasa_high[:, [1, 2, 3, 4, 5, 7]]) * S_T 
+    end
+    if !gas.thermo.isTcommon
+        ind_correction = @. (T > 1000.0) & (T < gas.thermo.Trange[:, 2])
+        S0[ind_correction] .=
+            @view(gas.thermo.nasa_low[ind_correction, [1, 2, 3, 4, 5, 7]]) *
+            S_T 
+    end
+    return S0 
+end
+cal_s0_R(gas,T)=cal_s0_R(gas, T, 0, [])
+export cal_s0_R
+
+"""
+    cal_s_R(gas, T, p, X)
+
+calculates the dimensionless mole based entropy (s) for each species
+"""
+function cal_s_R(gas, T, p, X)
+   return cal_s0_R(gas, T) - log.(max.(X,1e-30)) .- log(p/one_atm)
+end
+
+"""
+    cal_g_RT(gas, T, p, X)
+
+calculates the dimensionless mole based free gibbs energy (g) for each species
+"""
+function cal_g_RT(gas, T, p, X)
+    return cal_h_RT(gas, T, p, X) - cal_s_R(gas, T, p, X)
+end
+
+"""
+    cal_u_RT(gas, T, p, X)
+
+calculates the dimensionless mole based internal energy (u) for each species
+"""
+function cal_u_RT(gas, T, p, X)
+    return cal_h_RT(gas, T, p, X) .- 1
+end
+
+"""
+    cal_a_RT(gas, T, p, X)
+
+calculates the dimensionless mole based helmholz free energy (a) for each species
+"""
+function cal_a_RT(gas, T, p, X)
+    return cal_u_RT(gas, T, p, X) - cal_s_R(gas, T, p, X)
+end
+
+"""
+    cal_cp_R(gas, T, p, X)
+
+calculates the dimensionless mole based heat capacity 
+at constant pressure (cp) for each species
+"""
+function cal_cp_R(gas, T, p, X)
+    cp_T = [1.0, T, T^2, T^3, T^4]
+    if T <= 1000.0
+        cp = @view(gas.thermo.nasa_low[:, 1:5]) * cp_T
+    else
+        cp = @view(gas.thermo.nasa_high[:, 1:5]) * cp_T
+    end
+    # TODO: not sure if inplace operation will be an issue for AD
+    if !gas.thermo.isTcommon
+        ind_correction = @. (T > 1000.0) & (T < gas.thermo.Trange[:, 2])
+        cp[ind_correction] .=
+            @view(gas.thermo.nasa_low[ind_correction, 1:5]) * cp_T
+    end
+    return cp
+end
+
+"""
+    cal_cv_R(gas, T, p, X)
+
+calculates the dimensionless mole based heat capacity 
+at constant volume (cv) for each species
+"""
+function cal_cv_R(gas, T, p, X)
+   return cal_cp_R(gas, T, p, X) .- 1
+end
+
+# Metaprogramming loop to generate and export all mass and mean functions
+property_names=((:cv,"Heat capacity at constant volume (cv)"),
+                (:cp,"Heat capacity at constant pressure (cp)"), 
+                (:s,"entropy (s)"), 
+                (:s0,"reference entropy (s0)"), 
+                (:h,"enthalpy (h)"),
+                (:a,"helmholz free energy (a)"), 
+                (:g,"gibbs free energy (g)"), 
+                (:u,"internal energy"))
+for (phi, doc_name) in property_names
+    if phi in (:cv, :cp, :s, :s0)
+        dimmless = Symbol(:_R)
+        RRT =:(R)
+    else
+        dimmless = Symbol(:_RT)
+        RRT =:(R*T)
+    end
+    cal_phi_dimless = Symbol(:cal_,phi,dimmless)
+    cal_phi = Symbol(:cal_,phi)
+    cal_phimass =  Symbol(:cal_,phi,:mass)
+    cal_phi_mean = Symbol(cal_phi,:_mean)
+    cal_phimass_mean = Symbol(cal_phimass,:_mean)
+
+    @eval begin 
+        export $cal_phi_dimless
+        """
+            $($cal_phi)(gas, T, p, X)
+
+        calculates the molar $($doc_name) for each species
+        """
+        function $cal_phi(gas, T, p, X)
+            return $cal_phi_dimless(gas, T, p, X) * $RRT
+        end
+        export $cal_phi
+        """
+            $($cal_phi_mean)(gas, T, p, X)
+        
+        calculates the mean mole based $($doc_name) of the mixture
+        """
+        function $cal_phi_mean(gas, T, p, X)
+            return dot(X,$cal_phi_dimless(gas, T, p, X)) * $RRT
+        end
+        export $cal_phi_mean
+        """
+            $($cal_phimass)(gas, T, p, X)
+
+        calculates the partial mass based $($doc_name) for each species
+        """
+        function $cal_phimass(gas, T, p, X)
+            return $cal_phi(gas, T, p, X) ./gas.MW
+        end
+        export $cal_phimass
+        """
+            $($cal_phimass_mean)(gas, T, p, X)
+
+        calculates the mean mass based $($doc_name) of the mixture
+        """
+        function $cal_phimass_mean(gas, T, p, X)
+            return $cal_phi_mean(gas, T, p, X) / dot(X,gas.MW)
+        end
+        export $cal_phimass_mean
+    end
+end
+
+
+# ------ Deprecated ----------# 
+
 "get specific of heat capacity"
 function get_cp(gas, T, X, mean_MW)
     cp_T = [1.0, T, T^2, T^3, T^4]
@@ -81,8 +261,7 @@ function get_S(gas, T, P, X)
         ind_correction = @. (T > 1000.0) & (T < gas.thermo.Trange[:, 2])
         S0[ind_correction] .=
             @view(gas.thermo.nasa_low[ind_correction, [1, 2, 3, 4, 5, 7]]) *
-            S_T *
-            R
+            S_T * R
     end
     # _X = @. S0 - R * log(clamp(X, 1.e-30, Inf))
     # s_mole = _X .- R * (P / one_atm)

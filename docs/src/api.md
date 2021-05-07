@@ -5,7 +5,6 @@ Docstrings for Arrhenius.jl interface members can be [accessed through Julia's b
 You can use `name(Arrhenius)` to print a full list of exported namespace by Arrhenius.jl, and then copy the list below.
 
 ```@docs
-:Arrhenius
 :C2X
 :CreateSolution
 :H_mass_func
@@ -26,4 +25,10 @@ You can use `name(Arrhenius)` to print a full list of exported namespace by Arrh
 :set_states
 :species_index
 :wdot_func
+```
+## Thermo Interface API Documentation
+```@autodocs
+Modules = [Arrhenius]
+Pages   = ["Thermo.jl"]
+Order   = [:function, :type]
 ```
