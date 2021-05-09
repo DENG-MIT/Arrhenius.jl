@@ -79,7 +79,7 @@ P = one_atm
 u0 = vcat(Y0, T0);
 ```
 Create a function to define the ODE problem (for more details on solving differential equations refer to [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/). 
-```
+```julia
 @inbounds function dudt!(du, u, p, t)
     T = u[end]
     Y = @view(u[1:ns])
@@ -124,7 +124,7 @@ pltsum = plot(plt, pltT, legend=true, framestyle=:box)
 ```
 You should get a plot something like this: 
 
-![](/docs/src/figures/JP10.svg)
+![](/docs/src/figures/JP10.PNG)
 
 ### Computing ignition delay time
 ## Sensitivity analysis of ignition delay times-Active subspaces
