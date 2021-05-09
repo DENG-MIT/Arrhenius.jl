@@ -62,7 +62,7 @@ ct_gas.TPY = T, P, "H2:0.1,O2:0.2,AR:0.7"
 
 @test λ_mix ≈ ct_gas.thermal_conductivity rtol = 1.e-4
 
-@test Dkm ≈ ct_gas.mix_diff_coeffs rtol = 1.e-4
+@test Dkm ≈ ct_gas.mix_diff_coeffs rtol = 1.e-3
 
 println("Dkm from Arrhenius.jl | Cantera")
 hcat(Dkm, ct_gas.mix_diff_coeffs)
