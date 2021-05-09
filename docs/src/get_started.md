@@ -122,6 +122,10 @@ xlabel!(pltT, "Time [s]")
 title!(plt, "JP10 pyrolysis @1200K/1atm")
 pltsum = plot(plt, pltT, legend=true, framestyle=:box)
 ```
+You should get a plot something like this: 
+
+![](/docs/src/figures/JP10.svg)
+
 ### Computing ignition delay time
 ## Sensitivity analysis of ignition delay times-Active subspaces
 ## Perfect Stirred reactor 
