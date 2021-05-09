@@ -79,7 +79,7 @@ P = one_atm
 u0 = vcat(Y0, T0);
 ```
 Create a function to define the ODE problem (for more details on solving differential equations refer to [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/). 
-```
+```julia
 @inbounds function dudt!(du, u, p, t)
     T = u[end]
     Y = @view(u[1:ns])
