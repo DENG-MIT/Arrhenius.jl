@@ -4,7 +4,7 @@ We first have to make Arrhenius.jl available in our code (along with other packa
 ```julia
 using Arrhenius
 ```
-The next step is to create the solution structure similar to Cantera by providing a YAML file as the input. The complete definition of the solution structure can be found [here](https://github.com/DENG-MIT/Arrhenius.jl/blob/a6e77fa501f8e1bfb0b4bd244b507f0bc10f1f8c/src/DataStructure.jl#L29). (Add more on how to input the YAML files here).  
+The next step is to create the solution structure similar to Cantera by providing a YAML file as the input. The complete definition of the solution structure can be found [here](https://github.com/DENG-MIT/Arrhenius.jl/blob/a6e77fa501f8e1bfb0b4bd244b507f0bc10f1f8c/src/DataStructure.jl#L29). 
 ```julia
 gas = CreateSolution("../../mechanism/JP10skeletal.yaml")
 
@@ -16,7 +16,7 @@ ns = gas.n_species
 nr = gas.n_reactions
 
 ```
-To view the species that you mechanism use:
+To view the species that your mechanism uses:
 ```julia
 species_arr = gas.species_names
 ```
