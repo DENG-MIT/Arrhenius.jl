@@ -124,7 +124,7 @@ pltsum = plot(plt, pltT, legend=true, framestyle=:box)
 ```
 You should get a plot something like this: 
 
-![](/docs/src/figures/JP10.png)
+![JP10](./figures/JP10.png)
 
 ### Computing ignition delay time
 ## Sensitivity analysis of ignition delay times-Active subspaces
