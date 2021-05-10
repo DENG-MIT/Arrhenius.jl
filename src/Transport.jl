@@ -1,6 +1,5 @@
 """
-    function mix_trans(gas::A, P::B, T::B, X::Q, mean_MW::B) where 
-        {A <: Arrhenius.Solution,B <: Real,Q <: AbstractArray}
+    mix_trans(gas::A, P, T, X, mean_MW) where {A <: Arrhenius.Solution}
 
 Compute the tranposrt properties of a mixture using mixture average formula
 
@@ -20,8 +19,7 @@ Test this module in _transport_test.jl
 
 See also implementations in ReacTorch
 """
-function mix_trans(gas::A, P::B, T::B, X::Q, mean_MW::B) where 
-    {A <: Arrhenius.Solution,B <: Real,Q <: AbstractArray}
+function mix_trans(gas::A, P, T, X, mean_MW) where {A <: Arrhenius.Solution}
 
     logT = log(T)
     trans_T = [logT^6, logT^5, logT^4, logT^3, logT^2, logT, 1.0]
