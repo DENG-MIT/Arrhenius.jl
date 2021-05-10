@@ -17,12 +17,7 @@ struct Reaction
     vk_sum::Array{Float64,1}
 end
 
-struct Thermo
-    nasa_low::Array{Float64,2}
-    nasa_high::Array{Float64,2}
-    Trange::Array{Float64,2}
-    isTcommon::Bool
-end
+abstract type Thermo end
 
 struct Transport
     poly_order::Int64
