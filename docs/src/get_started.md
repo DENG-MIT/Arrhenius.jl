@@ -126,8 +126,88 @@ You should get a plot something like this:
 
 ![JP10](./figures/JP10.png)
 
-### Computing ignition delay time
-## Sensitivity analysis of ignition delay times-Active subspaces
+### Exploiting Julia's Auto-Differentiation (AD) package to compute Jacobians
+Julia's automatic differentiation packages like [```ForwardDiff.jl```](https://juliadiff.org/ForwardDiff.jl/stable/user/api/) can be exploited thoroughly using Arrhenius.jl to compute the Jacobian that frequently pops up while integrating stiff systems in chemically reactive flows. We present to you an example using the LiDryer 9-species H2 combustion mechanism. So let's import packages:
+```julia
+using Arrhenius
+using LinearAlgebra
+using DifferentialEquations
+using ForwardDiff
+using DiffEqSensitivity
+using Plots
+using DelimitedFiles
+using Profile
+```
+Next input the YAML:
+```julia
+gas = CreateSolution(".../../mechanism/LiDryer.yaml")
+```
+We use a 9-species + 24-reaction model:
+```julia
+julia> ns = gas.n_species
+9
+julia> ns = gas.n_species
+24
+```
+View the participating species:
+```julia
+julia> gas.species_names
+9-element Array{String,1}:
+ "H2"
+ "O2"
+ "N2"
+ "H"
+ "O"
+ "OH"
+ "HO2"
+ "H2O2"
+ "H2O"
+```
+Let's set the initial conditions: 
+```julia 
+Y0 = zeros(ns)
+Y0[species_index(gas, "H2")] = 0.055463
+Y0[species_index(gas, "O2")] = 0.22008
+Y0[species_index(gas, "N2")] = 0.724457  #to sum as unity
+T0 = 1100.0   #K
+P = one_atm * 10.0
+u0 = vcat(Y0, T0);
+```
+Create the differential function:
+```julia
+function dudt(u)
+    T = u[end]
+    Y = @view(u[1:ns])
+    mean_MW = 1. / dot(Y, 1 ./ gas.MW)
+    ρ_mass = P / R / T * mean_MW
+    X = Y2X(gas, Y, mean_MW)
+    C = Y2C(gas, Y, ρ_mass)
+    cp_mole, cp_mass = get_cp(gas, T, X, mean_MW)
+    h_mole = get_H(gas, T, Y, X)
+    S0 = get_S(gas, T, P, X)
+    wdot = wdot_func(gas.reaction, T, C, S0, h_mole)
+    Ydot = wdot / ρ_mass .* gas.MW
+    Tdot = -dot(h_mole, wdot) / ρ_mass / cp_mass
+    du = vcat(Ydot, Tdot)
+end
+```
+Now computing the jacobian w/ref to the initial condition vector is as simple as: 
+```julia
+julia> @time du0 = ForwardDiff.jacobian(dudt, u0)
+ 0.026856 seconds (18.37 k allocations: 1.047 MiB)
+10×10 Array{Float64,2}:
+  -0.00227393    -0.000934232   0.000137514  …   0.000213839  -5.21262e-6
+  -0.0360919     -0.0148282     0.00218263       0.00334244   -8.27348e-5
+   0.0            0.0           0.0              0.0           0.0
+   0.00113697     0.000467116  -6.87571e-5      -0.000106919   2.60631e-6
+   2.09985e-12    2.28459e-12  -1.26987e-13      2.97389e-12   2.53222e-14
+   0.0            0.0           0.0          …   2.74378e-5    0.0
+   0.0372289      0.0152953    -0.00225138      -0.00344774    8.53411e-5
+   0.0            0.0           0.0              0.0           0.0
+   0.0            0.0           0.0             -2.9064e-5     0.0
+ -27.3692       -47.4374       16.5061          29.0894       -0.306451
+```
+### Sensitivity analysis of ignition delay times-Active subspaces
 ## Perfect Stirred reactor 
 ## Computing Jacobians 
 ## Auto-ignition
