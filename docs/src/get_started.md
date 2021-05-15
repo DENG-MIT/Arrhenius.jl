@@ -140,7 +140,7 @@ using Profile
 ```
 Next input the YAML:
 ```julia
-gas = CreateSolution("./mechanism/LiDryer.yaml")
+gas = CreateSolution(".../../mechanism/LiDryer.yaml")
 ```
 We use a 9-species + 24-reaction model:
 ```julia
