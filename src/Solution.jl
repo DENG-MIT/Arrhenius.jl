@@ -45,7 +45,7 @@ function CreateSolution(mech)
 
     isTcommon = (maximum(Trange[:, 2]) - minimum(Trange[:, 2])) < 0.01
 
-    thermo = Thermo(nasa_low, nasa_high, Trange, isTcommon)
+    thermo = IdealGasThermo(nasa_low, nasa_high, Trange, isTcommon)
 
 
     #### Kinetic data

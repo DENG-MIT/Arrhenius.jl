@@ -124,7 +124,7 @@ pltsum = plot(plt, pltT, legend=true, framestyle=:box)
 ```
 You should get a plot something like this: 
 
-![](/docs/src/figures/JP10.png)
+![JP10](./figures/JP10.png)
 
 ### Exploiting Julia's Auto-Differentiation (AD) package to compute Jacobians
 Julia's automatic differentiation packages like [```ForwardDiff.jl```](https://juliadiff.org/ForwardDiff.jl/stable/user/api/) can be exploited thoroughly using Arrhenius.jl to compute the Jacobian that frequently pops up while integrating stiff systems in chemically reactive flows. We present to you an example using the LiDryer 9-species H2 combustion mechanism. So let's import packages:
