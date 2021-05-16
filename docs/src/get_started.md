@@ -125,7 +125,30 @@ pltsum = plot(plt, pltT, legend=true, framestyle=:box)
 You should get a plot something like this: 
 
 ![JP10](./figures/JP10.png)
-
+### Sensitivity analysis using Julia's DiffEqSensitivity.jl
+In the previous example, we can easily perform a sensitivity analysis using Julia's [```DiffEqSensitivity.jl```](https://diffeq.sciml.ai/latest/analysis/sensitivity/):
+```julia
+sensealg = ForwardDiffSensitivity()
+alg = TRBDF2()
+# alg = Tsit5()
+function fsol(u0)
+    sol = solve(prob, u0=u0, alg, tspan = (0.0, 7.e-2),
+                reltol=1e-3, abstol=1e-6, sensealg=sensealg)
+    return sol[end, end]
+end
+u0[end] = 1200.0 + rand()
+println("timing ode solver ...")
+@time fsol(u0)
+@time fsol(u0)
+@time ForwardDiff.gradient(fsol, u0)
+```
+The results are quite promising, with sensitivity computed in less than 2 seconds! 
+```julia
+julia>timing ode solver ...
+0.405083 seconds (614.32 k allocations: 45.126 MiB)
+0.036229 seconds (16.72 k allocations: 11.618 MiB)
+1.517267 seconds (183.25 k allocations: 864.085 MiB, 7.46% gc time)
+```
 ### Exploiting Julia's Auto-Differentiation (AD) package to compute Jacobians
 Julia's automatic differentiation packages like [```ForwardDiff.jl```](https://juliadiff.org/ForwardDiff.jl/stable/user/api/) can be exploited thoroughly using Arrhenius.jl to compute the Jacobian that frequently pops up while integrating stiff systems in chemically reactive flows. We present to you an example using the LiDryer 9-species H2 combustion mechanism. So let's import packages:
 ```julia
