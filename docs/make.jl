@@ -17,6 +17,7 @@ makedocs(
             "get_started.md",
             "concepts.md"
            ],
+        "tutorial.md",
         "faq.md",
         "api.md"
     ],

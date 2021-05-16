@@ -1,5 +1,5 @@
 # [Arrhenius.jl](https://github.com/DENG-MIT/Arrhenius.jl)
-*Combustion Kinetic Modeling Software 2.0.*
+*Reacting Flow and Combustion Modeling Software 2.0.*
 
 ## Package Features
 
@@ -15,15 +15,21 @@
 Documentation comes in following forms:
 
 1. How-to examples
-2. Explanatory guide
+1. Explanatory guide
 3. Reference docstrings for the entire interface are avaliable in the API Documentation section.
 
-When updating these documents, make sure this is synced with docs/make.jl !!
+> For developers, when updating these documents, make sure this is synced with docs/make.jl !!
 
-### Baiscs
+## Baiscs
 
 ```@contents
 Pages = ["install.md", "get_started.md", "concepts.md"]
+```
+
+## Tutorials
+
+```@contents
+Pages = ["tutorial.md"]
 ```
 
 ## Reference
