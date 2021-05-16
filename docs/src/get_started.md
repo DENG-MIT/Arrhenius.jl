@@ -266,7 +266,7 @@ prob = ODEProblem(dudt!, u0, tspan);
 @time sol = solve(prob, CVODE_BDF(), reltol = 1e-6, abstol = 1e-9)
 ```
 After running [ignition.jl](https://github.com/DENG-MIT/Arrhenius.jl/blob/main/example/ignition/ignition.jl) you should get a plot as follows: \
-![plot](https://github.com/DENG-MIT/Arrhenius.jl/blob/main/example/ignition/CH4_ignition.png)
+![plot](./figures/ignition.png)
 ### Sensitivity analysis of ignition delay times-Active subspaces
 ### Perfect Stirred reactor
 One may refer to the [NN-PSR repo](https://github.com/DENG-MIT/NN-PSR)
