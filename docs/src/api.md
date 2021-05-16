@@ -1,8 +1,6 @@
-# API Documentation
+# API
 
 Docstrings for Arrhenius.jl interface members can be [accessed through Julia's built-in documentation system](https://docs.julialang.org/en/v1/manual/documentation/index.html#Accessing-Documentation-1) or in the list below.
-
-You can use `name(Arrhenius)` to print a full list of exported namespace by Arrhenius.jl, and then copy the list below.
 
 ```@docs
 :C2X
@@ -26,7 +24,7 @@ You can use `name(Arrhenius)` to print a full list of exported namespace by Arrh
 :species_index
 :wdot_func
 ```
-## Thermo Interface API Documentation
+## Thermo Interface API
 ```@autodocs
 Modules = [Arrhenius]
 Pages   = ["Thermo.jl"]
