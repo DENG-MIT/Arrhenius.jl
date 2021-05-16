@@ -1,7 +1,9 @@
 # [Arrhenius.jl](https://github.com/DENG-MIT/Arrhenius.jl)
 *Reacting Flow and Combustion Modeling Software 2.0.*
 
-## Package Features
+![logo.png](https://user-images.githubusercontent.com/8445647/118408755-e0cd6f80-b654-11eb-8c36-80188e4703ce.png)
+
+**Package Features**
 
 `Arrhenius.jl` is designed with following in mind:
 
