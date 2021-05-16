@@ -207,8 +207,44 @@ julia> @time du0 = ForwardDiff.jacobian(dudt, u0)
    0.0            0.0           0.0             -2.9064e-5     0.0
  -27.3692       -47.4374       16.5061          29.0894       -0.306451
 ```
+### Auto-ignition
+Here we use the GRI30 methane combustion mechanism to compute the ignition delay time of a premixed methane-air mixture @ 980K/15 atm. The implementation is quite similar. Let's say you want to set ICs in-terms of the mole-fractions, one may eventually convert them to mass-fractions as follows: 
+```julia
+X0 = zeros(ns);
+X0[species_index(gas, "CH4")] = 1.0 / 2.0
+X0[species_index(gas, "O2")] = 1.0
+X0[species_index(gas, "N2")] = 3.76
+X0 = X0 ./ sum(X0);
+Y0 = X2Y(gas, X0, dot(X0, gas.MW));
+```
+The integrator function remains the same: 
+```julia
+u0 = vcat(Y0, T0)
+@inbounds function dudt!(du, u, p, t)
+    T = u[end]
+    Y = @view(u[1:ns])
+    mean_MW = 1.0 / dot(Y, 1 ./ gas.MW)
+    ρ_mass = P / R / T * mean_MW
+    X = Y2X(gas, Y, mean_MW)
+    C = Y2C(gas, Y, ρ_mass)
+    cp_mole, cp_mass = get_cp(gas, T, X, mean_MW)
+    h_mole = get_H(gas, T, Y, X)
+    S0 = get_S(gas, T, P, X)
+    wdot = wdot_func(gas.reaction, T, C, S0, h_mole)
+    Ydot = wdot / ρ_mass .* gas.MW
+    Tdot = -dot(h_mole, wdot) / ρ_mass / cp_mass
+    du .= vcat(Ydot, Tdot)
+end
+```
+We then integrate using DifferentialEquations.jl
+```julia
+tspan = [0.0, 0.1];
+prob = ODEProblem(dudt!, u0, tspan);
+@time sol = solve(prob, CVODE_BDF(), reltol = 1e-6, abstol = 1e-9)
+```
+After running [ignition.jl](https://github.com/DENG-MIT/Arrhenius.jl/blob/main/example/ignition/ignition.jl) you should get a plot as follows: \
+![plot](https://github.com/DENG-MIT/Arrhenius.jl/blob/main/example/ignition/CH4_ignition.png)
 ### Sensitivity analysis of ignition delay times-Active subspaces
-## Perfect Stirred reactor 
-## Computing Jacobians 
-## Auto-ignition
-## Exploiting Auto-differentiation 
+### Perfect Stirred reactor
+One may refer to the [NN-PSR repo](https://github.com/DENG-MIT/NN-PSR)
+### Combustion Diagnostics support- CEMA and CSP
