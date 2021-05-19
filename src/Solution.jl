@@ -1,3 +1,13 @@
+function read_species_basics(yaml)
+    n_species = length(yaml["phases"][1]["species"])
+    n_reactions = length(yaml["reactions"])
+    species_names = yaml["phases"][1]["species"]
+    elements = yaml["phases"][1]["elements"]
+    n_elements = length(elements)
+
+    ele_matrix = zeros(n_elements, n_species)
+    return n_species, n_reactions, species_names, elements, n_elements, ele_matrix
+end
 """
     CreateSolution(mech)
     
@@ -9,43 +19,17 @@ test for math enviroment
 function CreateSolution(mech)
     yaml = YAML.load_file(mech)
 
-
     #### Basics
+    n_species, n_reactions, species_names,
+    elements, n_elements, ele_matrix = read_species_basics(yaml)
 
-    n_species = length(yaml["phases"][1]["species"])
-    n_reactions = length(yaml["reactions"])
-    species_names = yaml["phases"][1]["species"]
-    elements = yaml["phases"][1]["elements"]
-    n_elements = length(elements)
-
-    ele_matrix = zeros(n_elements, n_species)
-
-
-    #### Thermodynamic data
-
-    nasa_low = zeros(n_species, 7)
-    nasa_high = zeros(n_species, 7)
-    Trange = zeros(n_species, 3)
-
-    _species_names =
-        [yaml["species"][i]["name"] for i = 1:length(yaml["species"])]
-
-    for (i, species) in enumerate(species_names)
-        spec = yaml["species"][findfirst(x -> x == species, _species_names)]
-        nasa_low[i, :] = spec["thermo"]["data"][1]
-        nasa_high[i, :] = spec["thermo"]["data"][2]
-        Trange[i, :] .= spec["thermo"]["temperature-ranges"]
-
-        for j = 1:n_elements
-            if haskey(spec["composition"], elements[j])
-                ele_matrix[j, i] = spec["composition"][elements[j]]
-            end
-        end
+    #### Thermo
+    if yaml["phases"][1]["thermo"]=="ideal-gas" # switch to work with Cantera standard
+        thermo = IdealGasThermo(yaml)
+    else
+        constructorThermo = Symbol(yaml["phases"][1]["thermo"],:Thermo)
+         thermo = @eval($constructorThermo)(yaml)
     end
-
-    isTcommon = (maximum(Trange[:, 2]) - minimum(Trange[:, 2])) < 0.01
-
-    thermo = IdealGasThermo(nasa_low, nasa_high, Trange, isTcommon)
 
 
     #### Kinetic data
