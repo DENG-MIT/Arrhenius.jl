@@ -135,7 +135,7 @@ function CreateSolution(mech)
     else
         species_viscosities_poly = zeros(2, 2)
         thermal_conductivity_poly = zeros(2, 2)
-        binary_diff_coeffs_poly = zeros(2, 2, 2)
+        binary_diff_coeffs_poly = zeros(2, 2)
         poly_order = 6
     end
 
