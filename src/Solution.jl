@@ -6,6 +6,19 @@ function read_species_basics(yaml)
     n_elements = length(elements)
 
     ele_matrix = zeros(n_elements, n_species)
+
+    _species_names =
+        [yaml["species"][i]["name"] for i = 1:length(yaml["species"])]
+
+    for (i, species) in enumerate(species_names)
+        spec = yaml["species"][findfirst(x -> x == species, _species_names)]
+        for j = 1:n_elements
+            if haskey(spec["composition"], elements[j])
+                ele_matrix[j, i] = spec["composition"][elements[j]]
+            end
+        end
+    end
+
     return n_species, n_reactions, species_names, elements, n_elements, ele_matrix
 end
 """
@@ -24,11 +37,11 @@ function CreateSolution(mech)
     elements, n_elements, ele_matrix = read_species_basics(yaml)
 
     #### Thermo
-    if yaml["phases"][1]["thermo"]=="ideal-gas" # switch to work with Cantera standard
+    if yaml["phases"][1]["thermo"] == "ideal-gas" # switch to work with Cantera standard
         thermo = IdealGasThermo(yaml)
     else
-        constructorThermo = Symbol(yaml["phases"][1]["thermo"],:Thermo)
-         thermo = @eval($constructorThermo)(yaml)
+        constructorThermo = Symbol(yaml["phases"][1]["thermo"], :Thermo)
+        thermo = @eval($constructorThermo)(yaml)
     end
 
 
