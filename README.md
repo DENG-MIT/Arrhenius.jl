@@ -26,5 +26,5 @@ We are in an early-development. Expect some adventures and rough edges.
 > Note that some of the examples are in development and you can have early access by contacting [Weiqi Ji](mailto:weiqiji@mit.edu)
   + [Pyrolysis of JP10](./example/pyrolysis/pyrolysis.ipynb)
   + [Perfect Stirred Reactor](./example/perfect_stirred_reactor)
-  + [Auto-ignition](https://github.com/DENG-MIT/NN-Ignition):
+  + [Auto-ignition](https://github.com/DENG-MIT/NN-Ignition)
   + [Compute Jacobian using AD](https://gist.github.com/jiweiqi/21b8d149bd95b97d9ae948ab92e446df)
