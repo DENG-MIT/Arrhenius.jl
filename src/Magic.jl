@@ -2,6 +2,7 @@
 function Y2X(gas, Y)
     return Y ./ gas.MW / sum(Y./gas.MW)
 end
+Y2X(gas, Y, mean_MW) = Y2X(gas, Y)
 export Y2X
 
 "get concentration (C) from mass fraction (Y)"
@@ -26,6 +27,7 @@ export X2C
 function X2Y(gas, X)
     return X .* gas.MW / sum(X.*gas.MW)
 end
+X2Y(gas, X, mean_MW) = X2Y(gas, X)
 export X2Y
 
 """
