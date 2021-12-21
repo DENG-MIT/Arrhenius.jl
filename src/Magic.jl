@@ -1,7 +1,8 @@
 "get mole fraction (X) from mass fraction (Y)"
-function Y2X(gas, Y, mean_MW)
-    return Y * mean_MW ./ gas.MW
+function Y2X(gas, Y)
+    return Y ./ gas.MW / sum(Y./gas.MW)
 end
+Y2X(gas, Y, mean_MW) = Y2X(gas, Y)
 export Y2X
 
 "get concentration (C) from mass fraction (Y)"
@@ -18,14 +19,15 @@ export C2X
 
 "get concentration (C) from mole fraction (X)"
 function X2C(gas, X, ρ_mass)
-    return X * ρ_mass ./ gas.MW
+    return X * ρ_mass / sum(X.*gas.MW)
 end
 export X2C
 
 "get mass fraction (Y) from mole fraction (X)"
-function X2Y(gas, X, mean_MW)
-    return X .* gas.MW / mean_MW
+function X2Y(gas, X)
+    return X .* gas.MW / sum(X.*gas.MW)
 end
+X2Y(gas, X, mean_MW) = X2Y(gas, X)
 export X2Y
 
 """
