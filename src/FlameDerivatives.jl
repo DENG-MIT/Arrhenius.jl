@@ -81,8 +81,8 @@ function _flame_falloff_derivative(reaction,j,i,T,collider,high)
     index=reaction.index_falloff_Troe[j]
     if index>0
         p=reaction.Troe_
-        log_center=log10((1-p[index,1])*exp(-T/p[index,4])+
-            p[index,1]*exp(-T/p[index,2])+exp(-p[index,3]/T))
+        log_center=log10(max((1-p[index,1])*exp(-T/p[index,4])+
+            p[index,1]*exp(-T/p[index,2])+exp(-p[index,3]/T),1e-300))
         c=-.4-.67*log_center;N=.75-1.27*log_center
         f=(log10(reduced)+c)/(N-.14*(log10(reduced)+c))
         value *= exp(log(10.0)*log_center/(1+f*f))
