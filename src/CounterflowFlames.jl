@@ -290,21 +290,28 @@ struct CounterflowWorkspace{F}
     steps::Vector{Float64}
     radiative_heat_loss::Vector{Float64}
     planck_absorption::Vector{Float64}
+    derivatives::_ConservativeFlameDerivatives
+    source_gradient::Matrix{Float64}
 end
 function CounterflowWorkspace(f::CounterflowDiffusionFlame)
     adapter=_CounterflowPropertyAdapter(f.gas,f.grid,f.transport_model,
         f.multicomponent_data,f.soret_enabled,f.flux_gradient_basis)
     B,N=size(f.state)
+    n=f.gas.n_species
     return CounterflowWorkspace(FlameWorkspace(adapter),zeros(N-1),zeros(6B-2,B*N),
-        zeros(B,N),zeros(B,N),zeros(N),zeros(N),zeros(N))
+        zeros(B,N),zeros(B,N),zeros(N),zeros(N),zeros(N),
+        _ConservativeFlameDerivatives(f.gas,N),zeros(n,n+1))
 end
 
 "Evaluate continuity, radial momentum, pressure curvature, species and energy."
 function counterflow_residual!(residual,f::CounterflowDiffusionFlame,u=f.state,
         w=CounterflowWorkspace(f);previous=nothing,dt=Inf,update_transport=true,
-        nodes=eachindex(f.grid))
+        nodes=eachindex(f.grid),freeze_source=false)
     p=w.properties
-    _flame_properties!(p,f,u;update_transport,nodes)
+    # Mixture-averaged face viscosities come from the same transport evaluation.
+    shared_viscosity=f.transport_model==:mixture_averaged
+    _flame_properties!(p,f,u;update_transport,nodes,freeze_source,
+        viscosity=shared_viscosity ? w.viscosity : nothing)
     _counterflow_radiation!(w.radiative_heat_loss,w.planck_absorption,f,u,p.X)
     n,N=f.gas.n_species,length(f.grid)
     z,MW=f.grid,f.gas.MW
@@ -317,7 +324,7 @@ function counterflow_residual!(residual,f::CounterflowDiffusionFlame,u=f.state,
         (isnothing(jl) || isnothing(jr)) &&
             error("two-point control coordinates are not on the current grid")
     end
-    if update_transport
+    if update_transport && !shared_viscosity
         for j in 1:N-1
             Tmid=500*(u[1,j]+u[1,j+1])
             for k in 1:n
@@ -403,19 +410,28 @@ function counterflow_residual!(residual,f::CounterflowDiffusionFlame,u=f.state,
     return residual
 end
 
-function _counterflow_jacobian!(f,u,w,r;previous=nothing,dt=Inf)
+# Chemistry couples only variables at one node. Finite-difference columns keep
+# the base source and the analytic local chemistry block is added afterwards.
+# Premixed counterflow variants replace only last-node rows, never interior chemistry.
+# Catalytic walls add surface kinetics and keep the full finite-difference Jacobian.
+_counterflow_hybrid_chemistry(f)=(f isa CounterflowDiffusionFlame || f isa AbstractPremixedCounterflow) &&
+    !(f isa CatalyticImpingingJet)
+function _counterflow_jacobian!(f,u,w,r;previous=nothing,dt=Inf,analytic=true)
     B,N=size(u); kl=ku=2B-1
     fill!(w.band,0)
     w.perturbed .= u
     p=w.properties
+    hybrid=analytic && _counterflow_hybrid_chemistry(f)
     saved=(copy(p.X),copy(p.rho),copy(p.cp),copy(p.h),copy(p.source))
     for k in 1:B, color in 1:3
         for j in color:3:N
             w.steps[j]=1e-7*max(abs(u[k,j]),k==1 ? .1 : k<=f.gas.n_species+1 ? 1e-5 : .01)
             w.perturbed[k,j]=u[k,j]+w.steps[j]
         end
-        counterflow_residual!(w.residual_perturbed,f,w.perturbed,w;
-            previous,dt,update_transport=false,nodes=color:3:N)
+        hybrid ? counterflow_residual!(w.residual_perturbed,f,w.perturbed,w;
+                previous,dt,update_transport=false,nodes=color:3:N,freeze_source=true) :
+            counterflow_residual!(w.residual_perturbed,f,w.perturbed,w;
+                previous,dt,update_transport=false,nodes=color:3:N)
         for j in color:3:N
             column=(j-1)*B+k
             for jj in max(1,j-1):min(N,j+1),kk in 1:B
@@ -426,8 +442,38 @@ function _counterflow_jacobian!(f,u,w,r;previous=nothing,dt=Inf)
         end
         p.X .= saved[1]; p.rho .= saved[2]; p.cp .= saved[3]; p.h .= saved[4]; p.source .= saved[5]
     end
+    hybrid && (_counterflow_chemistry_jacobian!(f,u,w) || return _counterflow_jacobian!(f,u,w,r;previous,dt,analytic=false))
     return w.band
 end
+
+function _counterflow_chemistry_jacobian!(f,u,w)
+    p=w.properties;n=f.gas.n_species;B,N=size(u);G=w.source_gradient;MW=f.gas.MW
+    @inbounds for j in 2:N-1
+        _flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
+            @view(u[2:n+1,j]),@view(p.X[:,j]),@view(p.h[:,j]),p.rate_caches[j]) || return false
+        species=_flame_timescale/p.rho[j]
+        cpmean=0.0
+        for k in 1:n
+            cpmean+=u[k+1,j]*p.cp[k,j]/MW[k]
+        end
+        energy=-_flame_timescale/(1000*p.rho[j]*cpmean)
+        for l in 1:n+1
+            if _counterflow_energy_active(f)
+                heat=0.0
+                for k in 1:n
+                    heat+=p.h[k,j]*G[k,l]
+                end
+                _flame_band_add!(w.band,B,j,1,j,l,energy*heat)
+            end
+            for k in 1:n
+                k==f.dependent_species && continue
+                _flame_band_add!(w.band,B,j,k+1,j,l,species*MW[k]*G[k,l])
+            end
+        end
+    end
+    return true
+end
+_counterflow_energy_active(f)=isempty(f.fixed_temperature)
 
 function _counterflow_residual_scales!(scales,J,u,bw)
     fill!(scales,0.)
