@@ -46,10 +46,31 @@ def resolve_import(mechanism: Path, filename: str) -> Path:
     raise ValueError(f"cannot resolve imported mechanism file: {filename}")
 
 
+def plog_collider(reaction: ct.Reaction, species_index: dict[str, int]) -> int:
+    """1-based species index of a PLOG reaction's single named collider, else 0."""
+    third_body = reaction.third_body
+    if third_body is None:
+        return 0
+    efficiencies = third_body.efficiencies
+    if third_body.default_efficiency != 0.0 or len(efficiencies) != 1 or \
+            next(iter(efficiencies.values())) != 1.0:
+        raise ValueError(f"unsupported PLOG third body in {reaction.equation}")
+    return species_index[next(iter(efficiencies))] + 1
+
+
 def phase_selection(mechanism: Path, gas: ct.Solution) -> bytes:
     yaml = YAML(typ="safe")
     with mechanism.open("r", encoding="utf-8") as stream:
-        document = yaml.load(stream)
+        # Only the phase selectors are needed. Parse the top-level phases block
+        # alone so free-text notes elsewhere (e.g. tab-indented) cannot fail it.
+        lines = stream.read().splitlines(keepends=True)
+    start = next((i for i, line in enumerate(lines) if line.startswith("phases:")), None)
+    if start is None:
+        document = {}
+    else:
+        stop = next((i for i in range(start + 1, len(lines))
+                     if lines[i][:1] not in ("", " ", "-", "\n", "\r", "#")), len(lines))
+        document = yaml.load("".join(lines[start:stop]))
     imports: set[str] = set()
     phases = (document or {}).get("phases") or []
     if isinstance(phases, list) and phases:
@@ -111,6 +132,7 @@ def export(mechanism: Path, output: Path) -> None:
     blowers_coefficients = []
 
     plog_reaction_indices: list[int] = []
+    plog_collider_indices: list[int] = []
     plog_group_offsets = [1]
     plog_pressures: list[float] = []
     plog_rate_offsets = [1]
@@ -167,6 +189,7 @@ def export(mechanism: Path, output: Path) -> None:
                 raise ValueError(f"PLOG reaction {reaction_index + 1} has no rates")
             arrhenius[reaction_index, :] = groups[0][1][0]
             plog_reaction_indices.append(reaction_index + 1)
+            plog_collider_indices.append(plog_collider(reaction, species_index))
             for pressure, rows in groups:
                 plog_pressures.append(pressure)
                 plog_arrhenius.extend(rows)
@@ -215,6 +238,7 @@ def export(mechanism: Path, output: Path) -> None:
         BlowersMasel_reaction_indices=np.asarray(blowers_indices,dtype=np.int64),
         BlowersMasel_coefficients=np.asarray(blowers_coefficients,dtype=float).reshape((-1,4)),
         Plog_reaction_indices=np.asarray(plog_reaction_indices, dtype=np.int64),
+        Plog_collider_indices=np.asarray(plog_collider_indices, dtype=np.int64),
         Plog_group_offsets=np.asarray(plog_group_offsets, dtype=np.int64),
         Plog_pressures=np.asarray(plog_pressures, dtype=np.float64),
         Plog_rate_offsets=np.asarray(plog_rate_offsets, dtype=np.int64),

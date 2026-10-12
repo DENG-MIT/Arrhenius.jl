@@ -341,10 +341,11 @@ function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
                 reaction.Arrhenius_0[j,2]*logT-reaction.Arrhenius_0[j,3]*activation_scale)
         end
         for k in eachindex(temperature_cache.log_fcent)
-            temperature_cache.log_fcent[k] = log10(
+            # Cantera clamps F_cent at SmallNumber before taking its logarithm.
+            temperature_cache.log_fcent[k] = log10(max(
                 (1-reaction.Troe_[k,1])*exp(-T/reaction.Troe_[k,4])+
                 reaction.Troe_[k,1]*exp(-T/reaction.Troe_[k,2])+
-                exp(-reaction.Troe_[k,3]/T))
+                exp(-reaction.Troe_[k,3]/T),1e-300))
         end
     end
     end
@@ -427,7 +428,7 @@ function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
                 (one(T) - reaction.Troe_[k, 1]) * exp(-T / reaction.Troe_[k, 4]) +
                 reaction.Troe_[k, 1] * exp(-T / reaction.Troe_[k, 2]) +
                 exp(-reaction.Troe_[k, 3] / T)
-                log10(F_cent)
+                log10(max(F_cent, oftype(F_cent, 1e-300)))
             end
             C_troe = -oftype(T, 0.4) - oftype(T, 0.67) * lF_cent
             N = oftype(T, 0.75) - oftype(T, 1.27) * lF_cent
