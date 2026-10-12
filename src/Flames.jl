@@ -335,7 +335,8 @@ function FlameWorkspace(f::AbstractPremixedFlame)
         _conservative_flame(f) ? ConservativeFlameWorkspace(n,N,f.gas) : nothing)
 end
 
-function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid))
+function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid),freeze_source=false,
+        viscosity=nothing)
     gas, n, N = f.gas, f.gas.n_species, length(f.grid)
     conservative = _conservative_flame(f)
     @inbounds for j in nodes
@@ -362,8 +363,9 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
         h .*= R*T
         cp .*= R
         w.entropy .*= R
-        wdot!(@view(w.source[:,j]),gas.reaction,T,w.C,w.entropy,h,w.kinetics;
-            temperature_cache=w.rate_caches[j])
+        # A frozen source keeps the base chemistry for hybrid Jacobian columns.
+        freeze_source || wdot!(@view(w.source[:,j]),gas.reaction,T,w.C,w.entropy,h,w.kinetics;
+            temperature_cache=w.rate_caches[j],pressure=f.pressure)
     end
     @inbounds for j in 1:N-1
         Tmid = 500*(u[1,j]+u[1,j+1])
@@ -407,8 +409,9 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
                     end
                 end
             else
-                _, w.conductivity[j] = mixture_transport!(w.transport,gas,f.pressure,Tmid,w.xmid;
+                mu, w.conductivity[j] = mixture_transport!(w.transport,gas,f.pressure,Tmid,w.xmid;
                     basis=f.flux_gradient_basis)
+                viscosity === nothing || (viscosity[j] = mu)
                 for k in 1:n
                     weight = f.flux_gradient_basis == :mass ? meanMW : gas.MW[k]
                     w.diffusion_prefactor[k,j] = f.pressure/(R*Tmid)*weight*w.transport.diffusion[k]
@@ -634,9 +637,15 @@ end
 _flame_previous_enthalpy(f,w,previous) = _conservative_flame(f) ?
     _flame_previous_enthalpy!(w.conservative,f,previous) : nothing
 _flame_perturbation(f,u,k,j)=1e-7*max(abs(u[k,j]),k==1 ? .1 : 1e-5)
-# Branch of the clipped species RHS that a positive finite-difference step of
-# `_flame_perturbation` samples: traces just below zero use the forward branch.
-_flame_species_forward(y)=y+1e-7*max(abs(y),1e-5)>0
+# Fraction of the forward derivative that a positive finite-difference step of
+# `_flame_perturbation` samples on the clipped species RHS: one at nonnegative
+# values, the clipped chord fraction for traces within one step below zero.
+@inline function _flame_species_weight(y)
+    y>=0 && return 1.0
+    h=1e-7*max(abs(y),1e-5)
+    return max(y+h,0.0)/h
+end
+_flame_species_forward(y)=_flame_species_weight(y)>0
 _flame_correction_weights(f,u,transient)=_flame_correction_weights(u,transient)
 _flame_needs_correction_check(f)=false
 _flame_checkpoint_steady(f)=_conservative_flame(f)

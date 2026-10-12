@@ -227,19 +227,23 @@ function KineticsWorkspace(reaction::Reaction, ::Type{T}=Float64) where {T}
 end
 export KineticsWorkspace
 
-# Per-grid-point cache for flame Jacobians. Only temperature-dependent factors
-# are cached; collider concentrations, pressure-dependent rates and mass action
-# are recomputed for every state. The owning flame workspace fixes the mechanism.
+# Per-grid-point cache for flame Jacobians. Temperature-dependent factors and
+# PLOG rates at the cached pressure are reused; collider concentrations and mass
+# action are recomputed for every state. The owning flame workspace fixes the
+# mechanism.
 mutable struct _KineticsTemperatureCache
     temperature::Float64
     forward::Vector{Float64}
     low::Vector{Float64}
     log_fcent::Vector{Float64}
     equilibrium::Vector{Float64}
+    pressure::Float64
+    plog::Vector{Float64}
 end
 _KineticsTemperatureCache(reaction::Reaction) = _KineticsTemperatureCache(NaN,
     zeros(reaction.n_reactions),zeros(length(reaction.index_falloff)),
-    zeros(size(reaction.Troe_,1)),zeros(reaction.n_reactions))
+    zeros(size(reaction.Troe_,1)),zeros(reaction.n_reactions),
+    NaN,zeros(length(reaction.plog.reaction_indices)))
 
 @inline _concentration_power(c, order) = c^order
 @inline function _concentration_power(c, order::AbstractFloat)
@@ -352,27 +356,40 @@ function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
 
     if !isempty(reaction.plog.reaction_indices)
         P = isnothing(pressure) ? sum(C) * R * T : pressure
-        for (plog_index, reaction_index) in enumerate(reaction.plog.reaction_indices)
-            @inbounds kf[reaction_index] = if isnothing(log_rate_data)
-                _plog_rate_with_collider(
-                    reaction.plog,
-                    plog_index,
-                    T,
-                    P,
-                    logT,
-                    C,
-                )
-            else
-                _plog_rate_with_collider(
-                    log_rate_data,
-                    reaction.plog,
-                    plog_index,
-                    T,
-                    P,
-                    rate_logT,
-                    rate_activation_scale,
-                    C,
-                )
+        if cached
+            # PLOG rates depend only on T and P; reuse them at an unchanged state.
+            reuse = !refresh_temperature && temperature_cache.pressure == P
+            plog = reaction.plog
+            @inbounds for (plog_index, reaction_index) in enumerate(plog.reaction_indices)
+                rate = reuse ? temperature_cache.plog[plog_index] :
+                    (temperature_cache.plog[plog_index] = _plog_rate(plog, plog_index, T, P, logT))
+                collider_index = plog.collider_indices[plog_index]
+                kf[reaction_index] = collider_index > 0 ? rate * C[collider_index] : rate
+            end
+            temperature_cache.pressure = P
+        else
+            for (plog_index, reaction_index) in enumerate(reaction.plog.reaction_indices)
+                @inbounds kf[reaction_index] = if isnothing(log_rate_data)
+                    _plog_rate_with_collider(
+                        reaction.plog,
+                        plog_index,
+                        T,
+                        P,
+                        logT,
+                        C,
+                    )
+                else
+                    _plog_rate_with_collider(
+                        log_rate_data,
+                        reaction.plog,
+                        plog_index,
+                        T,
+                        P,
+                        rate_logT,
+                        rate_activation_scale,
+                        C,
+                    )
+                end
             end
         end
     end
@@ -518,7 +535,17 @@ function wdot!(
     if get_qdot
         return workspace.rates_of_progress
     end
-    mul!(wdot, reaction.vk, workspace.rates_of_progress)
+    # Direct column scatter of the stoichiometric matrix; SparseArrays' generic
+    # mul! dominated small-mechanism source evaluation.
+    fill!(wdot, zero(eltype(wdot)))
+    rows, coefficients = rowvals(reaction.vk), nonzeros(reaction.vk)
+    rates = workspace.rates_of_progress
+    @inbounds for i in eachindex(rates)
+        q = rates[i]
+        for slot in nzrange(reaction.vk, i)
+            wdot[rows[slot]] = muladd(coefficients[slot], q, wdot[rows[slot]])
+        end
+    end
     return wdot
 end
 export wdot!

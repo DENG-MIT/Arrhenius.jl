@@ -85,7 +85,8 @@ end
             end
             w=CounterflowWorkspace(cf); base=similar(cf.state)
             counterflow_residual!(base,cf,cf.state,w)
-            band=copy(Arrhenius._counterflow_jacobian!(cf,cf.state,w,base))
+            band=copy(Arrhenius._counterflow_jacobian!(cf,cf.state,w,base;analytic=false))
+            hybrid=copy(Arrhenius._counterflow_jacobian!(cf,cf.state,w,base))
             B,N=size(cf.state); bw=2B-1; J=zeros(length(cf.state),length(cf.state))
             for col in 1:length(cf.state), row in max(1,col-bw):min(length(cf.state),col+bw)
                 J[row,col]=band[2bw+1+row-col,col]
@@ -100,6 +101,15 @@ end
             end
             @test norm(J-ref,Inf)/max(1.,norm(ref,Inf))<1e-7
             @test maximum(abs.(J.-ref)./(1e-5.+abs.(ref)))<1e-4
+            # Analytic local chemistry replaces only the chemistry finite differences;
+            # their truncation error bounds the hybrid difference.
+            H=zeros(size(J))
+            for col in 1:length(cf.state), row in max(1,col-bw):min(length(cf.state),col+bw)
+                H[row,col]=hybrid[2bw+1+row-col,col]
+            end
+            @test norm(H-ref,Inf)/max(1.,norm(ref,Inf))<1e-5
+            significant=abs.(ref).>1e-3*norm(ref,Inf)
+            @test maximum(abs.(H.-ref)[significant]./abs.(ref)[significant])<1e-3
             @test J[(N-1)*B+B,(N-1)*B+n+2]≈1 atol=1e-6
             @test J[B-1,B]==0
             @testset "fresh correction convergence guards" begin

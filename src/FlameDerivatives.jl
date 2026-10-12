@@ -90,13 +90,12 @@ function _flame_falloff_derivative(reaction,j,i,T,collider,high)
     return _flame_partial(value)
 end
 
-function _flame_concentration_jacobian!(d,reaction,T,C,h,s,cache)
+function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache)
     plog=reaction.plog
     issorted(plog.reaction_indices) || return false
-    # PLOG rates depend only on T and the pressure the residual infers from C.
-    P=sum(C)*R*T;logT=log(T);plog_cursor=1
+    logT=log(T);plog_cursor=1
     wdot!(d.source_direction,reaction,T,C,s,h,d.kinetics;
-        temperature_cache=cache,get_rate_constants=true)
+        temperature_cache=cache,pressure=P,get_rate_constants=true)
     J=d.concentration_jacobian;fill!(J,0)
     kf,kr=d.kinetics.kf,d.kinetics.kr
     vr,vv=rowvals(reaction.vk),nonzeros(reaction.vk)
@@ -151,6 +150,38 @@ function _flame_concentration_jacobian!(d,reaction,T,C,h,s,cache)
     return all(isfinite,J)
 end
 
+"""
+Local chemistry block at one node: `G[k,1]` is d(source_k)/d(T/1000) and
+`G[k,l+1]` is d(source_k)/dY_l, for the molar source evaluated from the clipped
+state `y` with mole fractions `X` and molar enthalpies `h`.
+"""
+function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache)
+    n=gas.n_species;MW=gas.MW;Td=_flame_dual(T,1000.0);inverseMW=0.0
+    @inbounds for k in 1:n
+        inverseMW+=max(y[k],0.0)/MW[k]
+        d.concentration[k]=P/(R*T)*X[k]
+        d.dual_C[k]=_flame_dual(d.concentration[k],-1000d.concentration[k]/T)
+    end
+    cal_h_RT!(d.dual_h,gas,Td,P,X);cal_s0_R!(d.dual_s,gas,Td,P,X)
+    @inbounds for k in 1:n
+        d.dual_h[k] *= R*Td;d.dual_s[k] *= R
+        d.entropy[k]=ForwardDiff.value(d.dual_s[k])
+    end
+    wdot!(d.dual_source,gas.reaction,Td,d.dual_C,d.dual_s,d.dual_h,d.dual_kinetics;pressure=P)
+    _flame_concentration_jacobian!(d,gas.reaction,T,P,d.concentration,h,d.entropy,cache) || return false
+    mul!(d.source_direction,d.concentration_jacobian,X)
+    @inbounds for k in 1:n
+        G[k,1]=_flame_partial(d.dual_source[k])
+    end
+    @inbounds for l in 1:n
+        scale=_flame_species_weight(y[l])*P/(R*T*MW[l]*inverseMW)
+        for k in 1:n
+            G[k,l+1]=scale*(d.concentration_jacobian[k,l]-d.source_direction[k])
+        end
+    end
+    return all(isfinite,G)
+end
+
 @inline function _flame_band_add!(band,B,j,k,jj,kk,value)
     row=(j-1)*B+k;column=(jj-1)*B+kk
     @inbounds band[4B-1+row-column,column] += value
@@ -177,9 +208,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             d.cp_gradient[k+1,j]=w.cp[k,j]/MW[k]
             # Match the branch the positive finite-difference step samples:
             # traces within one step below zero use the forward derivative.
-            if _flame_species_forward(u[k+1,j])
-                d.density_gradient[k+1,j]=w.rho[j]*(1/sumY-1/(MW[k]*inverseMW))
-            end
+            d.density_gradient[k+1,j]=_flame_species_weight(u[k+1,j])*w.rho[j]*(1/sumY-1/(MW[k]*inverseMW))
         end
         d.density_gradient[1,j]=-1000w.rho[j]/T
         d.enthalpy_gradient[1,j]=1000c.cp[j];d.cp_gradient[1,j]=cpT
@@ -190,8 +219,8 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             d.dual_h[k] *= R*Td;d.dual_s[k] *= R
             d.entropy[k]=ForwardDiff.value(d.dual_s[k])
         end
-        wdot!(d.dual_source,gas.reaction,Td,d.dual_C,d.dual_s,d.dual_h,d.dual_kinetics)
-        _flame_concentration_jacobian!(d,gas.reaction,T,d.concentration,
+        wdot!(d.dual_source,gas.reaction,Td,d.dual_C,d.dual_s,d.dual_h,d.dual_kinetics;pressure=f.pressure)
+        _flame_concentration_jacobian!(d,gas.reaction,T,f.pressure,d.concentration,
             @view(w.h[:,j]),d.entropy,w.rate_caches[j]) || return false
         mul!(d.source_direction,d.concentration_jacobian,@view(w.X[:,j]))
         cell=.5*(f.grid[min(j+1,N)]-f.grid[j-1]);factor=_flame_timescale/w.rho[j]
@@ -204,7 +233,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             density_ratio=d.density_gradient[l,j]/w.rho[j]
             for k in 1:n
                 chemistry=l==1 ? _flame_partial(d.dual_source[k]) :
-                    l==B || !_flame_species_forward(u[l,j]) ? 0.0 : f.pressure/(R*T*MW[l-1]*inverseMW)*
+                    l==B ? 0.0 : _flame_species_weight(u[l,j])*f.pressure/(R*T*MW[l-1]*inverseMW)*
                         (d.concentration_jacobian[k,l-1]-d.source_direction[k])
                 balance=r[k+1,j]
                 if previous!==nothing
@@ -248,8 +277,8 @@ function _flame_face_derivatives!(d,f,u,w,j)
             d.projected_left[k]=pl;d.projected_right[k]=pr
         end
         @inbounds for l in 1:n,k in 1:n
-            L[k+1,l+1]=_flame_species_forward(u[l+1,j]) ? -(w.multi_prefactor[k,l,j]-d.projected_left[k])/(dz*MW[l]*inverse_left) : 0.0
-            Rj[k+1,l+1]=_flame_species_forward(u[l+1,j+1]) ? (w.multi_prefactor[k,l,j]-d.projected_right[k])/(dz*MW[l]*inverse_right) : 0.0
+            L[k+1,l+1]=-_flame_species_weight(u[l+1,j])*(w.multi_prefactor[k,l,j]-d.projected_left[k])/(dz*MW[l]*inverse_left)
+            Rj[k+1,l+1]=_flame_species_weight(u[l+1,j+1])*(w.multi_prefactor[k,l,j]-d.projected_right[k])/(dz*MW[l]*inverse_right)
         end
     else
         fluxsum=0.0
@@ -264,12 +293,12 @@ function _flame_face_derivatives!(d,f,u,w,j)
                 if f.flux_gradient_basis==:mass
                     dl=k==l ? w.diffusion_prefactor[k,j]/dz : 0.0;dr=-dl
                 else
-                    dl=_flame_species_forward(u[l+1,j]) ? w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/(dz*MW[l]*inverse_left) : 0.0
-                    dr=_flame_species_forward(u[l+1,j+1]) ? -w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/(dz*MW[l]*inverse_right) : 0.0
+                    dl=_flame_species_weight(u[l+1,j])*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/(dz*MW[l]*inverse_left)
+                    dr=-_flame_species_weight(u[l+1,j+1])*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/(dz*MW[l]*inverse_right)
                 end
                 L[k+1,l+1]=dl;Rj[k+1,l+1]=dr;sl+=dl;sr+=dr
             end
-            midpoint_derivative=_flame_species_forward(u[l+1,j]+u[l+1,j+1]) ? .5/ysum : 0.0
+            midpoint_derivative=_flame_species_weight(u[l+1,j]+u[l+1,j+1])*.5/ysum
             for k in 1:n
                 correction=midpoint_derivative*((k==l)-d.ymid[k])*fluxsum
                 L[k+1,l+1]-=d.ymid[k]*sl+correction
