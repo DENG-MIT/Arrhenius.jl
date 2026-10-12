@@ -375,6 +375,7 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
     require_burning=!(f isa ImpingingJet && f.configuration.initial_products==:inlet)
     acceptable()=!require_burning || !extinct(f)
     success=false
+    regrids=0
     for (attempt,N) in enumerate(attempts)
         N<=max_points || error("counterflow initialization exceeds max_points=$max_points")
         if attempt>1
@@ -391,10 +392,15 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
             empty!(f.fixed_temperature)
             success && (success=_premixed_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...))
         end
+        while !success && refine_grid && regrids<time_step_regrid &&
+                _refine_axisymmetric!(f;ratio,slope,curve,prune,grid_min,max_points)
+            regrids+=1; timestep[]=initial_time_step
+            loglevel>0 && println("Premixed counterflow regrid retry on ",length(f.grid)," points")
+            success=_premixed_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+        end
         success && acceptable() && break
     end
     success && acceptable() || error("native premixed counterflow solver failed")
-    regrids=0
     for pass in 1:40
         if !refine_grid || !_refine_axisymmetric!(f;ratio,slope,curve,prune,grid_min,max_points)
             f.converged=true

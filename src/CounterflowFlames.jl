@@ -674,6 +674,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
     initial_N=length(f.grid)
     attempts=auto && refine_grid ? unique(vcat(initial_N,[N for N in (12,24,48) if N>initial_N])) : [initial_N]
     burning=false
+    regrids=0
     for (attempt,N) in enumerate(attempts)
         N<=max_points || error("counterflow initialization exceeds max_points=$max_points")
         if attempt>1
@@ -693,11 +694,19 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
             end
         end
         burning=success && (!auto || !extinct(f))
+        # Cantera's time_step_regrid also covers the initial grid: refine the
+        # failed state and retry while refinement changes the grid.
+        while !success && refine_grid && regrids<time_step_regrid &&
+                _refine_flame!(f;ratio,slope,curve,prune,max_points)
+            regrids+=1; timestep[]=initial_time_step
+            loglevel>0 && println("Counterflow regrid retry on ",length(f.grid)," points")
+            success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+            burning=success && (!auto || !extinct(f))
+        end
         burning && break
     end
     burning || error(auto ? "native counterflow solver did not find a burning solution" :
         "native counterflow continuation solver did not converge")
-    regrids=0
     for pass in 1:40
         if !refine_grid || !_refine_flame!(f;ratio,slope,curve,prune,max_points)
             if !isnothing(f.control_points)
