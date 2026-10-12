@@ -149,6 +149,25 @@ function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache)
                 d.rate_gradient[collider] += multiplier*rate
                 _flame_scatter_species!(J,d.rate_gradient,collider,vr,vv,reaction.vk,i)
             end
+            if _plog_linear_burke(plog,plog_cursor)
+                # k(P eps_mix): d eps_mix/dC_l = (e_l - eps_mix)/sum(C), e_l = 1 unless listed.
+                effective=_plog_effective_pressure(plog,plog_cursor,T,P,C)
+                mix=effective/P;total=sum(C)
+                factor=multiplier*_plog_rate(plog,plog_cursor,T,effective,logT)*
+                    _plog_log_slope(plog,plog_cursor,T,effective,logT)/(mix*total)
+                if factor!=0
+                    for l in eachindex(C)
+                        d.rate_gradient[l] += factor*(1-mix)
+                    end
+                    for row in plog.lmr_offsets[plog_cursor]:(plog.lmr_offsets[plog_cursor+1]-1)
+                        eps=plog.lmr_eps[row,1]*exp(plog.lmr_eps[row,2]*logT-plog.lmr_eps[row,3]*(4184.0/R)/T)
+                        d.rate_gradient[plog.lmr_species[row]] += factor*(eps-1)
+                    end
+                    for l in eachindex(C)
+                        _flame_scatter_species!(J,d.rate_gradient,l,vr,vv,reaction.vk,i)
+                    end
+                end
+            end
             plog_cursor += 1
         elseif d.reaction_kind[i]==-1
             collider_derivative=cached ? cache.forward[i] : _flame_base_rate(reaction,i,T,h)

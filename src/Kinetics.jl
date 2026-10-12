@@ -37,6 +37,40 @@ end
 end
 
 @inline _positive_floor(value::T) where {T<:AbstractFloat} = nextfloat(zero(T))
+
+# Effective pressure P*eps_mix of a linear-Burke (LMR-R) reaction: listed
+# colliders weigh their mole fraction by eps_i(T); all other species by one.
+@inline function _plog_effective_pressure(plog::PlogData, plog_index, T, P, C)
+    _plog_linear_burke(plog, plog_index) || return P
+    total = zero(eltype(C))
+    @inbounds for c in C
+        total += c
+    end
+    listed = zero(total); weighted = zero(total)
+    logT = log(T); scale = oftype(T, 4184.0 / R) / T
+    @inbounds for row in plog.lmr_offsets[plog_index]:(plog.lmr_offsets[plog_index+1]-1)
+        x = C[plog.lmr_species[row]]
+        weighted += x * plog.lmr_eps[row,1] * exp(plog.lmr_eps[row,2] * logT - plog.lmr_eps[row,3] * scale)
+        listed += x
+    end
+    return P * (weighted + total - listed) / total
+end
+
+# d log k / d log P of a PLOG rate (zero outside the tabulated pressures).
+@inline function _plog_log_slope(plog::PlogData, plog_index, T, P, logT)
+    first_group = plog.group_offsets[plog_index]
+    last_group = plog.group_offsets[plog_index + 1] - 1
+    (P <= plog.pressures[first_group] || P >= plog.pressures[last_group]) && return zero(T)
+    lower_group = first_group
+    @inbounds while P > plog.pressures[lower_group + 1]
+        lower_group += 1
+    end
+    lower_rate = _plog_group_rate(plog, lower_group, T, logT)
+    upper_rate = _plog_group_rate(plog, lower_group + 1, T, logT)
+    tiny = _positive_floor(lower_rate)
+    return (log(upper_rate + tiny) - log(lower_rate + tiny)) /
+        log(plog.pressures[lower_group + 1] / plog.pressures[lower_group])
+end
 @inline _positive_floor(value) = oftype(value, 1.0e-300)
 
 """Log-domain Arrhenius parameters for mixed-precision rate evaluation.
@@ -363,8 +397,13 @@ function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
             reuse = !refresh_temperature && temperature_cache.pressure == P
             plog = reaction.plog
             @inbounds for (plog_index, reaction_index) in enumerate(plog.reaction_indices)
-                rate = reuse ? temperature_cache.plog[plog_index] :
-                    (temperature_cache.plog[plog_index] = _plog_rate(plog, plog_index, T, P, logT))
+                rate = if _plog_linear_burke(plog, plog_index)
+                    # Composition-dependent effective pressure: never cached.
+                    _plog_rate(plog, plog_index, T, _plog_effective_pressure(plog, plog_index, T, P, C), logT)
+                else
+                    reuse ? temperature_cache.plog[plog_index] :
+                        (temperature_cache.plog[plog_index] = _plog_rate(plog, plog_index, T, P, logT))
+                end
                 collider_index = plog.collider_indices[plog_index]
                 kf[reaction_index] = collider_index > 0 ? rate * C[collider_index] : rate
             end
@@ -376,7 +415,7 @@ function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
                         reaction.plog,
                         plog_index,
                         T,
-                        P,
+                        _plog_effective_pressure(reaction.plog, plog_index, T, P, C),
                         logT,
                         C,
                     )
@@ -386,7 +425,7 @@ function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
                         reaction.plog,
                         plog_index,
                         T,
-                        P,
+                        _plog_effective_pressure(reaction.plog, plog_index, T, P, C),
                         rate_logT,
                         rate_activation_scale,
                         C,

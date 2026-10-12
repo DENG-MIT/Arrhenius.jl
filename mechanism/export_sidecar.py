@@ -20,6 +20,7 @@ SUPPORTED_RATE_TYPES = {
     "PlogRate",
     "TroeRate",
     "BlowersMaselRate",
+    "LinearBurkeRate",
 }
 J_PER_KMOL_PER_CAL_PER_MOL = 4184.0
 
@@ -58,7 +59,7 @@ def plog_collider(reaction: ct.Reaction, species_index: dict[str, int]) -> int:
     return species_index[next(iter(efficiencies))] + 1
 
 
-def phase_selection(mechanism: Path, gas: ct.Solution) -> bytes:
+def phase_selection(mechanism: Path, gas: ct.Solution, phase: str = "") -> bytes:
     yaml = YAML(typ="safe")
     with mechanism.open("r", encoding="utf-8") as stream:
         # Only the phase selectors are needed. Parse the top-level phases block
@@ -74,7 +75,8 @@ def phase_selection(mechanism: Path, gas: ct.Solution) -> bytes:
     imports: set[str] = set()
     phases = (document or {}).get("phases") or []
     if isinstance(phases, list) and phases:
-        first = phases[0]
+        named = [p for p in phases if isinstance(p, dict) and p.get("name") == phase]
+        first = named[0] if phase and named else phases[0]
         if isinstance(first, dict):
             for field in ("species", "reactions"):
                 selector = first.get(field)
@@ -104,8 +106,8 @@ def arrhenius_row(data: dict[str, Any]) -> tuple[float, float, float]:
     )
 
 
-def export(mechanism: Path, output: Path) -> None:
-    gas = ct.Solution(str(mechanism))
+def export(mechanism: Path, output: Path, phase: str = "") -> None:
+    gas = ct.Solution(str(mechanism), phase) if phase else ct.Solution(str(mechanism))
     reactions = gas.reactions()
     species_index = {name: index for index, name in enumerate(gas.species_names)}
     unsupported = sorted(
@@ -133,6 +135,9 @@ def export(mechanism: Path, output: Path) -> None:
 
     plog_reaction_indices: list[int] = []
     plog_collider_indices: list[int] = []
+    lmr_offsets = [1]
+    lmr_species: list[int] = []
+    lmr_eps: list[tuple[float, float, float]] = []
     plog_group_offsets = [1]
     plog_pressures: list[float] = []
     plog_rate_offsets = [1]
@@ -180,6 +185,34 @@ def export(mechanism: Path, output: Path) -> None:
                 falloff_troe_indices.append(len(troe_rows))
             else:
                 falloff_troe_indices.append(-1)
+        elif rate_type == "LinearBurkeRate":
+            # Supported form: collider M given as PLOG, all other colliders as
+            # efficiencies only. Then every collider shares M's rate at P*eps_mix.
+            colliders = rate_data["colliders"]
+            M = colliders[0]
+            if M.get("name") != "M" or M.get("type") != "pressure-dependent-Arrhenius" or "eig0" in M:
+                raise ValueError(f"unsupported linear-Burke form in {reaction.equation}")
+            base = M.get("efficiency", {"A": 1.0, "b": 0.0, "Ea": 0.0})
+            grouped = defaultdict(list)
+            for item in M["rate-constants"]:
+                grouped[float(item["P"])].append(arrhenius_row(item))
+            groups = sorted(grouped.items())
+            arrhenius[reaction_index, :] = groups[0][1][0]
+            plog_reaction_indices.append(reaction_index + 1)
+            plog_collider_indices.append(0)
+            for pressure, rows in groups:
+                plog_pressures.append(pressure)
+                plog_arrhenius.extend(rows)
+                plog_rate_offsets.append(len(plog_arrhenius) + 1)
+            plog_group_offsets.append(len(plog_pressures) + 1)
+            for collider in colliders[1:]:
+                if "type" in collider or "efficiency" not in collider:
+                    raise ValueError(f"unsupported linear-Burke collider {collider.get('name')} in {reaction.equation}")
+                eff = collider["efficiency"]
+                lmr_species.append(species_index[collider["name"]] + 1)
+                lmr_eps.append((float(eff["A"]) / float(base["A"]), float(eff.get("b", 0.0)) - float(base.get("b", 0.0)),
+                                (float(eff.get("Ea", 0.0)) - float(base.get("Ea", 0.0))) / J_PER_KMOL_PER_CAL_PER_MOL))
+            lmr_offsets.append(len(lmr_species) + 1)
         elif rate_type == "PlogRate":
             grouped: dict[float, list[tuple[float, float, float]]] = defaultdict(list)
             for item in rate_data["rate-constants"]:
@@ -190,6 +223,7 @@ def export(mechanism: Path, output: Path) -> None:
             arrhenius[reaction_index, :] = groups[0][1][0]
             plog_reaction_indices.append(reaction_index + 1)
             plog_collider_indices.append(plog_collider(reaction, species_index))
+            lmr_offsets.append(len(lmr_species) + 1)
             for pressure, rows in groups:
                 plog_pressures.append(pressure)
                 plog_arrhenius.extend(rows)
@@ -216,7 +250,7 @@ def export(mechanism: Path, output: Path) -> None:
             ]).T,
         }
     output.parent.mkdir(parents=True, exist_ok=True)
-    selection = phase_selection(mechanism, gas)
+    selection = phase_selection(mechanism, gas, phase)
     payload = dict(
         molecular_weights=np.asarray(gas.molecular_weights, dtype=np.float64),
         reactant_stoich_coeffs=reactant_stoich,
@@ -239,6 +273,9 @@ def export(mechanism: Path, output: Path) -> None:
         BlowersMasel_coefficients=np.asarray(blowers_coefficients,dtype=float).reshape((-1,4)),
         Plog_reaction_indices=np.asarray(plog_reaction_indices, dtype=np.int64),
         Plog_collider_indices=np.asarray(plog_collider_indices, dtype=np.int64),
+        Plog_LMR_offsets=np.asarray(lmr_offsets, dtype=np.int64),
+        **({"Plog_LMR_species": np.asarray(lmr_species, dtype=np.int64),
+            "Plog_LMR_eps": np.asarray(lmr_eps, dtype=np.float64).reshape(-1, 3)} if lmr_species else {}),
         Plog_group_offsets=np.asarray(plog_group_offsets, dtype=np.int64),
         Plog_pressures=np.asarray(plog_pressures, dtype=np.float64),
         Plog_rate_offsets=np.asarray(plog_rate_offsets, dtype=np.int64),
@@ -258,10 +295,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("mechanism", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--phase", default="", help="phase name; default is the first phase")
     args = parser.parse_args()
     mechanism = args.mechanism.resolve()
-    output = (args.output or Path(f"{mechanism}.npz")).resolve()
-    export(mechanism, output)
+    suffix = f".{args.phase}.npz" if args.phase else ".npz"
+    output = (args.output or Path(f"{mechanism}{suffix}")).resolve()
+    export(mechanism, output, args.phase)
     print(output)
 
 
