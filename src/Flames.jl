@@ -343,15 +343,17 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
         T = 1000*u[1,j]
         sumY = 0.0
         inverseMW = 0.0
+        # Node thermochemistry uses signed mass fractions, as Cantera's flow
+        # residual does; only transport inputs at faces are clipped below.
         for k in 1:n
-            y = max(u[k+1,j],0.0)
+            y = u[k+1,j]
             sumY += y
             inverseMW += y/gas.MW[k]
         end
         meanMW = sumY/inverseMW
         w.rho[j] = f.pressure*meanMW/(R*T)
         for k in 1:n
-            w.X[k,j] = max(u[k+1,j],0.0)/gas.MW[k]/inverseMW
+            w.X[k,j] = u[k+1,j]/gas.MW[k]/inverseMW
             w.C[k] = f.pressure/(R*T)*w.X[k,j]
         end
         x = @view w.X[:,j]
@@ -638,8 +640,8 @@ _flame_previous_enthalpy(f,w,previous) = _conservative_flame(f) ?
     _flame_previous_enthalpy!(w.conservative,f,previous) : nothing
 _flame_perturbation(f,u,k,j)=1e-7*max(abs(u[k,j]),k==1 ? .1 : 1e-5)
 # Fraction of the forward derivative that a positive finite-difference step of
-# `_flame_perturbation` samples on the clipped species RHS: one at nonnegative
-# values, the clipped chord fraction for traces within one step below zero.
+# `_flame_perturbation` samples on a clipped face-midpoint species value: one
+# at nonnegative values, the chord fraction within one step below zero.
 @inline function _flame_species_weight(y)
     y>=0 && return 1.0
     h=1e-7*max(abs(y),1e-5)
@@ -706,8 +708,9 @@ function _flame_active_region!(region::BitMatrix,u::AbstractMatrix)
     size(region) == (n_species, 2n_nodes - 1) ||
         throw(DimensionMismatch("active region must have size ($(n_species), $(2n_nodes - 1))"))
     @inbounds for j in 1:n_nodes
+        # Signed node properties have no branch; only clipped faces do.
         for k in 1:n_species
-            region[k,j] = _flame_species_forward(u[k+1,j])
+            region[k,j] = true
         end
         if j < n_nodes
             face = n_nodes + j
