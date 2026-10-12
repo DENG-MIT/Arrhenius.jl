@@ -501,7 +501,9 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
     pivots=LinearAlgebra.BlasInt[]; age=5; contraction=Inf
     correction_enabled=!isnothing(f.control_points)
     correction_enabled && (age=21)
-    weights=correction_enabled ? _flame_correction_weights(u,previous!==nothing) : Float64[]
+    # Pseudo-time steps end on Cantera's weighted-correction criterion.
+    step_converged=previous!==nothing
+    weights=correction_enabled || step_converged ? _flame_correction_weights(u,previous!==nothing) : Float64[]
     trial_correction=correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     residual_scales=correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     residual_valid = false
@@ -551,6 +553,10 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
             elseif step[k,j]>0
                 alpha=min(alpha,.99*(high-u[k,j])/step[k,j])
             end
+        end
+        if step_converged && alpha==1 && _flame_correction_norm(step,weights)<1
+            u .+= step
+            return true
         end
         step_merit=correction_enabled ? _flame_correction_norm(step,weights) : 0.
         # A fresh small correction and componentwise backward error can certify
