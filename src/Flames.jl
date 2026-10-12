@@ -634,6 +634,9 @@ end
 _flame_previous_enthalpy(f,w,previous) = _conservative_flame(f) ?
     _flame_previous_enthalpy!(w.conservative,f,previous) : nothing
 _flame_perturbation(f,u,k,j)=1e-7*max(abs(u[k,j]),k==1 ? .1 : 1e-5)
+# Branch of the clipped species RHS that a positive finite-difference step of
+# `_flame_perturbation` samples: traces just below zero use the forward branch.
+_flame_species_forward(y)=y+1e-7*max(abs(y),1e-5)>0
 _flame_correction_weights(f,u,transient)=_flame_correction_weights(u,transient)
 _flame_needs_correction_check(f)=false
 _flame_checkpoint_steady(f)=_conservative_flame(f)
@@ -694,12 +697,12 @@ function _flame_active_region!(region::BitMatrix,u::AbstractMatrix)
         throw(DimensionMismatch("active region must have size ($(n_species), $(2n_nodes - 1))"))
     @inbounds for j in 1:n_nodes
         for k in 1:n_species
-            region[k,j] = u[k+1,j] >= 0
+            region[k,j] = _flame_species_forward(u[k+1,j])
         end
         if j < n_nodes
             face = n_nodes + j
             for k in 1:n_species
-                region[k,face] = u[k+1,j] + u[k+1,j+1] >= 0
+                region[k,face] = _flame_species_forward(u[k+1,j] + u[k+1,j+1])
             end
         end
     end
