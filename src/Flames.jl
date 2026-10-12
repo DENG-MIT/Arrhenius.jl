@@ -813,13 +813,11 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             return true
         end
         # The strict final-grid tolerance can lie below the residual's round-off
-        # floor. There, accept Cantera's criterion: a fresh Newton correction
-        # below one in the steady weighted norm.
-        if previous === nothing && refresh && tolerance <= 1e-8 && !require_positive &&
-                iteration > minimum_iterations && residual_norm < 10tolerance &&
-                _flame_correction_norm(step,_flame_correction_weights(f,u,false)) < 1
-            return true
-        end
+        # floor. If Newton stalls there, accept Cantera's criterion: a fresh
+        # Newton correction below one in the steady weighted norm.
+        at_floor = previous === nothing && refresh && tolerance <= 1e-8 && !require_positive &&
+            iteration > minimum_iterations && residual_norm < 10tolerance &&
+            _flame_correction_norm(step,_flame_correction_weights(f,u,false)) < 1
         alpha = 1.0
         for j in axes(u,2), k in axes(u,1)
             # Small negative species values are permitted in Newton iterates;
@@ -858,10 +856,12 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         end
         loglevel > 1 && println("Newton ",iteration," residual=",residual_norm," damping=",alpha)
         if !accepted || alpha <= 1e-10
+            at_floor && return true
             refresh && return false
             age = 5
             continue
         end
+        at_floor && alpha < 1e-3 && return true
         last_contraction = norm(rt)/norm(r)
         # The accepted trial already evaluated the full residual and properties
         # at exactly the newly accepted state. A rejected search never reuses it.
