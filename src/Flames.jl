@@ -662,8 +662,9 @@ end
 
 # Three grid colors exploit the nearest-neighbor block stencil. Each residual
 # evaluation perturbs one component at every third point without overlap.
-function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=nothing,analytic=true)
-    if analytic && _conservative_flame(f) && _conservative_flame_jacobian!(f,u,w,r;previous,dt,previous_enthalpy)
+function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=nothing,analytic=true,
+        update_transport=false)
+    if analytic && !update_transport && _conservative_flame(f) && _conservative_flame_jacobian!(f,u,w,r;previous,dt,previous_enthalpy)
         return w.band
     end
     B,N = size(u)
@@ -683,7 +684,8 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
             steps[j] = _flame_perturbation(f,u,k,j)
             perturbed[k,j] = u[k,j]+steps[j]
         end
-        flame_residual!(rp,f,perturbed,w; previous,dt,previous_enthalpy,update_transport=false,nodes=color:3:N)
+        # Transport stays frozen for Newton; adjoint sensitivities update it.
+        flame_residual!(rp,f,perturbed,w; previous,dt,previous_enthalpy,update_transport,nodes=color:3:N)
         for j in color:3:N
             column = (j-1)*B+k
             for jj in max(1,j-1):min(N,j+1), kk in 1:B
