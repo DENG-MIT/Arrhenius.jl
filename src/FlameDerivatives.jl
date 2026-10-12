@@ -91,8 +91,10 @@ function _flame_falloff_derivative(reaction,j,i,T,collider,high)
 end
 
 function _flame_concentration_jacobian!(d,reaction,T,C,h,s,cache)
-    # Pressure-interpolated rates retain the generic finite-difference path.
-    isempty(reaction.plog.reaction_indices) || return false
+    plog=reaction.plog
+    issorted(plog.reaction_indices) || return false
+    # PLOG rates depend only on T and the pressure the residual infers from C.
+    P=sum(C)*R*T;logT=log(T);plog_cursor=1
     wdot!(d.source_direction,reaction,T,C,s,h,d.kinetics;
         temperature_cache=cache,get_rate_constants=true)
     J=d.concentration_jacobian;fill!(J,0)
@@ -116,7 +118,12 @@ function _flame_concentration_jacobian!(d,reaction,T,C,h,s,cache)
         end
         multiplier=pf-(reaction.is_reversible[i] ? pr/d.kinetics.equilibrium_constants[i] : 0.0)
         collider_derivative=0.0
-        if i in reaction.index_three_body
+        if plog_cursor<=length(plog.reaction_indices) && plog.reaction_indices[plog_cursor]==i
+            # A named PLOG collider multiplies the interpolated rate by its concentration.
+            collider=plog.collider_indices[plog_cursor]
+            collider>0 && (d.rate_gradient[collider] += multiplier*_plog_rate(plog,plog_cursor,T,P,logT))
+            plog_cursor += 1
+        elseif i in reaction.index_three_body
             collider_derivative=_flame_base_rate(reaction,i,T,h)
         else
             index=findfirst(==(i),reaction.index_falloff)
@@ -168,9 +175,9 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             cpT+=u[k+1,j]*d.cp_temperature[k,j]/MW[k]
             d.enthalpy_gradient[k+1,j]=w.h[k,j]/MW[k]
             d.cp_gradient[k+1,j]=w.cp[k,j]/MW[k]
-            # A forward derivative at zero agrees with the original positive
-            # finite-difference perturbation. Negative trial species stay clipped.
-            if u[k+1,j]>=0
+            # Match the branch the positive finite-difference step samples:
+            # traces within one step below zero use the forward derivative.
+            if _flame_species_forward(u[k+1,j])
                 d.density_gradient[k+1,j]=w.rho[j]*(1/sumY-1/(MW[k]*inverseMW))
             end
         end
@@ -197,7 +204,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             density_ratio=d.density_gradient[l,j]/w.rho[j]
             for k in 1:n
                 chemistry=l==1 ? _flame_partial(d.dual_source[k]) :
-                    l==B || u[l,j]<0 ? 0.0 : f.pressure/(R*T*MW[l-1]*inverseMW)*
+                    l==B || !_flame_species_forward(u[l,j]) ? 0.0 : f.pressure/(R*T*MW[l-1]*inverseMW)*
                         (d.concentration_jacobian[k,l-1]-d.source_direction[k])
                 balance=r[k+1,j]
                 if previous!==nothing
@@ -241,8 +248,8 @@ function _flame_face_derivatives!(d,f,u,w,j)
             d.projected_left[k]=pl;d.projected_right[k]=pr
         end
         @inbounds for l in 1:n,k in 1:n
-            L[k+1,l+1]=u[l+1,j]>=0 ? -(w.multi_prefactor[k,l,j]-d.projected_left[k])/(dz*MW[l]*inverse_left) : 0.0
-            Rj[k+1,l+1]=u[l+1,j+1]>=0 ? (w.multi_prefactor[k,l,j]-d.projected_right[k])/(dz*MW[l]*inverse_right) : 0.0
+            L[k+1,l+1]=_flame_species_forward(u[l+1,j]) ? -(w.multi_prefactor[k,l,j]-d.projected_left[k])/(dz*MW[l]*inverse_left) : 0.0
+            Rj[k+1,l+1]=_flame_species_forward(u[l+1,j+1]) ? (w.multi_prefactor[k,l,j]-d.projected_right[k])/(dz*MW[l]*inverse_right) : 0.0
         end
     else
         fluxsum=0.0
@@ -257,12 +264,12 @@ function _flame_face_derivatives!(d,f,u,w,j)
                 if f.flux_gradient_basis==:mass
                     dl=k==l ? w.diffusion_prefactor[k,j]/dz : 0.0;dr=-dl
                 else
-                    dl=u[l+1,j]>=0 ? w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/(dz*MW[l]*inverse_left) : 0.0
-                    dr=u[l+1,j+1]>=0 ? -w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/(dz*MW[l]*inverse_right) : 0.0
+                    dl=_flame_species_forward(u[l+1,j]) ? w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/(dz*MW[l]*inverse_left) : 0.0
+                    dr=_flame_species_forward(u[l+1,j+1]) ? -w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/(dz*MW[l]*inverse_right) : 0.0
                 end
                 L[k+1,l+1]=dl;Rj[k+1,l+1]=dr;sl+=dl;sr+=dr
             end
-            midpoint_derivative=u[l+1,j]+u[l+1,j+1]>=0 ? .5/ysum : 0.0
+            midpoint_derivative=_flame_species_forward(u[l+1,j]+u[l+1,j+1]) ? .5/ysum : 0.0
             for k in 1:n
                 correction=midpoint_derivative*((k==l)-d.ymid[k])*fluxsum
                 L[k+1,l+1]-=d.ymid[k]*sl+correction
@@ -327,7 +334,6 @@ function _flame_face_derivatives!(d,f,u,w,j)
 end
 
 function _conservative_flame_jacobian!(f,u,w,r;previous=nothing,dt=Inf,previous_enthalpy=nothing)
-    isempty(f.gas.reaction.plog.reaction_indices) || return false
     n,N=f.gas.n_species,length(f.grid);B=n+2;d=w.conservative.derivatives;c=w.conservative
     previous!==nothing && previous_enthalpy===nothing &&
         (previous_enthalpy=_flame_previous_enthalpy!(c,f,previous))
