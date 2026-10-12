@@ -70,6 +70,8 @@ end
 export mix_trans
 
 "Reusable storage for mixture-averaged ideal-gas transport properties."
+# `inverse_binary` holds reciprocal binary diffusion coefficients; the two pair-weight
+# matrices are stored transposed ([j,k] for species k) for column access.
 struct TransportWorkspace
     viscosity::Vector{Float64}
     conductivity::Vector{Float64}
@@ -78,13 +80,18 @@ struct TransportWorkspace
     weight_quarter_ratio::Matrix{Float64}
     inverse_phi_denominator::Matrix{Float64}
     molecular_weights::Vector{Float64}
+    inverse_binary::Matrix{Float64}
+    root_viscosity::Vector{Float64}
+    inverse_root_viscosity::Vector{Float64}
+    weighted_mole_fraction::Vector{Float64}
 end
 TransportWorkspace(gas::Solution) = TransportWorkspace(
     zeros(gas.n_species), zeros(gas.n_species), zeros(gas.n_species),
     zeros(gas.n_species, gas.n_species),
-    [sqrt(sqrt(gas.MW[j]/gas.MW[k])) for k in 1:gas.n_species,j in 1:gas.n_species],
-    [inv(sqrt(8*(1+gas.MW[k]/gas.MW[j]))) for k in 1:gas.n_species,j in 1:gas.n_species],
-    copy(gas.MW),
+    [sqrt(sqrt(gas.MW[j]/gas.MW[k])) for j in 1:gas.n_species,k in 1:gas.n_species],
+    [inv(sqrt(8*(1+gas.MW[k]/gas.MW[j]))) for j in 1:gas.n_species,k in 1:gas.n_species],
+    copy(gas.MW), zeros(gas.n_species, gas.n_species),
+    zeros(gas.n_species), zeros(gas.n_species), zeros(gas.n_species),
 )
 
 @inline function _transport_polynomial(coefficients, k, logT)
@@ -119,40 +126,49 @@ function mixture_transport!(w::TransportWorkspace, gas::Solution, P, T, X; basis
         throw(ArgumentError("normalized nonnegative mole fractions required"))
     if w.molecular_weights != gas.MW
         for j in 1:n,k in 1:n
-            w.weight_quarter_ratio[k,j] = sqrt(sqrt(gas.MW[j]/gas.MW[k]))
-            w.inverse_phi_denominator[k,j] = inv(sqrt(8*(1+gas.MW[k]/gas.MW[j])))
+            w.weight_quarter_ratio[j,k] = sqrt(sqrt(gas.MW[j]/gas.MW[k]))
+            w.inverse_phi_denominator[j,k] = inv(sqrt(8*(1+gas.MW[k]/gas.MW[j])))
         end
         copyto!(w.molecular_weights,gas.MW)
     end
     logT = log(T)
     sqrtT = sqrt(T)
+    root,inverse_root,mass_fraction_weight = w.root_viscosity,w.inverse_root_viscosity,w.weighted_mole_fraction
     @inbounds for k in 1:n
         w.viscosity[k] = sqrtT * _transport_polynomial(gas.trans.species_viscosities_poly, k, logT)^2
         w.conductivity[k] = sqrtT * _transport_polynomial(gas.trans.thermal_conductivity_poly, k, logT)
+        root[k] = sqrt(w.viscosity[k]); inverse_root[k] = inv(root[k])
+        mass_fraction_weight[k] = X[k]*gas.MW[k]
     end
-    @inbounds for j in 1:n, i in 1:n
-        w.binary[i,j] = T * sqrtT / P * _transport_polynomial(
-            gas.trans.binary_diff_coeffs_poly, i + (j-1)*n, logT)
+    # Binary diffusion fits are symmetric: evaluate each pair once and keep the
+    # reciprocal coefficient, read column-wise below.
+    scale = P/(T*sqrtT)
+    @inbounds for j in 1:n, i in 1:j
+        value = _transport_polynomial(gas.trans.binary_diff_coeffs_poly, i + (j-1)*n, logT)/scale
+        w.binary[i,j] = value; w.binary[j,i] = value
+        inverse = inv(value)
+        w.inverse_binary[i,j] = inverse; w.inverse_binary[j,i] = inverse
     end
     viscosity = 0.0
     arithmetic = 0.0
     harmonic = 0.0
     mean_MW = dot(X, gas.MW)
+    total_mass = sum(mass_fraction_weight)
     @inbounds for k in 1:n
         denominator = 0.0
         invdiff = 0.0
-        othermass = 0.0
         mass_invdiff = 0.0
+        rk = root[k]
         for j in 1:n
-            phi = (1 + sqrt(w.viscosity[k]/w.viscosity[j]) *
-                w.weight_quarter_ratio[k,j])^2 * w.inverse_phi_denominator[k,j]
-            denominator += X[j] * phi
-            if j != k
-                invdiff += X[j] / w.binary[k,j]
-                othermass += X[j] * gas.MW[j]
-                mass_invdiff += X[j] * gas.MW[j] / w.binary[k,j]
-            end
+            phi = muladd(rk*inverse_root[j], w.weight_quarter_ratio[j,k], 1)^2 * w.inverse_phi_denominator[j,k]
+            denominator = muladd(X[j], phi, denominator)
+            invdiff = muladd(X[j], w.inverse_binary[j,k], invdiff)
+            mass_invdiff = muladd(mass_fraction_weight[j], w.inverse_binary[j,k], mass_invdiff)
         end
+        # Remove the diagonal pair term accumulated above.
+        invdiff -= X[k]*w.inverse_binary[k,k]
+        mass_invdiff -= mass_fraction_weight[k]*w.inverse_binary[k,k]
+        othermass = total_mass - mass_fraction_weight[k]
         viscosity += X[k] * w.viscosity[k] / denominator
         arithmetic += X[k] * w.conductivity[k]
         harmonic += X[k] / w.conductivity[k]
