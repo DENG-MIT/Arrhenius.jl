@@ -922,6 +922,17 @@ function _flame_reset_species!(u)
     return changed
 end
 
+# Edge temperature gradients relative to the mean gradient (Cantera's check_width).
+function _flame_domain_too_narrow(f)
+    T = temperature(f); x = f.grid; N = length(x)
+    N < 4 && return false
+    reference = (T[end]-T[1])/(x[end]-x[1])
+    reference == 0 && return false
+    left = (T[2]-T[1])/(x[2]-x[1])/reference
+    right = (T[N-2]-T[N])/(x[N-2]-x[N])/reference
+    return left > 0.02 || right > 0.02
+end
+
 _flame_refine_active(f,k) = true
 _flame_refine_protect!(keep,f) = nothing
 
@@ -1046,7 +1057,7 @@ pseudo-time stepping. Failure raises an error and leaves `converged=false`.
 """
 function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,curve=.12,
         max_points=1000,max_time_steps=500,loglevel=0,
-        initial_time_step=f isa FreeFlame ? 1e-6 : 1e-5)
+        initial_time_step=f isa FreeFlame ? 1e-6 : 1e-5,domain_check=f isa FreeFlame)
     isfinite(ratio) && ratio > 1 && 0 < slope <= 1 && 0 < curve <= 1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step) && initial_time_step > 0 || throw(ArgumentError("initial time step must be finite and positive"))
     f.converged = false
@@ -1055,6 +1066,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     # looser steady tolerance. A grid accepted by refinement is then solved to
     # the full residual tolerance and checked again.
     strict = !refine_grid || !_flame_step_sequencing(f)
+    expansions = 0
     for pass in 1:40
         loglevel > 0 && println("Solving on ",length(f.grid)," points")
         tolerance = strict ? 1e-8 : 1e-6
@@ -1065,6 +1077,16 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
             timestep[] = initial_time_step
             _flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,clip_species=true) ||
                 error("flame solve failed on $(length(f.grid)) points")
+        end
+        if domain_check && expansions < 12 && _flame_domain_too_narrow(f)
+            # Cantera's FreeFlame.solve(auto=True): double a domain whose edge
+            # temperature gradients are significant, refine once and re-solve.
+            f.grid .*= 2
+            expansions += 1
+            loglevel > 0 && println("Expanding domain to ",f.grid[end]-f.grid[1]," m")
+            refine_grid && _refine_flame!(f;ratio,slope,curve,max_points)
+            strict = !refine_grid || !_flame_step_sequencing(f)
+            continue
         end
         refined = refine_grid && _refine_flame!(f;ratio,slope,curve,max_points)
         if !refined && !strict
