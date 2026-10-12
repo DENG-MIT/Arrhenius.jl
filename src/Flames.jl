@@ -648,6 +648,7 @@ end
 _flame_species_forward(y)=_flame_species_weight(y)>0
 _flame_correction_weights(f,u,transient)=_flame_correction_weights(u,transient)
 _flame_needs_correction_check(f)=false
+_flame_step_sequencing(f)=_conservative_flame(f)
 _flame_checkpoint_steady(f)=_conservative_flame(f)
 _flame_reuse_trial(f)=_conservative_flame(f)
 _flame_refine_threshold(f,k)=k==1 ? sqrt(eps(Float64))/1000 : sqrt(eps(Float64))
@@ -848,10 +849,10 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     return false
 end
 
-function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6))
+function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8)
     w = FlameWorkspace(f)
     steady_state = _flame_checkpoint_steady(f) ? copy(f.state) : nothing
-    _flame_newton!(f,w; loglevel) && return true
+    _flame_newton!(f,w; loglevel,tolerance) && return true
     # A failed steady trial must not replace the accepted pseudo-time state.
     steady_state === nothing || copyto!(f.state,steady_state)
     dt = timestep[]
@@ -864,7 +865,7 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6))
             if step % 10 == 0
                 loglevel > 0 && println("Transient step ",step," dt=",dt)
                 steady_state === nothing || copyto!(steady_state,f.state)
-                _flame_newton!(f,w; loglevel) && return true
+                _flame_newton!(f,w; loglevel,tolerance) && return true
                 steady_state === nothing || copyto!(f.state,steady_state)
             end
         else
@@ -1006,10 +1007,21 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     isfinite(initial_time_step) && initial_time_step > 0 || throw(ArgumentError("initial time step must be finite and positive"))
     f.converged = false
     timestep = Ref(Float64(initial_time_step))
+    # Grids that refinement may still change only guide refinement; they use a
+    # looser steady tolerance. A grid accepted by refinement is then solved to
+    # the full residual tolerance and checked again.
+    strict = !refine_grid || !_flame_step_sequencing(f)
     for pass in 1:40
         loglevel > 0 && println("Solving on ",length(f.grid)," points")
-        _flame_steady!(f; loglevel,max_time_steps,timestep) || error("flame solve failed on $(length(f.grid)) points")
-        if !refine_grid || !_refine_flame!(f;ratio,slope,curve,max_points)
+        _flame_steady!(f; loglevel,max_time_steps,timestep,tolerance=strict ? 1e-8 : 1e-6) ||
+            error("flame solve failed on $(length(f.grid)) points")
+        refined = refine_grid && _refine_flame!(f;ratio,slope,curve,max_points)
+        if !refined && !strict
+            strict = true
+            continue
+        end
+        refined && (strict = !_flame_step_sequencing(f))
+        if !refined
             if _conservative_flame(f) && minimum(@view(f.state[2:end-1,:])) <= -1e-12
                 # A clipped negative trial can converge on an unphysical branch.
                 # Build a nonnegative starting guess, preserving normalization,
