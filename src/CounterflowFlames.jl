@@ -449,8 +449,15 @@ end
 function _counterflow_chemistry_jacobian!(f,u,w)
     p=w.properties;n=f.gas.n_species;B,N=size(u);G=w.source_gradient;MW=f.gas.MW
     @inbounds for j in 2:N-1
-        _flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
-            @view(u[2:n+1,j]),@view(p.X[:,j]),@view(p.h[:,j]),p.rate_caches[j]) || return false
+        if !_flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
+                @view(u[2:n+1,j]),@view(p.X[:,j]),@view(p.h[:,j]),p.rate_caches[j])
+            # Signed trace species make fractional-order rate derivatives
+            # non-finite; differentiate this node at a positive floor instead
+            # of falling back to a finite-difference Jacobian for every node.
+            _flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
+                max.(@view(u[2:n+1,j]),1e-30),max.(@view(p.X[:,j]),1e-30),
+                @view(p.h[:,j]),p.rate_caches[j]) || return false
+        end
         species=_flame_timescale/p.rho[j]
         cpmean=0.0
         for k in 1:n
