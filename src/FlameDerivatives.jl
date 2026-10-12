@@ -245,7 +245,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
         T=1000u[1,j];Td=_flame_dual(T,1000.0)
         sumY=0.0;inverseMW=0.0
         for k in 1:n
-            positive=u[k+1,j]
+            positive=_flame_node_species(w,u[k+1,j])
             sumY+=positive;inverseMW+=positive/MW[k]
             d.concentration[k]=f.pressure/(R*T)*w.X[k,j]
             d.dual_C[k]=_flame_dual(d.concentration[k],-1000d.concentration[k]/T)
@@ -259,7 +259,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             d.cp_gradient[k+1,j]=w.cp[k,j]/MW[k]
             # Match the branch the positive finite-difference step samples:
             # traces within one step below zero use the forward derivative.
-            d.density_gradient[k+1,j]=w.rho[j]*(1/sumY-1/(MW[k]*inverseMW))
+            d.density_gradient[k+1,j]=_flame_node_weight(w,u[k+1,j])*w.rho[j]*(1/sumY-1/(MW[k]*inverseMW))
         end
         d.density_gradient[1,j]=-1000w.rho[j]/T
         d.enthalpy_gradient[1,j]=1000c.cp[j];d.cp_gradient[1,j]=cpT
@@ -284,7 +284,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             density_ratio=d.density_gradient[l,j]/w.rho[j]
             for k in 1:n
                 chemistry=l==1 ? _flame_partial(d.dual_source[k]) :
-                    l==B ? 0.0 : f.pressure/(R*T*MW[l-1]*inverseMW)*
+                    l==B ? 0.0 : _flame_node_weight(w,u[l,j])*f.pressure/(R*T*MW[l-1]*inverseMW)*
                         (d.concentration_jacobian[k,l-1]-d.source_direction[k])
                 balance=r[k+1,j]
                 if previous!==nothing
@@ -314,8 +314,8 @@ function _flame_face_derivatives!(d,f,u,w,j)
     ysum=0.0;inverse_left=0.0;inverse_right=0.0
     @inbounds for k in 1:n
         d.ymid[k]=max(.5*(u[k+1,j]+u[k+1,j+1]),0.0);ysum+=d.ymid[k]
-        inverse_left+=u[k+1,j]/MW[k]
-        inverse_right+=u[k+1,j+1]/MW[k]
+        inverse_left+=_flame_node_species(w,u[k+1,j])/MW[k]
+        inverse_right+=_flame_node_species(w,u[k+1,j+1])/MW[k]
     end
     d.ymid ./= ysum
     if f.transport_model==:multicomponent
@@ -328,8 +328,8 @@ function _flame_face_derivatives!(d,f,u,w,j)
             d.projected_left[k]=pl;d.projected_right[k]=pr
         end
         @inbounds for l in 1:n,k in 1:n
-            L[k+1,l+1]=-(w.multi_prefactor[k,l,j]-d.projected_left[k])/(dz*MW[l]*inverse_left)
-            Rj[k+1,l+1]=(w.multi_prefactor[k,l,j]-d.projected_right[k])/(dz*MW[l]*inverse_right)
+            L[k+1,l+1]=-_flame_node_weight(w,u[l+1,j])*(w.multi_prefactor[k,l,j]-d.projected_left[k])/(dz*MW[l]*inverse_left)
+            Rj[k+1,l+1]=_flame_node_weight(w,u[l+1,j+1])*(w.multi_prefactor[k,l,j]-d.projected_right[k])/(dz*MW[l]*inverse_right)
         end
     else
         fluxsum=0.0
@@ -344,8 +344,8 @@ function _flame_face_derivatives!(d,f,u,w,j)
                 if f.flux_gradient_basis==:mass
                     dl=k==l ? w.diffusion_prefactor[k,j]/dz : 0.0;dr=-dl
                 else
-                    dl=w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/(dz*MW[l]*inverse_left)
-                    dr=-w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/(dz*MW[l]*inverse_right)
+                    dl=_flame_node_weight(w,u[l+1,j])*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/(dz*MW[l]*inverse_left)
+                    dr=-_flame_node_weight(w,u[l+1,j+1])*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/(dz*MW[l]*inverse_right)
                 end
                 L[k+1,l+1]=dl;Rj[k+1,l+1]=dr;sl+=dl;sr+=dr
             end

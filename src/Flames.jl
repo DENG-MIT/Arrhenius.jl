@@ -320,6 +320,9 @@ struct FlameWorkspace{K}
     mixture_thermal::Union{Nothing,MixtureThermalDiffusionWorkspace}
     rate_caches::Vector{_KineticsTemperatureCache}
     conservative::Union{Nothing,ConservativeFlameWorkspace}
+    # Fallback for grids where signed species stall at their lower bound:
+    # clipped node species with a finite-difference Jacobian.
+    clip_species::Base.RefValue{Bool}
 end
 function FlameWorkspace(f::AbstractPremixedFlame)
     n, N = f.gas.n_species, length(f.grid)
@@ -332,8 +335,12 @@ function FlameWorkspace(f::AbstractPremixedFlame)
         f.transport_model == :mixture_averaged && f.soret_enabled ?
             MixtureThermalDiffusionWorkspace(f.multicomponent_data) : nothing,
         [_KineticsTemperatureCache(f.gas.reaction) for _ in 1:N],
-        _conservative_flame(f) ? ConservativeFlameWorkspace(n,N,f.gas) : nothing)
+        _conservative_flame(f) ? ConservativeFlameWorkspace(n,N,f.gas) : nothing,Ref(false))
 end
+_flame_clipped(w) = w isa FlameWorkspace && w.clip_species[]
+# Node species value and derivative weight under the active species form.
+@inline _flame_node_species(w,y) = _flame_clipped(w) ? max(y,0.0) : y
+@inline _flame_node_weight(w,y) = _flame_clipped(w) ? _flame_species_weight(y) : 1.0
 
 function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid),freeze_source=false,
         viscosity=nothing)
@@ -345,15 +352,16 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
         inverseMW = 0.0
         # Node thermochemistry uses signed mass fractions, as Cantera's flow
         # residual does; only transport inputs at faces are clipped below.
+        clip = w.clip_species[]
         for k in 1:n
-            y = u[k+1,j]
+            y = clip ? max(u[k+1,j],0.0) : u[k+1,j]
             sumY += y
             inverseMW += y/gas.MW[k]
         end
         meanMW = sumY/inverseMW
         w.rho[j] = f.pressure*meanMW/(R*T)
         for k in 1:n
-            w.X[k,j] = u[k+1,j]/gas.MW[k]/inverseMW
+            w.X[k,j] = (clip ? max(u[k+1,j],0.0) : u[k+1,j])/gas.MW[k]/inverseMW
             w.C[k] = f.pressure/(R*T)*w.X[k,j]
         end
         x = @view w.X[:,j]
@@ -854,17 +862,25 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     return false
 end
 
-function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8)
+function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
+        clip_species=false)
     w = FlameWorkspace(f)
+    # Species reset and clipping apply to neutral premixed flames only; ionized
+    # flames keep signed charged species.
+    neutral = w isa FlameWorkspace
+    clip_species && !neutral && return false
+    neutral && (w.clip_species[] = clip_species)
     steady_state = _flame_checkpoint_steady(f) ? copy(f.state) : nothing
     _flame_newton!(f,w; loglevel,tolerance) && return true
     # A failed steady trial must not replace the accepted pseudo-time state.
     steady_state === nothing || copyto!(f.state,steady_state)
     dt = timestep[]
     previous = similar(f.state)
+    failures = 0
     for step in 1:max_time_steps
         copyto!(previous,f.state)
         if _flame_newton!(f,w; previous,dt,maxiters=20,loglevel=0)
+            failures = 0
             dt = min(dt*1.5,1.0)
             timestep[] = dt
             if step % 10 == 0
@@ -875,12 +891,35 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
             end
         else
             copyto!(f.state,previous)
+            failures += 1
+            if neutral && failures > 2 && _flame_reset_species!(f.state)
+                # As Cantera's resetBadValues: signed species pinned at their
+                # lower bound stall every step; clip and renormalize instead.
+                failures = 0
+                continue
+            end
             dt *= .25
             timestep[] = dt
             dt > 1e-12 || return false
         end
     end
     return false
+end
+
+# Clip negative mass fractions and renormalize each node; true if any changed.
+function _flame_reset_species!(u)
+    changed = false
+    @inbounds for j in axes(u,2)
+        total = 0.0
+        for k in 2:size(u,1)-1
+            if u[k,j] < 0
+                u[k,j] = 0.0; changed = true
+            end
+            total += u[k,j]
+        end
+        total > 0 && (@views u[2:end-1,j] ./= total)
+    end
+    return changed
 end
 
 _flame_refine_active(f,k) = true
@@ -1018,8 +1057,15 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     strict = !refine_grid || !_flame_step_sequencing(f)
     for pass in 1:40
         loglevel > 0 && println("Solving on ",length(f.grid)," points")
-        _flame_steady!(f; loglevel,max_time_steps,timestep,tolerance=strict ? 1e-8 : 1e-6) ||
-            error("flame solve failed on $(length(f.grid)) points")
+        tolerance = strict ? 1e-8 : 1e-6
+        if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance)
+            # Retry the grid with clipped species; at a nonnegative converged
+            # state both forms share the same solution.
+            loglevel > 0 && println("Retrying ",length(f.grid)," points with clipped species")
+            timestep[] = initial_time_step
+            _flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,clip_species=true) ||
+                error("flame solve failed on $(length(f.grid)) points")
+        end
         refined = refine_grid && _refine_flame!(f;ratio,slope,curve,max_points)
         if !refined && !strict
             strict = true
