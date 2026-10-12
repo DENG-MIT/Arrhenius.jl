@@ -812,6 +812,12 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
                 residual_norm < tolerance && _flame_correction_norm(step,correction_weights) < 1
             return true
         end
+        # The strict final-grid tolerance can lie below the residual's round-off
+        # floor. If Newton stalls there, accept Cantera's criterion: a fresh
+        # Newton correction below one in the steady weighted norm.
+        at_floor = previous === nothing && refresh && tolerance <= 1e-8 && !require_positive &&
+            iteration > minimum_iterations && residual_norm < 10tolerance &&
+            _flame_correction_norm(step,_flame_correction_weights(f,u,false)) < 1
         alpha = 1.0
         for j in axes(u,2), k in axes(u,1)
             # Small negative species values are permitted in Newton iterates;
@@ -826,7 +832,9 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         # Trial correction merit uses the already factored (lagged) Newton J.
         step_merit = correction_enabled ? _flame_correction_norm(step,correction_weights) : 0.0
         accepted = false
-        for backtrack in 1:24
+        # Cantera's MultiNewton::dampStep: at most seven trials, each sqrt(2)
+        # shorter, before the Jacobian is refreshed or the step fails.
+        for backtrack in 1:7
             @. trial = u + alpha*step
             flame_residual!(rt,f,trial,w; previous,dt,previous_enthalpy)
             trial_contracts = false
@@ -844,14 +852,16 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
                 accepted = true
                 break
             end
-            alpha *= .5
+            alpha /= sqrt(2)
         end
         loglevel > 1 && println("Newton ",iteration," residual=",residual_norm," damping=",alpha)
         if !accepted || alpha <= 1e-10
+            at_floor && return true
             refresh && return false
             age = 5
             continue
         end
+        at_floor && alpha < 1e-3 && return true
         last_contraction = norm(rt)/norm(r)
         # The accepted trial already evaluated the full residual and properties
         # at exactly the newly accepted state. A rejected search never reuses it.
@@ -1057,7 +1067,7 @@ pseudo-time stepping. Failure raises an error and leaves `converged=false`.
 """
 function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,curve=.12,
         max_points=1000,max_time_steps=500,loglevel=0,
-        initial_time_step=f isa FreeFlame ? 1e-6 : 1e-5,domain_check=f isa FreeFlame)
+        initial_time_step=1e-5,domain_check=f isa FreeFlame)
     isfinite(ratio) && ratio > 1 && 0 < slope <= 1 && 0 < curve <= 1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step) && initial_time_step > 0 || throw(ArgumentError("initial time step must be finite and positive"))
     f.converged = false
