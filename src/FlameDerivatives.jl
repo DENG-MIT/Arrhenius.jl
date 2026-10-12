@@ -30,6 +30,8 @@ struct _ConservativeFlameDerivatives
     projected_right::Vector{Float64}
     uncorrected_flux::Vector{Float64}
     ymid::Vector{Float64}
+    # Per reaction: 0 elementary, -1 three-body, or its falloff position.
+    reaction_kind::Vector{Int}
 end
 
 function _ConservativeFlameDerivatives(gas,N)
@@ -39,7 +41,27 @@ function _ConservativeFlameDerivatives(gas,N)
         zeros(_FlameDual,n),zeros(_FlameDual,n),zeros(_FlameDual,n),
         zeros(_FlameDual,n),zeros(_FlameDual,n),zeros(n,N),zeros(B,N),
         zeros(B,N),zeros(B,N),zeros(n,n),zeros(n),zeros(n),zeros(B,B),
-        zeros(B,B),zeros(n),zeros(n),zeros(n),zeros(n))
+        zeros(B,B),zeros(n),zeros(n),zeros(n),zeros(n),_flame_reaction_kinds(gas.reaction))
+end
+function _flame_reaction_kinds(reaction)
+    kinds=zeros(Int,reaction.n_reactions)
+    for i in reaction.index_three_body
+        kinds[i]=-1
+    end
+    for (j,i) in enumerate(reaction.index_falloff)
+        kinds[i]=j
+    end
+    return kinds
+end
+# Scatter one species' rate-of-progress derivative and clear it for the next reaction.
+@inline function _flame_scatter_species!(J,gradient,k,rows,values,vk,i)
+    @inbounds value=gradient[k]
+    value==0 && return nothing
+    @inbounds gradient[k]=0.0
+    @inbounds for slot in nzrange(vk,i)
+        J[rows[slot],k] += values[slot]*value
+    end
+    return nothing
 end
 
 # Product differentiation does not divide by concentration, so first-order
@@ -70,19 +92,19 @@ function _flame_base_rate(reaction,i,T,h)
     return value
 end
 
-function _flame_falloff_derivative(reaction,j,i,T,collider,high)
+function _flame_falloff_derivative(reaction,j,i,T,collider,high;low=nothing,log_center=nothing)
     # These are the RHS's actual zero/negative-pressure branches.
     collider<=0 && return 0.0
-    low=reaction.Arrhenius_0[j,1]*exp(reaction.Arrhenius_0[j,2]*log(T)-
-        reaction.Arrhenius_0[j,3]*(4184.0/R)/T)
+    low===nothing && (low=reaction.Arrhenius_0[j,1]*exp(reaction.Arrhenius_0[j,2]*log(T)-
+        reaction.Arrhenius_0[j,3]*(4184.0/R)/T))
     reduced=low*_flame_dual(collider,1.0)/high
     reduced<=0 && return 0.0
     value=high*reduced/(1+reduced)
     index=reaction.index_falloff_Troe[j]
     if index>0
         p=reaction.Troe_
-        log_center=log10(max((1-p[index,1])*exp(-T/p[index,4])+
-            p[index,1]*exp(-T/p[index,2])+exp(-p[index,3]/T),1e-300))
+        log_center===nothing && (log_center=log10(max((1-p[index,1])*exp(-T/p[index,4])+
+            p[index,1]*exp(-T/p[index,2])+exp(-p[index,3]/T),1e-300)))
         c=-.4-.67*log_center;N=.75-1.27*log_center
         f=(log10(reduced)+c)/(N-.14*(log10(reduced)+c))
         value *= exp(log(10.0)*log_center/(1+f*f))
@@ -100,8 +122,10 @@ function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache)
     kf,kr=d.kinetics.kf,d.kinetics.kr
     vr,vv=rowvals(reaction.vk),nonzeros(reaction.vk)
     er,ev=rowvals(reaction.efficiencies_coeffs),nonzeros(reaction.efficiencies_coeffs)
+    # Temperature-only factors cached by the wdot! call above at this T and P.
+    cached=cache!==nothing && cache.temperature==T
+    cached_plog=cached && cache.pressure==P
     @inbounds for i in 1:reaction.n_reactions
-        fill!(d.rate_gradient,0)
         _flame_product_gradient!(d.rate_gradient,reaction.reactant_orders,i,C,kf[i])
         if reaction.is_reversible[i]
             _flame_product_gradient!(d.rate_gradient,reaction.product_stoich_coeffs,i,C,-kr[i])
@@ -120,30 +144,38 @@ function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache)
         if plog_cursor<=length(plog.reaction_indices) && plog.reaction_indices[plog_cursor]==i
             # A named PLOG collider multiplies the interpolated rate by its concentration.
             collider=plog.collider_indices[plog_cursor]
-            collider>0 && (d.rate_gradient[collider] += multiplier*_plog_rate(plog,plog_cursor,T,P,logT))
-            plog_cursor += 1
-        elseif i in reaction.index_three_body
-            collider_derivative=_flame_base_rate(reaction,i,T,h)
-        else
-            index=findfirst(==(i),reaction.index_falloff)
-            if index!==nothing
-                collider=0.0
-                for slot in nzrange(reaction.efficiencies_coeffs,i)
-                    collider += ev[slot]*C[er[slot]]
-                end
-                collider_derivative=_flame_falloff_derivative(reaction,index,i,T,collider,
-                    _flame_base_rate(reaction,i,T,h))
+            if collider>0
+                rate=cached_plog ? cache.plog[plog_cursor] : _plog_rate(plog,plog_cursor,T,P,logT)
+                d.rate_gradient[collider] += multiplier*rate
+                _flame_scatter_species!(J,d.rate_gradient,collider,vr,vv,reaction.vk,i)
             end
+            plog_cursor += 1
+        elseif d.reaction_kind[i]==-1
+            collider_derivative=cached ? cache.forward[i] : _flame_base_rate(reaction,i,T,h)
+        elseif d.reaction_kind[i]>0
+            index=d.reaction_kind[i]
+            collider=0.0
+            for slot in nzrange(reaction.efficiencies_coeffs,i)
+                collider += ev[slot]*C[er[slot]]
+            end
+            troe=reaction.index_falloff_Troe[index]
+            collider_derivative=_flame_falloff_derivative(reaction,index,i,T,collider,
+                cached ? cache.forward[i] : _flame_base_rate(reaction,i,T,h);
+                low=cached ? cache.low[index] : nothing,
+                log_center=cached && troe>0 ? cache.log_fcent[troe] : nothing)
         end
         if collider_derivative!=0
             for slot in nzrange(reaction.efficiencies_coeffs,i)
                 d.rate_gradient[er[slot]] += multiplier*collider_derivative*ev[slot]
             end
+            for slot in nzrange(reaction.efficiencies_coeffs,i)
+                _flame_scatter_species!(J,d.rate_gradient,er[slot],vr,vv,reaction.vk,i)
+            end
         end
-        for k in eachindex(C)
-            value=d.rate_gradient[k]
-            for slot in nzrange(reaction.vk,i)
-                J[vr[slot],k] += vv[slot]*value
+        for A in (reaction.reactant_orders,reaction.product_stoich_coeffs)
+            rows=rowvals(A)
+            for slot in nzrange(A,i)
+                _flame_scatter_species!(J,d.rate_gradient,rows[slot],vr,vv,reaction.vk,i)
             end
         end
     end
@@ -158,7 +190,7 @@ state `y` with mole fractions `X` and molar enthalpies `h`.
 function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache)
     n=gas.n_species;MW=gas.MW;Td=_flame_dual(T,1000.0);inverseMW=0.0
     @inbounds for k in 1:n
-        inverseMW+=max(y[k],0.0)/MW[k]
+        inverseMW+=y[k]/MW[k]
         d.concentration[k]=P/(R*T)*X[k]
         d.dual_C[k]=_flame_dual(d.concentration[k],-1000d.concentration[k]/T)
     end
@@ -174,7 +206,7 @@ function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache)
         G[k,1]=_flame_partial(d.dual_source[k])
     end
     @inbounds for l in 1:n
-        scale=_flame_species_weight(y[l])*P/(R*T*MW[l]*inverseMW)
+        scale=P/(R*T*MW[l]*inverseMW)
         for k in 1:n
             G[k,l+1]=scale*(d.concentration_jacobian[k,l]-d.source_direction[k])
         end
@@ -194,7 +226,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
         T=1000u[1,j];Td=_flame_dual(T,1000.0)
         sumY=0.0;inverseMW=0.0
         for k in 1:n
-            positive=max(u[k+1,j],0.0)
+            positive=u[k+1,j]
             sumY+=positive;inverseMW+=positive/MW[k]
             d.concentration[k]=f.pressure/(R*T)*w.X[k,j]
             d.dual_C[k]=_flame_dual(d.concentration[k],-1000d.concentration[k]/T)
@@ -208,7 +240,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             d.cp_gradient[k+1,j]=w.cp[k,j]/MW[k]
             # Match the branch the positive finite-difference step samples:
             # traces within one step below zero use the forward derivative.
-            d.density_gradient[k+1,j]=_flame_species_weight(u[k+1,j])*w.rho[j]*(1/sumY-1/(MW[k]*inverseMW))
+            d.density_gradient[k+1,j]=w.rho[j]*(1/sumY-1/(MW[k]*inverseMW))
         end
         d.density_gradient[1,j]=-1000w.rho[j]/T
         d.enthalpy_gradient[1,j]=1000c.cp[j];d.cp_gradient[1,j]=cpT
@@ -233,7 +265,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             density_ratio=d.density_gradient[l,j]/w.rho[j]
             for k in 1:n
                 chemistry=l==1 ? _flame_partial(d.dual_source[k]) :
-                    l==B ? 0.0 : _flame_species_weight(u[l,j])*f.pressure/(R*T*MW[l-1]*inverseMW)*
+                    l==B ? 0.0 : f.pressure/(R*T*MW[l-1]*inverseMW)*
                         (d.concentration_jacobian[k,l-1]-d.source_direction[k])
                 balance=r[k+1,j]
                 if previous!==nothing
@@ -263,8 +295,8 @@ function _flame_face_derivatives!(d,f,u,w,j)
     ysum=0.0;inverse_left=0.0;inverse_right=0.0
     @inbounds for k in 1:n
         d.ymid[k]=max(.5*(u[k+1,j]+u[k+1,j+1]),0.0);ysum+=d.ymid[k]
-        inverse_left+=max(u[k+1,j],0.0)/MW[k]
-        inverse_right+=max(u[k+1,j+1],0.0)/MW[k]
+        inverse_left+=u[k+1,j]/MW[k]
+        inverse_right+=u[k+1,j+1]/MW[k]
     end
     d.ymid ./= ysum
     if f.transport_model==:multicomponent
@@ -277,8 +309,8 @@ function _flame_face_derivatives!(d,f,u,w,j)
             d.projected_left[k]=pl;d.projected_right[k]=pr
         end
         @inbounds for l in 1:n,k in 1:n
-            L[k+1,l+1]=-_flame_species_weight(u[l+1,j])*(w.multi_prefactor[k,l,j]-d.projected_left[k])/(dz*MW[l]*inverse_left)
-            Rj[k+1,l+1]=_flame_species_weight(u[l+1,j+1])*(w.multi_prefactor[k,l,j]-d.projected_right[k])/(dz*MW[l]*inverse_right)
+            L[k+1,l+1]=-(w.multi_prefactor[k,l,j]-d.projected_left[k])/(dz*MW[l]*inverse_left)
+            Rj[k+1,l+1]=(w.multi_prefactor[k,l,j]-d.projected_right[k])/(dz*MW[l]*inverse_right)
         end
     else
         fluxsum=0.0
@@ -293,8 +325,8 @@ function _flame_face_derivatives!(d,f,u,w,j)
                 if f.flux_gradient_basis==:mass
                     dl=k==l ? w.diffusion_prefactor[k,j]/dz : 0.0;dr=-dl
                 else
-                    dl=_flame_species_weight(u[l+1,j])*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/(dz*MW[l]*inverse_left)
-                    dr=-_flame_species_weight(u[l+1,j+1])*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/(dz*MW[l]*inverse_right)
+                    dl=w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/(dz*MW[l]*inverse_left)
+                    dr=-w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/(dz*MW[l]*inverse_right)
                 end
                 L[k+1,l+1]=dl;Rj[k+1,l+1]=dr;sl+=dl;sr+=dr
             end
@@ -366,7 +398,8 @@ function _conservative_flame_jacobian!(f,u,w,r;previous=nothing,dt=Inf,previous_
     n,N=f.gas.n_species,length(f.grid);B=n+2;d=w.conservative.derivatives;c=w.conservative
     previous!==nothing && previous_enthalpy===nothing &&
         (previous_enthalpy=_flame_previous_enthalpy!(c,f,previous))
-    fill!(w.band,0)
+    # LAPACK's leading fill-in rows need no initialization.
+    fill!(@view(w.band[2B:end,:]),0)
     _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy) || return false
     @inbounds for face in 1:N-1
         _flame_face_derivatives!(d,f,u,w,face)
@@ -427,5 +460,6 @@ function _conservative_flame_jacobian!(f,u,w,r;previous=nothing,dt=Inf,previous_
             _flame_band_add!(w.band,B,j,B,j-1,B,-1.0)
         end
     end
-    return all(isfinite,w.band)
+    # NaN and Inf propagate through the sum of the stored band.
+    return isfinite(sum(@view(w.band[2B:end,:])))
 end

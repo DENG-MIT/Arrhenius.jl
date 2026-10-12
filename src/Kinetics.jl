@@ -250,7 +250,9 @@ _KineticsTemperatureCache(reaction::Reaction) = _KineticsTemperatureCache(NaN,
     value = convert(promote_type(typeof(c),typeof(order)),c)
     order == one(order) && return value
     order == oftype(order,2) && return value*value
-    return c^order
+    isinteger(order) && return value^Int(order)
+    # Non-integer orders vanish at nonpositive concentrations, as in Cantera.
+    return value > 0 ? value^order : zero(value)
 end
 
 function _mass_action!(workspace, reaction::Reaction, C)
