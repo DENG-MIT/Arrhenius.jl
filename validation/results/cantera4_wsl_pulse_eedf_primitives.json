@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "scope": "Native fixed-grid two-term EEDF prerequisites for the methane pulse-discharge example",
+  "complete_example_validated": false,
+  "performance_validated": false,
+  "reference": {
+    "cantera_version": "4.0.0a2",
+    "source_commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+    "source_url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/reactors/nanosecond_pulse_discharge.py",
+    "model": "methane-plasma-pavan-2023.yaml",
+    "model_sha256": "3789dc895d9ad0bd5437bb84386b9c274ca553e9ca52f98417f3a35d8f04bbcc",
+    "temperature_K": 300,
+    "pressure_Pa": 101325,
+    "initial_composition": "CH4:0.095,O2:0.19,N2:0.715,e:1e-11",
+    "peak_reduced_field_Td": 190
+  },
+  "native": {
+    "julia_version": "1.12.7",
+    "source_commit": "10b7bbb8924c876d336dd2d0df09e1f3e76c24be",
+    "api": [
+      "read_eedf_model(path; phase, data_paths)",
+      "EEDFState(model; number_density, ...)",
+      "solve_eedf(model, state; initial)"
+    ],
+    "grid_eV": {
+      "first": 0,
+      "last": 40,
+      "step": 1,
+      "cells": 40
+    },
+    "collision_kinds": {
+      "effective": 6,
+      "excitation": 23,
+      "ionization": 5
+    },
+    "source_sha256": {
+      "src/PlasmaEEDF.jl": "fcf1b287c0b4f17ece682d45365cbfde479dfedda048bfae6614527bb0da3331",
+      "src/PlasmaEEDFIO.jl": "3c330ce787bbd60e91a1ac9646603400260693b489013d389d078729423d6975"
+    }
+  },
+  "validation": {
+    "passed": true,
+    "independent_checks": 100,
+    "edge_absolute_plus_relative_tolerance": [
+      1e-10,
+      0.0001
+    ],
+    "weighted_L1_tolerance": 0.0001,
+    "mobility_relative_tolerance": 0.0001,
+    "center_normalization_tolerance": 1e-12,
+    "states": {
+      "initial": {
+        "max_edge_absolute_error": 6.162975822039155e-33,
+        "native_mobility_m2_V_s": 0.524940828779533,
+        "reference_mobility_m2_V_s": 0.524940828779533,
+        "mobility_relative_error": 0.0,
+        "center_zero_count": 21,
+        "iterations": 0
+      },
+      "peak_eedf": {
+        "max_edge_absolute_error": 8.881784197001252e-16,
+        "native_mobility_m2_V_s": 0.5249398875544824,
+        "reference_mobility_m2_V_s": 0.5249398875544823,
+        "mobility_relative_error": 2.220446049250313e-16,
+        "center_zero_count": 0,
+        "iterations": 1
+      }
+    },
+    "standalone_air_arrays_and_iteration_history_unchanged": true,
+    "previous_result_unchanged": true,
+    "low_field_reset_verified": true,
+    "density_and_frequency_scaling_verified": true,
+    "local_tests": {
+      "targeted_assertions": 111,
+      "core_assertions": 2808,
+      "optional_assertions": 142,
+      "passed": true
+    }
+  },
+  "limitations": [
+    "The complete90ns pulse chemistry/trajectory has not been validated.",
+    "No pulse throughput qualification is made.",
+    "Stored electron temperature is distinct from the Boltzmann distribution; this primitive does not integrate electron energy."
+  ],
+  "generated_utc": "2026-09-12T22:18:25.111301+00:00"
+}

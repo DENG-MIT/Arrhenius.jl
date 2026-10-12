@@ -1,0 +1,132 @@
+{
+  "example": "thermo/equations_of_state",
+  "cantera_version": "4.0.0a2",
+  "coolprop_version": "8.0.0",
+  "source_sha256": "5a80d530ec9908e10ae45ea3653caa816a8e26047da73c856b9460ae1e968cd0",
+  "mechanism_sha256": "b7cdc6ba3a08245a7eb669b48e2cb6f18f37ac0af04e8ddc92c38df75f77e51b",
+  "parameter_json_sha256": "106d09a0ee43cd74b96f749c08d0e664cd0f70869e6b2009625e059756eacf00",
+  "reference_sha256": "112a99e7d81ca8c69bf667bb3a619974ea33a9b4eb82e3540117b6c259b492f2",
+  "performance_qualified": false,
+  "property_names": [
+    "relative_enthalpy",
+    "relative_internal_energy",
+    "relative_entropy",
+    "cp",
+    "cv"
+  ],
+  "property_units": [
+    "kJ/kg",
+    "kJ/kg",
+    "kJ/kg/K",
+    "kJ/kg/K",
+    "kJ/kg/K"
+  ],
+  "source_url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/thermo/equations_of_state.py",
+  "checks": {
+    "T": {
+      "passed": true,
+      "rtol": 1e-08,
+      "atol": 1e-08,
+      "maximum_absolute_error": 0.0
+    },
+    "pressure": {
+      "passed": true,
+      "rtol": 1e-08,
+      "atol": 1e-08,
+      "maximum_absolute_error": 1.862645149230957e-09
+    },
+    "ideal": {
+      "passed": true,
+      "rtol": 1e-07,
+      "atol": 1e-07,
+      "maximum_absolute_error": 1.7763568394002505e-15,
+      "maximum_absolute_error_by_property": [
+        0.0,
+        0.0,
+        1.7763568394002505e-15,
+        0.0,
+        0.0
+      ]
+    },
+    "ideal_density": {
+      "passed": true,
+      "rtol": 1e-08,
+      "atol": 1e-08,
+      "maximum_absolute_error": 5.684341886080802e-14
+    },
+    "rk": {
+      "passed": true,
+      "rtol": 1e-07,
+      "atol": 1e-07,
+      "maximum_absolute_error": 7.530616130679846e-10,
+      "maximum_absolute_error_by_property": [
+        6.766640581190586e-10,
+        7.530616130679846e-10,
+        2.680966559864828e-12,
+        9.656542232505672e-11,
+        1.4017675908917226e-12
+      ]
+    },
+    "rk_density": {
+      "passed": true,
+      "rtol": 1e-08,
+      "atol": 1e-08,
+      "maximum_absolute_error": 3.4042386687360704e-09
+    },
+    "helmholtz": {
+      "passed": true,
+      "rtol": 1e-07,
+      "atol": 1e-07,
+      "maximum_absolute_error": 1.1027176611833056e-06,
+      "maximum_absolute_error_by_property": [
+        1.0217792834055217e-06,
+        1.1027176611833056e-06,
+        2.1853479026390232e-09,
+        3.984195133810431e-07,
+        9.084960783667384e-09
+      ]
+    },
+    "helmholtz_density": {
+      "passed": true,
+      "rtol": 1e-08,
+      "atol": 1e-08,
+      "maximum_absolute_error": 1.879470801213756e-09
+    },
+    "helmholtz_phase": {
+      "passed": true,
+      "rtol": 1e-08,
+      "atol": 1e-08,
+      "maximum_absolute_error": 0.0
+    },
+    "saturation_pressure": {
+      "passed": true,
+      "rtol": 1e-08,
+      "atol": 1e-08,
+      "maximum_absolute_error": 6.51925802230835e-09
+    }
+  },
+  "correctness_pass": true,
+  "native_artifact_sha256": "58d1ccfbd02945b906550710203c9a870b8268f4cd1f1640eeb4af5915e57719",
+  "native_metadata": {
+    "example_sha256": "87770870aac5499d968832f75f0665f24aa1c18a42a708d2922e112f08f07a24",
+    "parameter_sha256": "106d09a0ee43cd74b96f749c08d0e664cd0f70869e6b2009625e059756eacf00"
+  },
+  "host": "wsl",
+  "julia_version": "1.12.7",
+  "clapeyron_version": "0.6.28",
+  "native_core_commit": "ab1a0448354790eef68853f9f177eb897c794e36",
+  "scope": "All 1,000 original pressure points at 300 K: 15,000 h/u/s/cp/cv values, 3,000 densities, stable Helmholtz phase and saturation pressure; native identity, pressure closure and fresh replay checks.",
+  "native_model_backends": {
+    "ideal": "Arrhenius",
+    "rk": "Arrhenius",
+    "helmholtz": "Clapeyron.SingleFluid"
+  },
+  "native_local_assertions": 18,
+  "native_local_assertions_pass": true,
+  "native_loaded_library_check_pass": true,
+  "native_check_log_sha256": "259dd84638e927f8e68e7fad450cd363422dafbdcedb345744a857645df89111",
+  "validation_harness_sha256": {
+    "equations_of_state_cases.py": "5f363f2831825b03e35cc125d7cacd59f0de0f06d0039497e817cc507bf07609",
+    "equations_of_state_cases.jl": "3f94c443e4469b2836529eace5701571739a9b49576e561ed376e7f075ad165f"
+  }
+}

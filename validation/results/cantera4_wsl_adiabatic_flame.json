@@ -1,0 +1,2598 @@
+{
+  "case": "free",
+  "formal": true,
+  "passed": false,
+  "performance_pass": false,
+  "date": "2026-09-12 01:34:38 +0800",
+  "host": {
+    "cpu": "Intel(R) Core(TM) Ultra 7 155H",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "kernel_release": "6.6.87.2-microsoft-standard-WSL2",
+    "system": "Linux",
+    "machine": "x86_64",
+    "logical_cpus": 18
+  },
+  "target": "wsl",
+  "scope": "Sum of construction/initialization/adaptive-solve stages in the complete published transport sequence. Mechanism/sidecar loading, snapshots and output excluded. No refined-reference solve is timed.",
+  "compilation_scope": "Julia runtime startup and using/imports are outside timers. Specialization of run_source_sequence before entry to its internal stage timers is also excluded; the first measured sequence is not whole-program cold latency. Only JIT triggered after a stage timer starts can enter its measurement. First repetition is recorded separately and excluded from warm medians.",
+  "timing_order": "cantera-first",
+  "threads": {
+    "threadpools": [
+      {
+        "file": "libgomp.so.1.0.0",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.34.so",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ],
+    "environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "JULIA_NUM_THREADS": "1"
+    }
+  },
+  "cantera_version": "4.0.0a2",
+  "cantera_build_record": {
+    "compiler": "conda-forge gcc/g++ 15.3.0 (from ct-build-env)",
+    "build": "release -O3 (debug=n, -DNDEBUG, no -g)",
+    "source": {
+      "commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+      "archive_sha256": "fe10560a649c557613cdc22bf4309245f055cea5014673079a53db391403d47c"
+    },
+    "library_hashes": {
+      "prefix/lib/libcantera_shared.so.4.0.0": "1edb2105be995bea941fad7b942651788835d13737fe3b15dff342c0e64571f6",
+      "prefix/lib/libcantera.a": "5566535b5108d50df2102847470e8d6e998ca5557ee5181ac942d731c3736df5",
+      "prefix/lib/libcantera_python3_12.so": "d0b89bdf40c0d773712cd15274cc41d3c88bf334f757eef0394332a698995d17",
+      "site-packages/cantera/_cantera.cpython-312-x86_64-linux-gnu.so": "cb6f63a9170b57a6e8f3a0ba1eeb92ecfb43becf64f92fcae867a9f2a5e4f6ac"
+    },
+    "dependencies": {
+      "python": "3.12.14",
+      "numpy": "2.5.2",
+      "cython": "3.3.0",
+      "scons": "4.11.1",
+      "gcc_gxx": "15.3.0 (conda-forge)",
+      "sundials": "7.2.1",
+      "eigen": "3.4.0",
+      "fmt": "12.2.0",
+      "yaml_cpp": "0.8 (libyaml-cpp.so.0.8)",
+      "boost_headers": "1.85",
+      "openblas_lapack": "libopenblas.so.0 / liblapack from env lib"
+    },
+    "version": "4.0.0a2"
+  },
+  "cantera_build_record_sha256": "fd95180063b52d8b4b5a0effe4cb95addd52b7a996c37d34f68a6a931570686c",
+  "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+  "sidecar_sha256": "fa6b84d7d41331d009666cc2b8d48192bd3027cd2e78d3527f2babb58c273647",
+  "multicomponent_sha256": "1cd41b1b8eb31bb1bc8c22c1bb346404feee76a630121a79752a740206c123ff",
+  "fixed_temperature_profile_sha256": null,
+  "parameter_provenance": {
+    "cantera_version": "4.0.0a2",
+    "source_commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+    "mechanisms": {
+      "h2o2": {
+        "sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+        "species": 10,
+        "reactions": 29
+      },
+      "gri30": {
+        "sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+        "species": 53,
+        "reactions": 325
+      }
+    },
+    "examples": {
+      "adiabatic_flame": {
+        "sha256": "f2a845e0e2b0c06d466eadeba9b1be1d9b8124aadf94e83230527d4124b5840d"
+      },
+      "burner_flame": {
+        "sha256": "8c95f440748a2559b4f2a940b6b1864144e0668704a8d894e5923663278632c2"
+      },
+      "flame_fixed_T": {
+        "sha256": "102af72f0349116ce7a1258bb1ce0b06cc04ebe7359358b5c4d635799bbd01be"
+      }
+    }
+  },
+  "original_source_example": {
+    "path": "adiabatic_flame.py",
+    "sha256": "f2a845e0e2b0c06d466eadeba9b1be1d9b8124aadf94e83230527d4124b5840d"
+  },
+  "reference_hashes": {
+    "free-mass-0.npz": "d335eb11cf3221afcef80550a8b60d611adc54f8df07d497b9aee788302b9c1d",
+    "free-mass-1.npz": "be067d012741a01f83741129e2d92a3f5ae07c48b0dc3bbe1c3079acb16b499e",
+    "free-mass-2.npz": "270407a7e8370d1e07cd077febb3b878ae155e51a7a4db5b959eeb9b998acb53",
+    "free-mass-3.npz": "3b7f281b3cc30fd7c81b28ce28523ab21546fb78630e59d1641fbb222c80b893",
+    "free-mass-4.npz": "143e34e78ef7573f78cbb9a46443d15d79b6f6d41f0cd181090126466943655e",
+    "free-mass-soret-0.npz": "d2b8a9c1c4a7b560bef525fdbfec27df9d2129427bc6474b6dcf52e39d309534",
+    "free-mass-soret-1.npz": "e745d2062f3f36b6917d4cd857a8167a5425cec4a7a3e9b3c80cddbc9eddf042",
+    "free-mass-soret-2.npz": "bcba990c96f044fec8f415fee4473f3a11f4a42aa4a34c463c564e235d490df5",
+    "free-mass-soret-3.npz": "b73516e1b32cf973a3dddffbc32c65df2c5b0330b50fb38fcdc0270618a92369",
+    "free-mass-soret-4.npz": "be56ffb737d373ffe80b2fdbbdd33358c3ad195efcb93310704a602a4c1c4342",
+    "free-multi-0.npz": "27a66bb49fda0e6e71c7509c51607da5f5443f4cf96f8616c3f1a60908235c66",
+    "free-multi-1.npz": "d353fd023afdbfefe09cab76adbe3663441cc4c795658ab9e00f21adc319c0b6",
+    "free-multi-2.npz": "9285110c86aed4c3cc263d70d3de1b188a8cb78d9b9545f0575023e0ff58185c",
+    "free-multi-3.npz": "6ecd3b49da4550e165e05c56b0365e293339b3d021941be52f488031b0201e97",
+    "free-multi-4.npz": "d23629ac15ab3d7951681745f52cf3ad0da91b4073c1f41f664b59b17ccbec71",
+    "free-multi-soret-0.npz": "9111cc5acc2f7284bc95ffaadcfc4c5d8d646a9e1840b46c4aff59186f10bc9b",
+    "free-multi-soret-1.npz": "55060a74c1fa8a0115641613566abbfa29b9c7067e09cfa83f6c0e2e0de69651",
+    "free-multi-soret-2.npz": "e57b97f60f202ad39b3858edfeaf4b26cc5885180b257b98f9989ef74ba59a83",
+    "free-multi-soret-3.npz": "aed5c4445dbf66f2e27a9d0e119220d58809883cd61013ec4575885e16b415b5",
+    "free-multi-soret-4.npz": "31e24b48a5379e6ee536878c3755a95614515d0c4fc20dc07bc3c7be2703c4f9"
+  },
+  "benchmark_driver_hashes": {
+    "conservative_source_bench.py": "743956a92da8b6b5daabe7616b20af4fdbfdda9f9dd91c82cc9aab5f5de91bbd",
+    "conservative_source_bench.jl": "985a199f528f8b4f99838483a705b0b16435ddf05de3e35ac1e0457b7b6e7e88",
+    "conservative_source_accuracy.py": "e1993c6d74f74ed4c7d0e1ecd0f81151da187c595bf6368551a31afca35b66d0",
+    "flame_benchmarks.py": "31a093adb4baff665f24021a2c0fc2e33366f4567fd4fe59884bd4125fcd4563",
+    "benchmark_environment.py": "a7fb9c06cf45edf95872d38cf0a66ae19e8eadb834641c0b4d0ab08614b350fb",
+    "numerical_threads.jl": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739"
+  },
+  "input_hashes": {
+    "validation/conservative_source_bench.py": "743956a92da8b6b5daabe7616b20af4fdbfdda9f9dd91c82cc9aab5f5de91bbd",
+    "validation/conservative_source_bench.jl": "985a199f528f8b4f99838483a705b0b16435ddf05de3e35ac1e0457b7b6e7e88",
+    "validation/conservative_source_accuracy.py": "e1993c6d74f74ed4c7d0e1ecd0f81151da187c595bf6368551a31afca35b66d0",
+    "validation/flame_benchmarks.py": "31a093adb4baff665f24021a2c0fc2e33366f4567fd4fe59884bd4125fcd4563",
+    "validation/benchmark_environment.py": "a7fb9c06cf45edf95872d38cf0a66ae19e8eadb834641c0b4d0ab08614b350fb",
+    "validation/numerical_threads.jl": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739",
+    "example/flames/source_flame_sequence.jl": "441654ce840cb9f583154baa1f5c2149f7b18a2cc73f142c597f727041848ccc",
+    "example/flames/adiabatic_flame.jl": "d5e3eaaf731f0c4e610a73bb961bbbd112bff364df797894159c34b9f5a46bf2",
+    "example/flames/burner_flame.jl": "2d225e359492cb26fc0dd1b42c77f4ed3363242bcad810f8b806c709df5d233c",
+    "example/flames/flame_fixed_T.jl": "3ad2fe9047bb78e332d04676d4f4ca5dc470b34ec0b7dae4446d971823985226",
+    "adiabatic_flame.py": "f2a845e0e2b0c06d466eadeba9b1be1d9b8124aadf94e83230527d4124b5840d",
+    "parameters/h2o2.yaml": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+    "parameters/h2o2.yaml.npz": "fa6b84d7d41331d009666cc2b8d48192bd3027cd2e78d3527f2babb58c273647",
+    "parameters/h2o2.yaml.multicomponent.npz": "1cd41b1b8eb31bb1bc8c22c1bb346404feee76a630121a79752a740206c123ff",
+    "parameters/provenance.json": "efcd15a3136588a6ce148261e76b6909498f263cf89e7e6d542cfaf79ef4ff90",
+    "wsl-cantera-build-record.json": "fd95180063b52d8b4b5a0effe4cb95addd52b7a996c37d34f68a6a931570686c",
+    "native-record.json": "5430f8cca7dc217045414d8ad7e71ea895eaa2d230d7de84b784921f8ac330f7",
+    "Project.toml": "3452e1b1c23a944371eaa9c6de5de61f4585c5a6d90b5b7b6fecda3be22c3d78",
+    "Manifest.toml": "1faf9139d9368b0d538e76653b299fa92a2b8423c2420d385c31905dd53afbd4",
+    "reference/free-mass-0.npz": "d335eb11cf3221afcef80550a8b60d611adc54f8df07d497b9aee788302b9c1d",
+    "reference/free-mass-1.npz": "be067d012741a01f83741129e2d92a3f5ae07c48b0dc3bbe1c3079acb16b499e",
+    "reference/free-mass-2.npz": "270407a7e8370d1e07cd077febb3b878ae155e51a7a4db5b959eeb9b998acb53",
+    "reference/free-mass-3.npz": "3b7f281b3cc30fd7c81b28ce28523ab21546fb78630e59d1641fbb222c80b893",
+    "reference/free-mass-4.npz": "143e34e78ef7573f78cbb9a46443d15d79b6f6d41f0cd181090126466943655e",
+    "reference/free-mass-soret-0.npz": "d2b8a9c1c4a7b560bef525fdbfec27df9d2129427bc6474b6dcf52e39d309534",
+    "reference/free-mass-soret-1.npz": "e745d2062f3f36b6917d4cd857a8167a5425cec4a7a3e9b3c80cddbc9eddf042",
+    "reference/free-mass-soret-2.npz": "bcba990c96f044fec8f415fee4473f3a11f4a42aa4a34c463c564e235d490df5",
+    "reference/free-mass-soret-3.npz": "b73516e1b32cf973a3dddffbc32c65df2c5b0330b50fb38fcdc0270618a92369",
+    "reference/free-mass-soret-4.npz": "be56ffb737d373ffe80b2fdbbdd33358c3ad195efcb93310704a602a4c1c4342",
+    "reference/free-multi-0.npz": "27a66bb49fda0e6e71c7509c51607da5f5443f4cf96f8616c3f1a60908235c66",
+    "reference/free-multi-1.npz": "d353fd023afdbfefe09cab76adbe3663441cc4c795658ab9e00f21adc319c0b6",
+    "reference/free-multi-2.npz": "9285110c86aed4c3cc263d70d3de1b188a8cb78d9b9545f0575023e0ff58185c",
+    "reference/free-multi-3.npz": "6ecd3b49da4550e165e05c56b0365e293339b3d021941be52f488031b0201e97",
+    "reference/free-multi-4.npz": "d23629ac15ab3d7951681745f52cf3ad0da91b4073c1f41f664b59b17ccbec71",
+    "reference/free-multi-soret-0.npz": "9111cc5acc2f7284bc95ffaadcfc4c5d8d646a9e1840b46c4aff59186f10bc9b",
+    "reference/free-multi-soret-1.npz": "55060a74c1fa8a0115641613566abbfa29b9c7067e09cfa83f6c0e2e0de69651",
+    "reference/free-multi-soret-2.npz": "e57b97f60f202ad39b3858edfeaf4b26cc5885180b257b98f9989ef74ba59a83",
+    "reference/free-multi-soret-3.npz": "aed5c4445dbf66f2e27a9d0e119220d58809883cd61013ec4575885e16b415b5",
+    "reference/free-multi-soret-4.npz": "31e24b48a5379e6ee536878c3755a95614515d0c4fc20dc07bc3c7be2703c4f9"
+  },
+  "native_example_hashes": {
+    "source_flame_sequence.jl": "441654ce840cb9f583154baa1f5c2149f7b18a2cc73f142c597f727041848ccc",
+    "adiabatic_flame.jl": "d5e3eaaf731f0c4e610a73bb961bbbd112bff364df797894159c34b9f5a46bf2",
+    "burner_flame.jl": "2d225e359492cb26fc0dd1b42c77f4ed3363242bcad810f8b806c709df5d233c",
+    "flame_fixed_T.jl": "3ad2fe9047bb78e332d04676d4f4ca5dc470b34ec0b7dae4446d971823985226"
+  },
+  "actual_loaded_cantera_hashes_before": {
+    "libcantera_shared.so.4.0.0": "1edb2105be995bea941fad7b942651788835d13737fe3b15dff342c0e64571f6",
+    "_cantera.cpython-312-x86_64-linux-gnu.so": "cb6f63a9170b57a6e8f3a0ba1eeb92ecfb43becf64f92fcae867a9f2a5e4f6ac"
+  },
+  "python_executable_sha256": "5d8bebed9b1455cb15ee614356a65374a47f11d50e81783c3ef72c3a882149bf",
+  "native_source_hashes": {
+    "src/Arrhenius.jl": "c666ebaa2e516305f1b149628b5d09345535bc2df4a3843004a9ca41b85366d2",
+    "src/BlowersMasel.jl": "6e2266794056367d648a68a9160f15d839fde8d9bab923a4f350fbafec7cb95d",
+    "src/CatalyticFlames.jl": "8e8fab0b4eea80daf99d73e1e587b188f6ff0810a11c0667efdeba966e0d3222",
+    "src/Constants.jl": "2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83",
+    "src/CounterflowFlames.jl": "7a0ca9c3cdea0bd58c23a5d9e453b3a52400b1aaf50f6d5eb469d802213ea1c1",
+    "src/CoverageDependentThermo.jl": "cf3e8f5adde603343c58717b7deefe54694284475cb8833b923fa584823eb4df",
+    "src/CriticalProperties.jl": "90cc6911489ffe90748b15965e5da14dbde9232a0beea03312fc4ec31e5f63ba",
+    "src/DataStructure.jl": "07acaddb93237a04d978e9a73fdc136cde20ff4d922a00db790e9c4a67e85f1e",
+    "src/DustyGasTransport.jl": "b87c8a982bff05c3976c4cad27578a05098124d32fc31dce6f4756d4db0701a4",
+    "src/Equilibrium.jl": "ce2091af79c5b2ce4340735fd3936659ba269091c3f619451fef304699c7d9a2",
+    "src/FlameDerivatives.jl": "c9ead3f2c74d4c51c7b686e82c5d2ecca9f704b569d913a332f6bd5dee647562",
+    "src/FlameIO.jl": "e78b0366d1c680d744d95b14f1d5591bcd9efa8c2ac20b2d0bd1598b1f0e8021",
+    "src/Flames.jl": "070c23a6b6ac5d577b6ca1317ebbb62691ec044af2ee715771f445c9eed1d07b",
+    "src/IdealGasMixing.jl": "5ab4e26a5912a1b3a154777cbf886ddf66f48a5e26cd41af9006206d6eb87046",
+    "src/IdealGasStates.jl": "46b90818b147c9c55cfe6c6caafaf3b8f194b8eaf14b2a2828d3d26c80ec3000",
+    "src/Kinetics.jl": "54aef1c23fc012ee7f7d45eda7534d2d44cec8a283412aed9c4b51f2a9716bbd",
+    "src/Magic.jl": "9386419d03e7f481a134f2d56a2b59c4b340f1ba276bbc6ce52861597805c8e0",
+    "src/MovingWallReactors.jl": "c14ee93fa7c0a3e5e10b1e3c6b51764ff52f32929f79cf71372b21a1881f9d00",
+    "src/MulticomponentTransport.jl": "b798c622769beb0cda757abce23a05501938e7d1bba3553afab2f4ced267206a",
+    "src/Precision.jl": "970165da7f441088adacc1a5c8fa14dbcbc699df73b57d5681d9d05ab52949fd",
+    "src/PremixedCounterflowFlames.jl": "b9cda647f2cf6d6dfff79f7da558dd14f425f4ece8709024c2c7205f12114991",
+    "src/PureWater.jl": "234a75cf5ea3a06886c9003ce19f0a8d6f7492e38022b3af23604d1b3a512955",
+    "src/ReactorNetworks.jl": "e9b9410cb69d72fe92b737d958e4c5cac51be277faa7457ccf9bcbe40e5bee9b",
+    "src/Reactors.jl": "6753e519f66fd240f85622a7ea993beff2eb41050d8d61140c090a8558dd5994",
+    "src/RealGasReactors.jl": "4c62099789aa1f7a19c5728f3519714ad68c4a684e9e8dcaa575e54596c79e50",
+    "src/RealGasThermo.jl": "e67f6a0cbaab7fa8828491e3a9d01b6beab00250b9f169035c32e8a7469b347b",
+    "src/Solution.jl": "7e3dbc589eebb3e9904d22a3f9bd1fd8f88ddc36712ef3a248d334770b6339c4",
+    "src/SurfaceFlowReactors.jl": "c7f39a9f1ae4ac6b63548d104dbd4895ae8674fc69df592e101ac58b674f4909",
+    "src/SurfaceKinetics.jl": "d55b05829c4bdeee4f56a79d78ae676750600187c9a543ce72deed690ac8409e",
+    "src/Thermo/IdealGasThermo.jl": "e85feaf3272a8da51792935207ad7fbf2ab8a2b00f7c67dd0a6fae58a5b0cf31",
+    "src/Thermo.jl": "e09107c74cc4fa0379204e92ba43517df81fa01f19785fa4c5956ee02a6492c3",
+    "src/Transport.jl": "c75b8b87274d08e1c1df6c9d40e39746980fc0098040fe9be6ca87518bf844a3",
+    "src/_Arrhenius_dev.jl": "6b08d913208a17d66dda42345ecb14d164c53dcfda9292cda5f68e60e7056eed",
+    "src/_transport_test.jl": "8e2ad5c75074bce96ee9cb7a72cbdfb041cc6c9c3b0cc7983b3f370327ee4ee3"
+  },
+  "native_commit": "fd0dca8774cc59098a5379384712e9a99730c5e3",
+  "native_record_sha256": "5430f8cca7dc217045414d8ad7e71ea895eaa2d230d7de84b784921f8ac330f7",
+  "cantera_stage_seconds": [
+    [
+      0.15018419502303004,
+      0.025460371747612953,
+      0.0306963212788105,
+      0.027656751219183207
+    ],
+    [
+      0.14484442304819822,
+      0.028690647799521685,
+      0.030603556893765926,
+      0.028429238125681877
+    ],
+    [
+      0.15027541806921363,
+      0.02522987499833107,
+      0.02965755108743906,
+      0.029555573593825102
+    ],
+    [
+      0.15637223469093442,
+      0.026964679826050997,
+      0.028385153971612453,
+      0.02605886897072196
+    ],
+    [
+      0.146977623924613,
+      0.026317952200770378,
+      0.02882674289867282,
+      0.03001599805429578
+    ],
+    [
+      0.14097102684900165,
+      0.02562243165448308,
+      0.028805873822420835,
+      0.02905221190303564
+    ],
+    [
+      0.1473127929493785,
+      0.02690506912767887,
+      0.029876878019422293,
+      0.03044327301904559
+    ],
+    [
+      0.1427362309768796,
+      0.02773521700873971,
+      0.031239059288054705,
+      0.02894965000450611
+    ],
+    [
+      0.14465463999658823,
+      0.025820504873991013,
+      0.029212947003543377,
+      0.027671976946294308
+    ],
+    [
+      0.15296893380582333,
+      0.02866746485233307,
+      0.03176098922267556,
+      0.027432666160166264
+    ]
+  ],
+  "cantera_stage_points": [
+    [
+      137,
+      143,
+      143,
+      143
+    ],
+    [
+      137,
+      143,
+      143,
+      143
+    ],
+    [
+      137,
+      143,
+      143,
+      143
+    ],
+    [
+      137,
+      143,
+      143,
+      143
+    ],
+    [
+      137,
+      143,
+      143,
+      143
+    ],
+    [
+      137,
+      143,
+      143,
+      143
+    ],
+    [
+      137,
+      143,
+      143,
+      143
+    ],
+    [
+      137,
+      143,
+      143,
+      143
+    ],
+    [
+      137,
+      143,
+      143,
+      143
+    ],
+    [
+      137,
+      143,
+      143,
+      143
+    ]
+  ],
+  "cantera_repetition_thread_checks": [
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    }
+  ],
+  "cantera_replay": {
+    "passed": true,
+    "checked_stages": 40,
+    "relative_tolerance": 1e-12,
+    "absolute_tolerance": 1e-14,
+    "records": [
+      {
+        "repetition": 0,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 0,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 0,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 0,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 1,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 1,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 1,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 1,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 2,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 2,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 2,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 2,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 3,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 3,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 3,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 3,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 4,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 4,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 4,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 4,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 5,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 5,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 5,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 5,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 6,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 6,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 6,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 6,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 7,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 7,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 7,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 7,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 8,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 8,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 8,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 8,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 9,
+        "mode": "mass",
+        "sha256": "fd8ff35bdd16ca2126af2b61101f4c32db8ddcfc73f5c31111f5b71682c135a9",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 9,
+        "mode": "mass-soret",
+        "sha256": "6cc9a372ee4dbf13b4764f231c224070fd21007f61ba961b17517edda7a68384",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 9,
+        "mode": "multi",
+        "sha256": "53c836bc65c97c65e1d057978b1deb031edbdbce5a5a203706d84829dd919528",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 9,
+        "mode": "multi-soret",
+        "sha256": "11b0ab24b94ed981312140cff792e8b2b00a9caee1677c03ea20d9a847596582",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      }
+    ]
+  },
+  "shared_public_calculation_verified": true,
+  "julia_stage_seconds": [
+    [
+      0.202622282,
+      0.015086054,
+      0.064927296,
+      0.044133226
+    ],
+    [
+      0.18678704,
+      0.013441652,
+      0.064160674,
+      0.043224383
+    ],
+    [
+      0.19370888,
+      0.014890307,
+      0.064366768,
+      0.042068578
+    ],
+    [
+      0.222021309,
+      0.017050865,
+      0.06319081,
+      0.045119778
+    ],
+    [
+      0.193429803,
+      0.015829969,
+      0.065862016,
+      0.043188295
+    ],
+    [
+      0.207248651,
+      0.015256321,
+      0.064625073,
+      0.047363605
+    ],
+    [
+      0.197692976,
+      0.012701807,
+      0.06194948,
+      0.043579256
+    ],
+    [
+      0.192142559,
+      0.014850504,
+      0.065006992,
+      0.047010028
+    ],
+    [
+      0.200459396,
+      0.016898635,
+      0.062037109,
+      0.043325679
+    ],
+    [
+      0.18929896,
+      0.014307903,
+      0.075562611,
+      0.047428928
+    ]
+  ],
+  "julia_stage_points": [
+    [
+      131,
+      137,
+      140,
+      140
+    ],
+    [
+      131,
+      137,
+      140,
+      140
+    ],
+    [
+      131,
+      137,
+      140,
+      140
+    ],
+    [
+      131,
+      137,
+      140,
+      140
+    ],
+    [
+      131,
+      137,
+      140,
+      140
+    ],
+    [
+      131,
+      137,
+      140,
+      140
+    ],
+    [
+      131,
+      137,
+      140,
+      140
+    ],
+    [
+      131,
+      137,
+      140,
+      140
+    ],
+    [
+      131,
+      137,
+      140,
+      140
+    ],
+    [
+      131,
+      137,
+      140,
+      140
+    ]
+  ],
+  "julia_runtime": {
+    "julia_version": "1.12.7",
+    "kernel": "6.6.87.2-microsoft-standard-WSL2",
+    "machine": "x86_64-linux-gnu",
+    "package_path": "src/Arrhenius.jl",
+    "blas_config": "LBTConfig([ILP64] libopenblas64_.so)",
+    "accelerate_threading": -1,
+    "julia_executable_sha256": "582718c20c563d824b88a08e2a9d0afcf5015b3053f425697cecc79ec4e9ea36"
+  },
+  "julia_repetition_thread_checks": {
+    "after_repetition_0": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_1": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_2": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_3": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_4": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_5": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_6": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_7": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_8": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_9": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "before_first": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    }
+  },
+  "julia_source_bytes_verified": true,
+  "julia_library_hashes": {
+    "libopenspecfun.so.2.1": "12c3a3b62eb99ea6c67e0a1e3f0210e16e6fd0c7b55ce468a5639ecc23b0cb83",
+    "libcharset.so.1.0.0": "c63496c39af6afff57ec2c8853a3a6f1b7acc60a236cd6242535ef7a7c7241d6",
+    "libiconv.so.2.7.0": "8dabf2b27aae2f328b75407f4a0aef0f73b59af36e3fb87bb511c52f09876d5a",
+    "ymlFQ_LWuTN.so": "7a89ed5e7d4830cf476d6997086b3f4b6eb17d0d3b3ecc71a0089d86f77253f8",
+    "VMTKN_2m9uZ.so": "3393d25a3a879fc6e0282d409f2832df433420d3eb25a78671b1664f2c3afe2c",
+    "vlfPe_2m9uZ.so": "c7683db1bf234a582ef6def00a58cff21a45b1e7f718a92cf1886c11f8705741",
+    "x2ZNk_2m9uZ.so": "090e2248faec9dfc3ff108151a34e3fe3756afd25fe18543f718326790b4446f",
+    "KRdZs_2m9uZ.so": "63d9d80857e85fa7cb0e29d9531df277822a5841ba980571f6520f6dab9d7329",
+    "6iKRU_2m9uZ.so": "7f6cdf2faca346a60b5809cab01e131d3071c9d76156e07f039ad10789cff1ea",
+    "k0ETY_2m9uZ.so": "9e211e722df36b91e2de21c66008249014e86c89ed2bb00b86849a32b3775c70",
+    "ukdUG_2m9uZ.so": "fe1f168014404dd771269bc78693ea5b228433c45d9bc654165e3c3bac8f50c8",
+    "7Zgw7_2m9uZ.so": "d3d1d6dd57c7f1a8c5b733172b07243f0ce9b83929659b9fc8e303c1630db03b",
+    "ujTCF_2m9uZ.so": "440270fa7951190882beb44f2ae6279c6ab63148be30f673968f7630f62f0e33",
+    "cmCYR_2m9uZ.so": "a0ae4a14a7857bd463e63d0926b6d56c23343b84fcf74092a0fc5b70cf7502c5",
+    "38lnR_2m9uZ.so": "7f27c1a657ee098e231178c389f1465f4d85dbfc86814dd0fc30669ba3c6b6cd",
+    "TV7Kn_2m9uZ.so": "b3125a4dcc48bc3a5b85610aea58d87aea3f9d4a4eab0a3f12d7e06e257237e3",
+    "k9Y1O_2m9uZ.so": "e411ae25096e572774356de4732a1a9bd273faead76ae06735f01b9bb60ddc97",
+    "TDl1L_2m9uZ.so": "3bbaa6bf01c97b9bd6f535405b15e33575bbb1042f8018ae904d77be4944d8e6",
+    "pWSk8_2m9uZ.so": "7a486fbc310908bed4bd1a6eadbbe13b5edf67af2c5a28d9ef47e11390887b4c",
+    "IyxeS_2m9uZ.so": "747d8e1755cb2a2a9c7478bcd811fcd8ea3fe2ca0c736a057da8c6da5c7eb496",
+    "78gOt_2m9uZ.so": "242f411f320ca5032277fde24f5da274a8929312de589ea2488f152f4e910f02",
+    "Tzw28_2m9uZ.so": "0048fd766e194cb1698ca95574d16a42eabfe41e2bf4a90dd6d957c6b7be1f3a",
+    "ACjY3_2m9uZ.so": "174208de2dc0d26bffe88119aafbd740f2480e62e7eef0c91de55c5fc73fc5b4",
+    "LPCgu_2m9uZ.so": "228450572bc515175cd40634bcf72f11125d916bab9451732fc32a4ec53ed364",
+    "cOum2_2m9uZ.so": "640f6d3d44f4f2e220d036d2924a9cb9fc655f4a7198c2c003e1ef8cd676f5d6",
+    "libLLVM.so.18.1jl": "278838ed3622cb3920cc0e37df6bfa0badeaa832c1523fcf4158ccc6fecc312c",
+    "libamd.so.3.3.3": "3f3ddcec90bcfc60a0429412c6824c21c0ba076838e106827e6115f556163b73",
+    "libatomic.so.1.2.0": "4eacc397483e462fcae9719d8d478fba593924aba406f4d962d39833dc9bbf18",
+    "libblastrampoline.so.5": "8222c2022d164add076130e376fadbcde143f7a47a5c2eb2bb590ea98a98589e",
+    "libbtf.so.2.3.2": "2361f6ec813205d7106a402947be7a625feeea884e94929e7e9d502ddbc2ab9d",
+    "libcamd.so.3.3.3": "38ff4ddf627861535fead7b7cbd7e10fa83ac8046c8e80a11948daefd22c49b9",
+    "libccolamd.so.3.3.4": "c068c516311acdfceb50fa2aeb781a7f16fd72fd63a74c2d179003d4427c3736",
+    "libcholmod.so.5.3.0": "baf5aa763cc91941106764818d980212a741f8d7402e2d3d90b9ddd3c47188f4",
+    "libcolamd.so.3.3.4": "991b75a29f817756a95599bf7471caeeb243ea20f2f2753bb1e49092c3066279",
+    "libcrypto.so.3": "5894df8180d1a7b2eaf94e9c9d74535e0461b01c301ce75cf08b956edba83a41",
+    "libcurl.so.4.8.0": "571461981bb431c56b295e7ebcddfedd77223f097ec097b749f2a924b9df5360",
+    "libgcc_s.so.1": "32953d4f360f4459ff8eebdcb6a8817c881778f0f175ef126e6afca7ed777602",
+    "libgfortran.so.5.0.0": "9ef2443f986b752e189a3d5b5dc1f987161e0d8bb3a6f0d78ff7a9480230bd36",
+    "libgit2.so.1.9.0": "3a78c489e133f238d2b4423c97efc46cd90390b26cdd46fb27c08a75a01edc40",
+    "libgmp.so.10.5.0": "1fc3c46e660098636b5ee816cddb41ad2ee5865ec76ff3f8011afe9b8f693376",
+    "libgomp.so.1.0.0": "7626e1975f0bed37947c5538e72b043c37676497f2a0ddbe1ff90f91d8f1992a",
+    "libjulia-codegen.so.1.12.7": "eb3f37c97b141619fb08a4fb933c8f7d4fe64b41f0c1804717e04054913feda2",
+    "libjulia-internal.so.1.12.7": "e36f5186f293ebc66ee8a5ebf0ee29cd6bf5e72ccf091f5a58ab44b59fdf52c5",
+    "libklu.so.2.3.5": "7774746d906a451f7f7b6e0186773e7f043303e525a2e8d569c15679f3089866",
+    "libldl.so.3.3.2": "1341f5a5d49b3d14a0fd7ed801b480754e25e2b010751301d1c375a69aa47466",
+    "libmpfr.so.6.2.2": "6f7f0ab9c643d52a26d4f5ba84b6850ab397f71e32f87e1da46566801d8c99d2",
+    "libnghttp2.so.14.28.3": "3275833c037ed598e50823f97a1a450e6d804eb6e63d566314cbca147883b56e",
+    "libopenblas64_.0.3.29.so": "8ee07277bc2a35049697c73f10c419eb16b235845f15666b74cf284476d91097",
+    "libopenlibm.so.4.0": "38395d1ab83bf1ef2a42ffd97ea7c00274c3da9a75c5db9f03d6c3003fb17751",
+    "libpcre2-8.so.0.13.0": "b6725ac6198818730f93b0fcfd0f4c351dd83c30b6f9cea580a2eef1bb8be9f1",
+    "libquadmath.so.0.0.0": "56b78da2940e73b707b05e5e1b8d2011fc298589a2f2e96d15b3df74271bb338",
+    "librbio.so.4.3.4": "f6affc55ea70b3256fd80a2dfa1e053436d452994b622a1655dd290da6b931f8",
+    "libspqr.so.4.3.4": "deca66000511a6035d7a710f20990f2726517f4aa756b4992bc4e9fb87ebb6a8",
+    "libssh2.so.1.0.1": "d7e6446d0506f7ba7abe9ad53139688c2aa1b6350dd2f6d188fad61e0b388ac9",
+    "libssl.so.3": "c8705da42d98f3b68072e79e554e5bb6d4d0a36f22f63ab6f909a3fef3617c29",
+    "libssp.so.0.0.0": "6cb514ffbfb163605787979f6ccf14734a1ba3544c30b671ca8ac999fb4c5888",
+    "libstdc++.so.6.0.33": "a74012ee96923aa31cb317748eda6cfbf9617fbe026b050ab2872de6364f933a",
+    "libsuitesparseconfig.so.7.8.3": "148ee155c1b1767105fca5db2c7b15234e433e03fcfabcc4f47ec4af9f3cc305",
+    "libumfpack.so.6.3.5": "2c2292aac484ddf8ac8057de29fb12023b5d222517fb86ff7fdda6d81fcb7abd",
+    "libunwind.so.8.1.0": "8886bc0dbd2897cabeb4ad834bd158052741dd4b789be1bfdd52ba58856266df",
+    "libz.so.1.3.1": "0725af73672a66b78f8f1801ce68d68abe420cb92b92c7b59e516d0f0678c784",
+    "sys.so": "03041fa63edac21123a7d4ced06364243c5b9653f4ceb6ba618f69876eefa66f",
+    "libjulia.so.1.12.7": "59edaa8de00fcac7309a3589e387cde9d44d9a741c4cbc0a055be209883e3ded",
+    "aGHFV_Xp4XB.so": "2d4bbb4fc41918d766040ed637593cef5f58549726e2aa1d3521d78b6b3317dc",
+    "D7K0n_Xp4XB.so": "feedf9ade9201eacb35920778810163d799a11bfd8718dcb7cc1ccae3b177a66",
+    "iCwSB_Xp4XB.so": "e391dbcb528c6edb99ff9998fca1003c1ec8a2bee3a42f3f3700c14b92e4cf72",
+    "p8See_Xp4XB.so": "419b5f121b3a6dac6e768c34070ef74d83128c92bd6a579a92ba06dba2befa7a",
+    "eiA4B_Xp4XB.so": "76a4da85a2df80207c6917d8ee6a95b6e9824dc42a6761c2191a079400c740d2",
+    "8OCEv_Xp4XB.so": "3df746cb993237ff712870a71e1bb4e9eceb91900158c85f6e3dfc8689b90d64",
+    "ht49g_Xp4XB.so": "f7bf4547a3d9ba658159cdaabfe00766e58077511c0263b469e66f04973744a1",
+    "9JWaY_Xp4XB.so": "88cf6c140cd736fb53003d5c8cdef7ff20f162ddd49eebd7f80009db473dd4f1",
+    "xrYJZ_Xp4XB.so": "a4733771a9bdb04b71ab2d666cca8639f3d63dc57aed869ed285ea71fe13e97d",
+    "nfCpg_Xp4XB.so": "0ab86f742b66b77d5dd2ae034e1afc5c6f6e4b58d5436e3d3c83b44c5a4397cd",
+    "K6mup_Xp4XB.so": "baeb4ff930217e49812befc911a56b33b6dbfefecc63fc191650363d038639d6",
+    "PWFjL_Xp4XB.so": "173dd2f6aed298c3ca44ef8d3e09808db5b2c4a40b351d0fb2377be704bb0387",
+    "AREjX_Xp4XB.so": "30f299fb92a4f5425ec8c495a671d470bec6d26ea6c7e6447dbc719a216fd7bd",
+    "XKIUi_Xp4XB.so": "f43b682a75ee0d07782757b5dc246caa43eac9420c3ffff438ac359a96de3826",
+    "J8H6s_Xp4XB.so": "dfd989c91514c6030c7ae0e86a848b213b18620b1e7cdc4a0611844be3fa43d6",
+    "ToVO1_Xp4XB.so": "d87cb3c4d135a51cd3e53f3310d3599ba9f3167489a8650c8cab598584eb9732",
+    "M3X35_Xp4XB.so": "7477ee7025e74dde43fb61fcba73561d02871afc0e9442398dbf111a3e9536f0",
+    "tUTdb_Xp4XB.so": "843aca8930622449fb97e56a040ce317093feadcbe320b8cdb62fee1618cd259",
+    "3FQLY_Xp4XB.so": "a06c60372769fd9f680534a75dedc8b6c62d0f661f2e41308aa09904e459ece0",
+    "zGad9_Xp4XB.so": "4706c9b11614bf5e194d0786b08425f29baa2b3075412ea72995aae9ac908b4f",
+    "P9ieR_Xp4XB.so": "a7ca6ebd3ed33cb732bd42f2009d170d9b1e831cab001cc154d18079667c1e52",
+    "UcVoM_Xp4XB.so": "4d7201747f316a767644ff7273da24f3e976ae00320e4af7561a5ce7959716b0",
+    "ME9At_Xp4XB.so": "a7e8e469b6f4dd42408b6f96468a1b0170edc6fe0ef221980fdcb651a91cc288",
+    "mjrwE_Xp4XB.so": "db5f2870f17e26aa672d6b66d91c2dbe57b8c9944c620728d74c9bcf6fd610d0",
+    "G9ZYP_Xp4XB.so": "d6facf2d382d66df4c8c5f0244cdfee53fb33b4f0823a77a675aeafd6a23108b",
+    "SIw1t_Xp4XB.so": "7dedf33c4813dd18b31c79db40a98c386708ee034882ebcde682fd96919463b8",
+    "xjq3Q_Xp4XB.so": "453c6500c0c7b321de41f09395d5c9580aee9bc4e2138cc44255dc6102414f9f",
+    "KTGSA_Xp4XB.so": "7da4aeb119be62cea03025de81b6915761a635facb4939f029c2fae11c7e6134",
+    "dfuGM_Xp4XB.so": "f003561c657b389167d591564b8dc1b2355967ac2a2e91e799770bebcd351e27",
+    "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2": "cd4df4f3c7b83673d61189bf2eaebd33ca4f2853ab9772b8a25e025ef99b1e81",
+    "/usr/lib/x86_64-linux-gnu/libc.so.6": "8db37cf3f2169f59a0f07ef1fea308c35656668c64c8ff294e1860f4121eb161",
+    "/usr/lib/x86_64-linux-gnu/libdl.so.2": "292d5f5af2e7360b3e18c56591a4960115373ecf40627660f9149b6c68a33f80",
+    "/usr/lib/x86_64-linux-gnu/libm.so.6": "e9c4b28d340e415b8137480ec442662f981e1399386c5931dae0e886e3639e91",
+    "/usr/lib/x86_64-linux-gnu/libpthread.so.0": "a27ffa9bf233d61a5f02ddb0cf770dd6579021afc1aa8aec0fb58ee4a965281a",
+    "/usr/lib/x86_64-linux-gnu/librt.so.1": "c6e6288545e24b0b3cfbf33320bda9236521625d8c3d628f3444f1ed40e5c7c5"
+  },
+  "julia_replay": {
+    "passed": true,
+    "checked_stages": 40,
+    "relative_tolerance": 1e-12,
+    "absolute_tolerance": 1e-14,
+    "hashes": [
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac",
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac",
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac",
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac",
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac",
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac",
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac",
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac",
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac",
+      "62ccac1b22c3851c2fcf506a4b508794c48e784db6060d1b148e389467a025b4",
+      "8be3586cce0468980334bdb63a4d829856e8939a88c31cf0b1771ca9c4c2f6ae",
+      "87f6c97f5226c372fd76a16b30629dda4de12d3c424a4dac52b646756ae2db78",
+      "82d7289f550263aca0c3b89c195ecf7ae2774a6366a79b64a2a14686d0d6b4ac"
+    ],
+    "fields": [
+      "grid",
+      "T",
+      "Y",
+      "velocity",
+      "inlet_Y",
+      "state",
+      "P"
+    ],
+    "max_abs": [
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ]
+    ]
+  },
+  "julia_blas_library_hashes": {
+    "libopenblas64_.so": "8ee07277bc2a35049697c73f10c419eb16b235845f15666b74cf284476d91097",
+    "libblastrampoline.so.5": "8222c2022d164add076130e376fadbcde143f7a47a5c2eb2bb590ea98a98589e"
+  },
+  "threads_after": {
+    "threadpools": [
+      {
+        "file": "libgomp.so.1.0.0",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.34.so",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ],
+    "environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "JULIA_NUM_THREADS": "1"
+    }
+  },
+  "actual_loaded_cantera_hashes": {
+    "libcantera_shared.so.4.0.0": "1edb2105be995bea941fad7b942651788835d13737fe3b15dff342c0e64571f6",
+    "_cantera.cpython-312-x86_64-linux-gnu.so": "cb6f63a9170b57a6e8f3a0ba1eeb92ecfb43becf64f92fcae867a9f2a5e4f6ac"
+  },
+  "accuracy": {
+    "reference": "First-order CT extrapolation from controlled whole-grid bisection, with last-extrapolation change retained.",
+    "criteria": {
+      "speed": 0.01,
+      "temperature": 0.01,
+      "species": 0.05,
+      "species_floor": 1e-07,
+      "elements": 1e-06
+    },
+    "required_modes": [
+      "mass",
+      "mass-soret",
+      "multi",
+      "multi-soret"
+    ],
+    "results": {
+      "mass": {
+        "native_points": 131,
+        "native_domain": [
+          0.0,
+          0.03
+        ],
+        "reference_levels": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "reference_points": [
+          1089,
+          2177
+        ],
+        "reference_domain": [
+          0.0,
+          0.06
+        ],
+        "profiles": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.00947831723082963,
+              "normalized_peak_error": 0.0028689841776467226,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 0.00020486361400619586,
+              "normalized_peak_error": 0.0010890267017739173,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 0.0023768466276296403,
+              "normalized_peak_error": 0.0023994609286833754,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.13684032169219668,
+              "normalized_peak_error": 0.00041833843732266986,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 0.002946074268732979,
+              "normalized_peak_error": 0.004576497693932296,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.08436583354733365,
+              "normalized_peak_error": 0.0005011322935960889,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 0.00022843211011834617,
+              "normalized_peak_error": 0.0021305257616335248,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 6.052939718104286e-05,
+              "normalized_peak_error": 0.003621717277253777,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 0.8547475512768034,
+              "normalized_peak_error": 2.7020810038165988e-05,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 0.0,
+              "normalized_peak_error": 0.0,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 1.1066034834454967,
+            "normalized_peak_error": 0.0005846791786082294
+          },
+          "all_species_pass": true
+        },
+        "reference_extrapolation_change": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.00947831723082963,
+              "normalized_peak_error": 0.00017514969840893224,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 0.00020486361400619586,
+              "normalized_peak_error": 8.580558824417633e-05,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 0.0023768466276296403,
+              "normalized_peak_error": 0.00012725438605871973,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.13684032169219668,
+              "normalized_peak_error": 2.1214452567103744e-05,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 0.002946074268732979,
+              "normalized_peak_error": 0.0002210632776209289,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.08436720337920166,
+              "normalized_peak_error": 2.757127454792127e-05,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 0.00022843211011834617,
+              "normalized_peak_error": 0.00015304407337259998,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 6.052939718104286e-05,
+              "normalized_peak_error": 0.000379704162789339,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 0.8547475512768034,
+              "normalized_peak_error": 1.59812847347364e-06,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 0.0,
+              "normalized_peak_error": 0.0,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 0.03884984145383896,
+            "normalized_peak_error": 2.0526497277567322e-05
+          },
+          "all_species_pass": true
+        },
+        "speed_relative_error": 0.00044460486231142715,
+        "Tmax_relative_error": 9.894460208960648e-05,
+        "elements": {
+          "O": {
+            "inlet": 0.13676369517570103,
+            "outlet": 0.13676369517577536,
+            "abs_error": 7.432943149865423e-14,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.009478316470455486,
+            "outlet": 0.009478316470463558,
+            "abs_error": 8.071668333720083e-15,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.8537579883538435,
+            "outlet": 0.8537579883537613,
+            "abs_error": 8.22675261247241e-14,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.0,
+            "outlet": 0.0,
+            "abs_error": 0.0,
+            "pass": true
+          }
+        },
+        "gates": {
+          "species_profiles": true,
+          "temperature_profile": true,
+          "peak_temperature": true,
+          "elements": true,
+          "speed": true
+        },
+        "passed": true
+      },
+      "mass-soret": {
+        "native_points": 137,
+        "native_domain": [
+          0.0,
+          0.03
+        ],
+        "reference_levels": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "reference_points": [
+          1137,
+          2273
+        ],
+        "reference_domain": [
+          0.0,
+          0.06
+        ],
+        "profiles": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.009478317104612293,
+              "normalized_peak_error": 0.003743728638434135,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 0.0001885437302708556,
+              "normalized_peak_error": 0.0009851736106834162,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 0.00227632453387139,
+              "normalized_peak_error": 0.0021587986113522093,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.136880875913995,
+              "normalized_peak_error": 0.00040545026761540994,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 0.0028885653215309304,
+              "normalized_peak_error": 0.004301362544919081,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.08436673526021093,
+              "normalized_peak_error": 0.0005210890721472835,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 0.00021155502231127922,
+              "normalized_peak_error": 0.0021933404036105744,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 5.6113275921164954e-05,
+              "normalized_peak_error": 0.004163100769415633,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 0.8562263686770881,
+              "normalized_peak_error": 3.5837813313025186e-05,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 0.0,
+              "normalized_peak_error": 0.0,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 1.0149557098916375,
+            "normalized_peak_error": 0.0005362553053007705
+          },
+          "all_species_pass": true
+        },
+        "reference_extrapolation_change": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.009478317104612293,
+              "normalized_peak_error": 0.00014369740050418424,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 0.0001885437302708556,
+              "normalized_peak_error": 0.00010196338552153815,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 0.00227632453387139,
+              "normalized_peak_error": 0.00015854325177653135,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.136880875913995,
+              "normalized_peak_error": 2.4262066377628548e-05,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 0.0028885653215309304,
+              "normalized_peak_error": 0.0002176112599614765,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.08436748413082355,
+              "normalized_peak_error": 3.415154620187481e-05,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 0.00021155502231127922,
+              "normalized_peak_error": 0.00018546806193661745,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 5.6113275921164954e-05,
+              "normalized_peak_error": 0.00038427071467187087,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 0.8562263686770881,
+              "normalized_peak_error": 1.3788821713793082e-06,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 0.0,
+              "normalized_peak_error": 0.0,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 0.03876568492910337,
+            "normalized_peak_error": 2.048198163156231e-05
+          },
+          "all_species_pass": true
+        },
+        "speed_relative_error": 0.0004649400342695481,
+        "Tmax_relative_error": 6.879732714130566e-05,
+        "elements": {
+          "O": {
+            "inlet": 0.13676369517570103,
+            "outlet": 0.13676369517580828,
+            "abs_error": 1.0724754417879012e-13,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.009478316470455486,
+            "outlet": 0.00947831647006511,
+            "abs_error": 3.9037523213991676e-13,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.8537579883538435,
+            "outlet": 0.8537579883541265,
+            "abs_error": 2.829958489769524e-13,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.0,
+            "outlet": 0.0,
+            "abs_error": 0.0,
+            "pass": true
+          }
+        },
+        "gates": {
+          "species_profiles": true,
+          "temperature_profile": true,
+          "peak_temperature": true,
+          "elements": true,
+          "speed": true
+        },
+        "passed": true
+      },
+      "multi": {
+        "native_points": 140,
+        "native_domain": [
+          0.0,
+          0.03
+        ],
+        "reference_levels": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "reference_points": [
+          1137,
+          2273
+        ],
+        "reference_domain": [
+          0.0,
+          0.06
+        ],
+        "profiles": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.009478316760845663,
+              "normalized_peak_error": 0.0017566273376090204,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 0.0002068466896615694,
+              "normalized_peak_error": 0.0012201885989362568,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 0.00239775727263971,
+              "normalized_peak_error": 0.0026901999137263297,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.13683952286410617,
+              "normalized_peak_error": 0.00046344027973746043,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 0.0029610859065121588,
+              "normalized_peak_error": 0.005026819997076062,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.08436596283339885,
+              "normalized_peak_error": 0.0005333505983993684,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 0.00022950012860765298,
+              "normalized_peak_error": 0.0021545346393365525,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 6.156093626477284e-05,
+              "normalized_peak_error": 0.0037154993903275764,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 0.8548211571252411,
+              "normalized_peak_error": 1.690361071193986e-05,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 7.145484644323623e-16,
+              "normalized_peak_error": 7.205405920646809e-06,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 1.2603065665134636,
+            "normalized_peak_error": 0.0006658883063234963
+          },
+          "all_species_pass": true
+        },
+        "reference_extrapolation_change": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.009478316760845663,
+              "normalized_peak_error": 5.7948950716970225e-05,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 0.0002068466896615694,
+              "normalized_peak_error": 8.580711276109587e-05,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 0.00239775727263971,
+              "normalized_peak_error": 0.0001287191289074771,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.13683952286410617,
+              "normalized_peak_error": 2.092147516554667e-05,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 0.0029610859065121588,
+              "normalized_peak_error": 0.00019844717780728423,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.08436738540333132,
+              "normalized_peak_error": 2.8219496161505312e-05,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 0.00022950012860765298,
+              "normalized_peak_error": 0.00016127304958185975,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 6.156093626477284e-05,
+              "normalized_peak_error": 0.0002614072260568404,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 0.8548211571252411,
+              "normalized_peak_error": 5.150874867289027e-07,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 7.145484644323623e-16,
+              "normalized_peak_error": 1.3307690581899359e-08,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 0.025525860461186767,
+            "normalized_peak_error": 1.3486696365449729e-05
+          },
+          "all_species_pass": true
+        },
+        "speed_relative_error": 0.0007445666601624349,
+        "Tmax_relative_error": 0.000105339456728983,
+        "elements": {
+          "O": {
+            "inlet": 0.13676369517570103,
+            "outlet": 0.13676369517570147,
+            "abs_error": 4.440892098500626e-16,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.009478316470455486,
+            "outlet": 0.009478316470455272,
+            "abs_error": 2.1337098754514727e-16,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.8537579883538435,
+            "outlet": 0.8537579883538433,
+            "abs_error": 2.220446049250313e-16,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.0,
+            "outlet": 1.726808569366589e-18,
+            "abs_error": 1.726808569366589e-18,
+            "pass": true
+          }
+        },
+        "gates": {
+          "species_profiles": true,
+          "temperature_profile": true,
+          "peak_temperature": true,
+          "elements": true,
+          "speed": true
+        },
+        "passed": true
+      },
+      "multi-soret": {
+        "native_points": 140,
+        "native_domain": [
+          0.0,
+          0.03
+        ],
+        "reference_levels": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "reference_points": [
+          1137,
+          2273
+        ],
+        "reference_domain": [
+          0.0,
+          0.06
+        ],
+        "profiles": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.00947831705185212,
+              "normalized_peak_error": 0.003926461073241545,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 0.0001926638711394892,
+              "normalized_peak_error": 0.001109480856894484,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 0.0023108948167365013,
+              "normalized_peak_error": 0.0024402611478905292,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.13684599267041764,
+              "normalized_peak_error": 0.00042862716348861864,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 0.002909896560763341,
+              "normalized_peak_error": 0.004760247874820119,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.08436662655377133,
+              "normalized_peak_error": 0.000544955677933253,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 0.0002128400576373519,
+              "normalized_peak_error": 0.0022304316425087994,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 5.7103283847228584e-05,
+              "normalized_peak_error": 0.0042563066553065795,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 0.8567537667846707,
+              "normalized_peak_error": 3.78630102527616e-05,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 6.699941118057607e-16,
+              "normalized_peak_error": 4.229646856784181e-06,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 1.169173583165957,
+            "normalized_peak_error": 0.0006177370584930025
+          },
+          "all_species_pass": true
+        },
+        "reference_extrapolation_change": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.00947831705185212,
+              "normalized_peak_error": 0.00013100268158618811,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 0.0001926638711394892,
+              "normalized_peak_error": 9.645591212332726e-05,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 0.0023108948167365013,
+              "normalized_peak_error": 0.00015124463572424398,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.13684599267041764,
+              "normalized_peak_error": 2.322948464889003e-05,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 0.002909896560763341,
+              "normalized_peak_error": 0.0002168758476687621,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.08436746634685069,
+              "normalized_peak_error": 3.311186864844887e-05,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 0.0002128400576373519,
+              "normalized_peak_error": 0.00018506297587494316,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 5.7103283847228584e-05,
+              "normalized_peak_error": 0.00036354825757213284,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 0.8567537667846707,
+              "normalized_peak_error": 1.2869906210355522e-06,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 6.699941118057607e-16,
+              "normalized_peak_error": 1.2818014671651156e-08,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 0.03681928239137733,
+            "normalized_peak_error": 1.9453599985284794e-05
+          },
+          "all_species_pass": true
+        },
+        "speed_relative_error": 0.0006993457080604439,
+        "Tmax_relative_error": 7.587661256881768e-05,
+        "elements": {
+          "O": {
+            "inlet": 0.13676369517570103,
+            "outlet": 0.13676369517570103,
+            "abs_error": 0.0,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.009478316470455486,
+            "outlet": 0.009478316470455425,
+            "abs_error": 6.071532165918825e-17,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.8537579883538435,
+            "outlet": 0.8537579883538435,
+            "abs_error": 0.0,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.0,
+            "outlet": 2.0284558948555105e-19,
+            "abs_error": 2.0284558948555105e-19,
+            "pass": true
+          }
+        },
+        "gates": {
+          "species_profiles": true,
+          "temperature_profile": true,
+          "peak_temperature": true,
+          "elements": true,
+          "speed": true
+        },
+        "passed": true
+      }
+    },
+    "failures": [],
+    "passed": true
+  },
+  "input_and_source_bytes_unchanged": true,
+  "cantera_seconds": [
+    0.2339976392686367,
+    0.2325678658671677,
+    0.23471841774880886,
+    0.23778093745931983,
+    0.23213831707835197,
+    0.2244515442289412,
+    0.23453801311552525,
+    0.23066015727818012,
+    0.22736006882041693,
+    0.24083005404099822
+  ],
+  "julia_seconds": [
+    0.326768858,
+    0.30761374899999994,
+    0.315034533,
+    0.347382762,
+    0.31831008299999997,
+    0.33449365,
+    0.31592351900000004,
+    0.31901008299999994,
+    0.322720819,
+    0.326598402
+  ],
+  "median_speed_ratio_cantera_over_julia": 0.7290298277724587,
+  "ratio_threshold_met": false,
+  "physical_gate_application": "Last repetition of every source stage checked against refined references; strict numerical replay establishes the same outputs for all first/warm repetitions.",
+  "raw_report_sha256": "618d7754e341195a562aa4a8b6cb96705e213e5a919b317155c7b114baa9c97f",
+  "native_commit_scope": "Numerical src files; public examples and benchmark drivers are separately identified by their measured hashes.",
+  "example": "onedim/adiabatic_flame",
+  "correctness_pass": true,
+  "speed_ratio": 0.7290298277724586,
+  "minimum_speed_ratio": 0.95,
+  "cantera_warm_median_seconds": 0.2325678658671677,
+  "julia_warm_median_seconds": 0.319010083
+}

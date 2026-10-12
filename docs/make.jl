@@ -7,6 +7,7 @@ makedocs(
     format=Documenter.HTML(),
     sitename="Arrhenius.jl",
     modules=[Arrhenius],
+    checkdocs=:exports,
     pages=[
         ##############################################
         ## MAKE SURE TO SYNC WITH docs/src/index.md ##

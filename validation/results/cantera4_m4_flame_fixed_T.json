@@ -1,0 +1,2570 @@
+{
+  "case": "fixed",
+  "formal": true,
+  "passed": false,
+  "performance_pass": false,
+  "date": "2026-09-12 01:30:59 +0800",
+  "host": {
+    "cpu": "Apple M4",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "kernel_release": "25.6.0",
+    "system": "Darwin",
+    "machine": "arm64",
+    "logical_cpus": 10
+  },
+  "target": "apple-m4",
+  "scope": "Sum of construction/initialization/adaptive-solve stages in the complete published transport sequence. Mechanism/sidecar loading, snapshots and output excluded. No refined-reference solve is timed.",
+  "compilation_scope": "Julia runtime startup and using/imports are outside timers. Specialization of run_source_sequence before entry to its internal stage timers is also excluded; the first measured sequence is not whole-program cold latency. Only JIT triggered after a stage timer starts can enter its measurement. First repetition is recorded separately and excluded from warm medians.",
+  "timing_order": "cantera-first",
+  "threads": {
+    "threadpools": [
+      {
+        "file": "libgomp.1.dylib",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.30.dylib",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ],
+    "accelerate_threading_mode": 1,
+    "environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "JULIA_NUM_THREADS": "1"
+    }
+  },
+  "cantera_version": "4.0.0a2",
+  "cantera_build_record": {
+    "version": "4.0.0a2",
+    "source": {
+      "commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+      "archive_sha256": "fe10560a649c557613cdc22bf4309245f055cea5014673079a53db391403d47c"
+    },
+    "compiler": "Apple clang version 17.0.0 (clang-1700.0.13.5)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "optimization": "-O3 -DNDEBUG; C++20; debug=no",
+    "original_build_record_sha256": "c8ee67fea694564a2eb0baf5673dc31ffeaff4f4f48a1a59c24dd56b205bc9e9",
+    "source_files_verified_unchanged": 1451,
+    "library_hashes": {
+      "lib/libcantera_shared.4.0.0.dylib": "295943c1cd2c73ae85d1c9683a047ad42d0204d8e588878efac799b84e5a042b",
+      "lib/python3.13/site-packages/cantera/_cantera.cpython-313-darwin.so": "b9dcc98aa66410e9d1896e2a5a6e398b0491af8adb7e82c6738ed9281db5a417"
+    },
+    "dependencies": {
+      "numpy": "2.5.2",
+      "cython": "3.3.0",
+      "setuptools": "84.0.0",
+      "ruamel.yaml": "0.19.1",
+      "scons": "4.11.1",
+      "jinja2": "3.1.6",
+      "typing_extensions": "4.16.0",
+      "boost": "1.86.0 isolated headers",
+      "eigen": "3.4.0 reused existing private source",
+      "fmt": "9.1.0 reused existing private source",
+      "yaml_cpp_cmake": "project(YAML_CPP VERSION 0.7.0 LANGUAGES CXX)",
+      "doxygen": "1.18.0 (8e760943e5d9581a444cf327f43a0b4d20d29482)",
+      "openblas": "0.3.30"
+    }
+  },
+  "cantera_build_record_sha256": "b151c4c9065364940a1a9409f6b3060a8b0a744ef1817076f17754a3121edfff",
+  "mechanism_sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+  "sidecar_sha256": "342f217b9d9e5b3b338350bf1428e32d833e9aa61ee05e97fc91a2e47c7b7b80",
+  "multicomponent_sha256": "af96b1d25dadeab49bbeab3bc56422a5d7ae6728aeb676443c936b386a3c02f3",
+  "fixed_temperature_profile_sha256": "77b20b266b645f168db825e3003e81f3a6c92cb26c1d8c5969c443a38622fdbc",
+  "parameter_provenance": {
+    "cantera_version": "4.0.0a2",
+    "source_commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+    "mechanisms": {
+      "h2o2": {
+        "sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+        "species": 10,
+        "reactions": 29
+      },
+      "gri30": {
+        "sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+        "species": 53,
+        "reactions": 325
+      }
+    },
+    "examples": {
+      "adiabatic_flame": {
+        "sha256": "f2a845e0e2b0c06d466eadeba9b1be1d9b8124aadf94e83230527d4124b5840d"
+      },
+      "burner_flame": {
+        "sha256": "8c95f440748a2559b4f2a940b6b1864144e0668704a8d894e5923663278632c2"
+      },
+      "flame_fixed_T": {
+        "sha256": "102af72f0349116ce7a1258bb1ce0b06cc04ebe7359358b5c4d635799bbd01be"
+      }
+    }
+  },
+  "original_source_example": {
+    "path": "cantera-source/samples/python/onedim/flame_fixed_T.py",
+    "sha256": "102af72f0349116ce7a1258bb1ce0b06cc04ebe7359358b5c4d635799bbd01be"
+  },
+  "reference_hashes": {
+    "fixed-mole-0.npz": "84e9e72e6294961e73b31dd3d1518298932af1e4badf301c67f71645adc07e8d",
+    "fixed-mole-1.npz": "166815c4fafa43c9b82beccc08c276d644cbfb3dd282da0ce836b2b308bf62fc",
+    "fixed-mole-2.npz": "5cbc987b4d800536c9803945965f136a9b05aea563a2c7ed5681b00eef468499",
+    "fixed-mole-3.npz": "89b4c07ef47035f975f28713b15654d44bd5534846a0672bfe22825a45bf4b92",
+    "fixed-multi-0.npz": "4bb9e25478706b82145e2e35476b2282b865fe86f0aafc6369d345a0fdf68be3",
+    "fixed-multi-1.npz": "27500ef4f38d48b211a9d6d0e683b3d8433bec94c56de10b44839599b431ff38",
+    "fixed-multi-2.npz": "3e2cedf8e407e9dcee618560813eb9f5066a74bee07cb52e19388f166d4376b5",
+    "fixed-multi-3.npz": "d2ffc9684e650cd914173691c62ad15a59309568fb1523a91984702b7cc9eead"
+  },
+  "benchmark_driver_hashes": {
+    "conservative_source_bench.py": "743956a92da8b6b5daabe7616b20af4fdbfdda9f9dd91c82cc9aab5f5de91bbd",
+    "conservative_source_bench.jl": "985a199f528f8b4f99838483a705b0b16435ddf05de3e35ac1e0457b7b6e7e88",
+    "conservative_source_accuracy.py": "e1993c6d74f74ed4c7d0e1ecd0f81151da187c595bf6368551a31afca35b66d0",
+    "flame_benchmarks.py": "31a093adb4baff665f24021a2c0fc2e33366f4567fd4fe59884bd4125fcd4563",
+    "benchmark_environment.py": "a7fb9c06cf45edf95872d38cf0a66ae19e8eadb834641c0b4d0ab08614b350fb",
+    "numerical_threads.jl": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739"
+  },
+  "input_hashes": {
+    "validation/conservative_source_bench.py": "743956a92da8b6b5daabe7616b20af4fdbfdda9f9dd91c82cc9aab5f5de91bbd",
+    "validation/conservative_source_bench.jl": "985a199f528f8b4f99838483a705b0b16435ddf05de3e35ac1e0457b7b6e7e88",
+    "validation/conservative_source_accuracy.py": "e1993c6d74f74ed4c7d0e1ecd0f81151da187c595bf6368551a31afca35b66d0",
+    "validation/flame_benchmarks.py": "31a093adb4baff665f24021a2c0fc2e33366f4567fd4fe59884bd4125fcd4563",
+    "validation/benchmark_environment.py": "a7fb9c06cf45edf95872d38cf0a66ae19e8eadb834641c0b4d0ab08614b350fb",
+    "validation/numerical_threads.jl": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739",
+    "example/flames/source_flame_sequence.jl": "441654ce840cb9f583154baa1f5c2149f7b18a2cc73f142c597f727041848ccc",
+    "example/flames/adiabatic_flame.jl": "d5e3eaaf731f0c4e610a73bb961bbbd112bff364df797894159c34b9f5a46bf2",
+    "example/flames/burner_flame.jl": "2d225e359492cb26fc0dd1b42c77f4ed3363242bcad810f8b806c709df5d233c",
+    "example/flames/flame_fixed_T.jl": "3ad2fe9047bb78e332d04676d4f4ca5dc470b34ec0b7dae4446d971823985226",
+    "cantera-source/samples/python/onedim/flame_fixed_T.py": "102af72f0349116ce7a1258bb1ce0b06cc04ebe7359358b5c4d635799bbd01be",
+    "parameters/gri30.yaml": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+    "parameters/gri30.yaml.npz": "342f217b9d9e5b3b338350bf1428e32d833e9aa61ee05e97fc91a2e47c7b7b80",
+    "parameters/gri30.yaml.multicomponent.npz": "af96b1d25dadeab49bbeab3bc56422a5d7ae6728aeb676443c936b386a3c02f3",
+    "parameters/provenance.json": "efcd15a3136588a6ce148261e76b6909498f263cf89e7e6d542cfaf79ef4ff90",
+    "mac-cantera-build-record.json": "b151c4c9065364940a1a9409f6b3060a8b0a744ef1817076f17754a3121edfff",
+    "native-record.json": "5430f8cca7dc217045414d8ad7e71ea895eaa2d230d7de84b784921f8ac330f7",
+    "Project.toml": "3452e1b1c23a944371eaa9c6de5de61f4585c5a6d90b5b7b6fecda3be22c3d78",
+    "Manifest.toml": "1faf9139d9368b0d538e76653b299fa92a2b8423c2420d385c31905dd53afbd4",
+    "fixed-mole-0.npz": "84e9e72e6294961e73b31dd3d1518298932af1e4badf301c67f71645adc07e8d",
+    "fixed-mole-1.npz": "166815c4fafa43c9b82beccc08c276d644cbfb3dd282da0ce836b2b308bf62fc",
+    "fixed-mole-2.npz": "5cbc987b4d800536c9803945965f136a9b05aea563a2c7ed5681b00eef468499",
+    "fixed-mole-3.npz": "89b4c07ef47035f975f28713b15654d44bd5534846a0672bfe22825a45bf4b92",
+    "fixed-multi-0.npz": "4bb9e25478706b82145e2e35476b2282b865fe86f0aafc6369d345a0fdf68be3",
+    "fixed-multi-1.npz": "27500ef4f38d48b211a9d6d0e683b3d8433bec94c56de10b44839599b431ff38",
+    "fixed-multi-2.npz": "3e2cedf8e407e9dcee618560813eb9f5066a74bee07cb52e19388f166d4376b5",
+    "fixed-multi-3.npz": "d2ffc9684e650cd914173691c62ad15a59309568fb1523a91984702b7cc9eead",
+    "parameters/fixed-profile.npz": "77b20b266b645f168db825e3003e81f3a6c92cb26c1d8c5969c443a38622fdbc"
+  },
+  "native_example_hashes": {
+    "source_flame_sequence.jl": "441654ce840cb9f583154baa1f5c2149f7b18a2cc73f142c597f727041848ccc",
+    "adiabatic_flame.jl": "d5e3eaaf731f0c4e610a73bb961bbbd112bff364df797894159c34b9f5a46bf2",
+    "burner_flame.jl": "2d225e359492cb26fc0dd1b42c77f4ed3363242bcad810f8b806c709df5d233c",
+    "flame_fixed_T.jl": "3ad2fe9047bb78e332d04676d4f4ca5dc470b34ec0b7dae4446d971823985226"
+  },
+  "actual_loaded_cantera_hashes_before": {
+    "libcantera_shared.4.0.0.dylib": "295943c1cd2c73ae85d1c9683a047ad42d0204d8e588878efac799b84e5a042b",
+    "_cantera.cpython-313-darwin.so": "b9dcc98aa66410e9d1896e2a5a6e398b0491af8adb7e82c6738ed9281db5a417"
+  },
+  "python_executable_sha256": "a1f6d9dc20d4787a84dc2fe782094a7bac5946f49a962aa0af48a02f0e8d5bc5",
+  "native_source_hashes": {
+    "src/Arrhenius.jl": "c666ebaa2e516305f1b149628b5d09345535bc2df4a3843004a9ca41b85366d2",
+    "src/BlowersMasel.jl": "6e2266794056367d648a68a9160f15d839fde8d9bab923a4f350fbafec7cb95d",
+    "src/CatalyticFlames.jl": "8e8fab0b4eea80daf99d73e1e587b188f6ff0810a11c0667efdeba966e0d3222",
+    "src/Constants.jl": "2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83",
+    "src/CounterflowFlames.jl": "7a0ca9c3cdea0bd58c23a5d9e453b3a52400b1aaf50f6d5eb469d802213ea1c1",
+    "src/CoverageDependentThermo.jl": "cf3e8f5adde603343c58717b7deefe54694284475cb8833b923fa584823eb4df",
+    "src/CriticalProperties.jl": "90cc6911489ffe90748b15965e5da14dbde9232a0beea03312fc4ec31e5f63ba",
+    "src/DataStructure.jl": "07acaddb93237a04d978e9a73fdc136cde20ff4d922a00db790e9c4a67e85f1e",
+    "src/DustyGasTransport.jl": "b87c8a982bff05c3976c4cad27578a05098124d32fc31dce6f4756d4db0701a4",
+    "src/Equilibrium.jl": "ce2091af79c5b2ce4340735fd3936659ba269091c3f619451fef304699c7d9a2",
+    "src/FlameDerivatives.jl": "c9ead3f2c74d4c51c7b686e82c5d2ecca9f704b569d913a332f6bd5dee647562",
+    "src/FlameIO.jl": "e78b0366d1c680d744d95b14f1d5591bcd9efa8c2ac20b2d0bd1598b1f0e8021",
+    "src/Flames.jl": "070c23a6b6ac5d577b6ca1317ebbb62691ec044af2ee715771f445c9eed1d07b",
+    "src/IdealGasMixing.jl": "5ab4e26a5912a1b3a154777cbf886ddf66f48a5e26cd41af9006206d6eb87046",
+    "src/IdealGasStates.jl": "46b90818b147c9c55cfe6c6caafaf3b8f194b8eaf14b2a2828d3d26c80ec3000",
+    "src/Kinetics.jl": "54aef1c23fc012ee7f7d45eda7534d2d44cec8a283412aed9c4b51f2a9716bbd",
+    "src/Magic.jl": "9386419d03e7f481a134f2d56a2b59c4b340f1ba276bbc6ce52861597805c8e0",
+    "src/MovingWallReactors.jl": "c14ee93fa7c0a3e5e10b1e3c6b51764ff52f32929f79cf71372b21a1881f9d00",
+    "src/MulticomponentTransport.jl": "b798c622769beb0cda757abce23a05501938e7d1bba3553afab2f4ced267206a",
+    "src/Precision.jl": "970165da7f441088adacc1a5c8fa14dbcbc699df73b57d5681d9d05ab52949fd",
+    "src/PremixedCounterflowFlames.jl": "b9cda647f2cf6d6dfff79f7da558dd14f425f4ece8709024c2c7205f12114991",
+    "src/PureWater.jl": "234a75cf5ea3a06886c9003ce19f0a8d6f7492e38022b3af23604d1b3a512955",
+    "src/ReactorNetworks.jl": "e9b9410cb69d72fe92b737d958e4c5cac51be277faa7457ccf9bcbe40e5bee9b",
+    "src/Reactors.jl": "6753e519f66fd240f85622a7ea993beff2eb41050d8d61140c090a8558dd5994",
+    "src/RealGasReactors.jl": "4c62099789aa1f7a19c5728f3519714ad68c4a684e9e8dcaa575e54596c79e50",
+    "src/RealGasThermo.jl": "e67f6a0cbaab7fa8828491e3a9d01b6beab00250b9f169035c32e8a7469b347b",
+    "src/Solution.jl": "7e3dbc589eebb3e9904d22a3f9bd1fd8f88ddc36712ef3a248d334770b6339c4",
+    "src/SurfaceFlowReactors.jl": "c7f39a9f1ae4ac6b63548d104dbd4895ae8674fc69df592e101ac58b674f4909",
+    "src/SurfaceKinetics.jl": "d55b05829c4bdeee4f56a79d78ae676750600187c9a543ce72deed690ac8409e",
+    "src/Thermo/IdealGasThermo.jl": "e85feaf3272a8da51792935207ad7fbf2ab8a2b00f7c67dd0a6fae58a5b0cf31",
+    "src/Thermo.jl": "e09107c74cc4fa0379204e92ba43517df81fa01f19785fa4c5956ee02a6492c3",
+    "src/Transport.jl": "c75b8b87274d08e1c1df6c9d40e39746980fc0098040fe9be6ca87518bf844a3",
+    "src/_Arrhenius_dev.jl": "6b08d913208a17d66dda42345ecb14d164c53dcfda9292cda5f68e60e7056eed",
+    "src/_transport_test.jl": "8e2ad5c75074bce96ee9cb7a72cbdfb041cc6c9c3b0cc7983b3f370327ee4ee3"
+  },
+  "native_commit": "fd0dca8774cc59098a5379384712e9a99730c5e3",
+  "native_record_sha256": "5430f8cca7dc217045414d8ad7e71ea895eaa2d230d7de84b784921f8ac330f7",
+  "cantera_stage_seconds": [
+    [
+      0.18981366709340364,
+      0.41225237504113466
+    ],
+    [
+      0.19067745795473456,
+      0.41030791704542935
+    ],
+    [
+      0.18808562506455928,
+      0.4158339169807732
+    ],
+    [
+      0.18926787504460663,
+      0.41215274995192885
+    ],
+    [
+      0.18845570809207857,
+      0.4130951249971986
+    ],
+    [
+      0.1884558330057189,
+      0.4134438750334084
+    ],
+    [
+      0.18935516709461808,
+      0.4102261249208823
+    ],
+    [
+      0.1883937920210883,
+      0.4143872499698773
+    ],
+    [
+      0.18956124992109835,
+      0.4119046250125393
+    ],
+    [
+      0.18918862496502697,
+      0.41246554197277874
+    ]
+  ],
+  "cantera_stage_points": [
+    [
+      25,
+      67
+    ],
+    [
+      25,
+      67
+    ],
+    [
+      25,
+      67
+    ],
+    [
+      25,
+      67
+    ],
+    [
+      25,
+      67
+    ],
+    [
+      25,
+      67
+    ],
+    [
+      25,
+      67
+    ],
+    [
+      25,
+      67
+    ],
+    [
+      25,
+      67
+    ],
+    [
+      25,
+      67
+    ]
+  ],
+  "cantera_repetition_thread_checks": [
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    },
+    {
+      "threadpools": [
+        {
+          "file": "libgomp.1.dylib",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.30.dylib",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ],
+      "accelerate_threading_mode": 1,
+      "environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "JULIA_NUM_THREADS": "1"
+      }
+    }
+  ],
+  "cantera_replay": {
+    "passed": true,
+    "checked_stages": 20,
+    "relative_tolerance": 1e-12,
+    "absolute_tolerance": 1e-14,
+    "records": [
+      {
+        "repetition": 0,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 0,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 1,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 1,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 2,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 2,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 3,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 3,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 4,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 4,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 5,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 5,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 6,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 6,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 7,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 7,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 8,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 8,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 9,
+        "mode": "mole",
+        "sha256": "20b1563eba2125dd2c0d2ab01b3b7affc43850a49684997a412d2fdccc10ed4c",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      },
+      {
+        "repetition": 9,
+        "mode": "multi",
+        "sha256": "70893d36779a193fd35610cbde1df4ef46591c77634c0d6b349b60ba5f33f128",
+        "max_abs": {
+          "P": 0.0,
+          "T": 0.0,
+          "Y": 0.0,
+          "grid": 0.0,
+          "inlet_Y": 0.0,
+          "velocity": 0.0
+        }
+      }
+    ]
+  },
+  "shared_public_calculation_verified": true,
+  "julia_stage_seconds": [
+    [
+      5.704015333,
+      1.17446675
+    ],
+    [
+      5.34150425,
+      1.1063335
+    ],
+    [
+      5.348602042,
+      1.178631375
+    ],
+    [
+      5.349630583,
+      1.107287667
+    ],
+    [
+      5.418722375,
+      1.108653792
+    ],
+    [
+      5.340236917,
+      1.105509333
+    ],
+    [
+      5.4243975,
+      1.106401041
+    ],
+    [
+      5.345710791,
+      1.108676916
+    ],
+    [
+      5.437249208,
+      1.108512542
+    ],
+    [
+      5.343434459,
+      1.1059855
+    ]
+  ],
+  "julia_stage_points": [
+    [
+      75,
+      80
+    ],
+    [
+      75,
+      80
+    ],
+    [
+      75,
+      80
+    ],
+    [
+      75,
+      80
+    ],
+    [
+      75,
+      80
+    ],
+    [
+      75,
+      80
+    ],
+    [
+      75,
+      80
+    ],
+    [
+      75,
+      80
+    ],
+    [
+      75,
+      80
+    ],
+    [
+      75,
+      80
+    ]
+  ],
+  "julia_runtime": {
+    "julia_version": "1.12.7",
+    "kernel": "25.6.0",
+    "machine": "arm64-apple-darwin25.5.0",
+    "package_path": "src/Arrhenius.jl",
+    "blas_config": "LBTConfig([ILP64] libopenblas64_.dylib)",
+    "accelerate_threading": 1,
+    "julia_executable_sha256": "81f22191668e32ddc48010024e33dbcc4e17d5e39e332f81959b179e430fa94f"
+  },
+  "julia_repetition_thread_checks": {
+    "after_repetition_0": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_1": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_2": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_3": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_4": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_5": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_6": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_7": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_8": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "after_repetition_9": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "before_first": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    }
+  },
+  "julia_source_bytes_verified": true,
+  "julia_library_hashes": {
+    "libopenspecfun.2.1.dylib": "0ced2e877231afe307af1d1d1d21c37381474582555b63e7769e6e2b926dd615",
+    "libcharset.1.dylib": "802b21ee31cc89c30605d1b35009a06f66435952f39e2bd104e0053fea9fc811",
+    "libiconv.2.dylib": "8647fe6b4e8a1b9bd096ff027cfda5c92cff3d9f25a18abd08c834ff838d7c5d",
+    "aGHFV_pt9xS.dylib": "a48d2b88562e327716501b55ff0cf0d101ed5c6ccf1f17da51a750d324773f8d",
+    "ymlFQ_waQj5.dylib": "76b8a912bc5b9a4a102f3debb7c486d205d40617313f96c8c674e5ad71253308",
+    "D7K0n_pt9xS.dylib": "c67d86fead8de3f92065274582560d3c35f673550e287a2c45be037b11dafd68",
+    "VMTKN_HqBV7.dylib": "dd86c2c2aef29c0f80eefb68430b23ab2d5c1fc90edf2d88de584d8ef2a6e47c",
+    "iCwSB_HqBV7.dylib": "d41c090aa0465ba31d6f4fb778ad0832f7861fd2e05129764550eabbd2c16d82",
+    "p8See_pt9xS.dylib": "ad1fa86d9b64c6de8a61695b01c8c722b7b903793ed546e20a793f3dca13110b",
+    "vlfPe_HqBV7.dylib": "4416c897fa80d5c191b62b32ea945c09b78b771832e9e4fe0b71f05961c25a5d",
+    "x2ZNk_HqBV7.dylib": "25edb32f0dac368e69a0088fd73fb812159d67272bd7e223c3af8e921375fbca",
+    "KRdZs_HqBV7.dylib": "d3cd215974761fc66824630885b8abbf360166160f556758f8a3ce49b44f7102",
+    "eiA4B_pt9xS.dylib": "e173dde3494e8158483906899f3f1fdba7d84d3887698d68fd369785bb0e0707",
+    "6iKRU_HqBV7.dylib": "3661050e4d8e100be5797b142a56e20a611f8edc288b8ecd87c27837aefad3c6",
+    "k0ETY_HqBV7.dylib": "bc2f1dc66db3f3e58fc0f3eca9c147f3ff8731553413a153253c0a2526f148f7",
+    "ukdUG_HqBV7.dylib": "e6947c4481efe7b1367d9621adf76ed3cd269245e1cbd1e000b8125c132e681f",
+    "7Zgw7_HqBV7.dylib": "2f06b5a0882729d3b14cf029dc9805a994105743f270972b2febc4adcda3d561",
+    "8OCEv_pt9xS.dylib": "95be36d46c381d8dde0cec282784197d0bc4272c491baaff53fcca91c8628d8c",
+    "ht49g_pt9xS.dylib": "ccf707535632da57fff3a6a6479f18f44d2965e5ad4f7c25664c587ba855ff04",
+    "9JWaY_pt9xS.dylib": "6e30fbbc0172becd666005f1dc36a0add4370d97b59c0e98a72bd0407e44dd74",
+    "xrYJZ_pt9xS.dylib": "ccb33857fd371ef114460af485149a7048ed8c1c627f0dd6ca9731656d14424e",
+    "nfCpg_pt9xS.dylib": "0697b81d33bcdc752d2acf19718c2f46f5f30ac07c76e3125d1e95ce3d7632d5",
+    "K6mup_pt9xS.dylib": "55dd47722c56f975d625d4321429c2c150100c9452edbbc6f826253575e4b156",
+    "ujTCF_HqBV7.dylib": "0e85df8bc07a2936e3bd3c6c4afcb784650b65a7f01c6bc3d83b5ff5eb7a2d14",
+    "cmCYR_HqBV7.dylib": "9371f0ea4b4061702851f7732d1c2bcd48cb044f7a66927c115d57db4741543e",
+    "PWFjL_pt9xS.dylib": "dc84751735fd7b4797f33999f7abf2c80b8841b899dfd397d7c12bfb6fb58ec4",
+    "38lnR_HqBV7.dylib": "c0e48683078d34c6636586d6610dbb205a38da5048db8c3364e0ec09a4a27f9c",
+    "AREjX_pt9xS.dylib": "5970b99ceaff480b168aa37627e881cf2b8e123444fc7620c70027fa7f8e4a70",
+    "XKIUi_pt9xS.dylib": "5b76379f6a5dce87515c8c2eee386e08c790a434666e1b66f4e7525ffe6187a2",
+    "TV7Kn_HqBV7.dylib": "5745b6531dc6ad253de31b734a3ba85035031652c2862ec7ee9949eac1ca351f",
+    "k9Y1O_HqBV7.dylib": "c9c394f70319338138acc95a818ccc01f49996e1bdb954f157adf333812efb0c",
+    "J8H6s_pt9xS.dylib": "e449804db9d0d4695b4f1f8dec7762f6ae092a24d6056f31ea567213ea0611dc",
+    "ToVO1_HqBV7.dylib": "bf342efa1cd5a310b1019f994b2418d6e1e6438faa20ecdcb0aac3a30f6a6ad4",
+    "M3X35_pt9xS.dylib": "6d52e4e8c8fcafab94882660bac808e219c36824e94b31620ed7fab72a9cf1c4",
+    "TDl1L_HqBV7.dylib": "9890d445f1aa9df66115b156ea3c7b0b075ac0d162abfa1265e923a15e6069d7",
+    "tUTdb_pt9xS.dylib": "42640cac98ac6521709f68ea6d953b692b8f959323ea1bfa305b375d78664b65",
+    "pWSk8_HqBV7.dylib": "3df1b35d3d2ba6e8fa22d7c581248e5fae7af90e50f8947b4863b2168e1010a6",
+    "3FQLY_pt9xS.dylib": "fad233fcccfa367554a9b5f3bc3113bd065ab0e90a9d1c4a595b36cc8d7941c8",
+    "IyxeS_HqBV7.dylib": "513be6dc0dada8f88e18b22c476988d6043d97d7aa0d88e9f5c92f67e3ede382",
+    "zGad9_HqBV7.dylib": "14daa0f2af04444b293dac1a61a658b604d8e688a1ce0126e9594326e43b3018",
+    "P9ieR_HqBV7.dylib": "4789ba522f635915422654ed5df547c3e00538ff7cf0b2bf426f9aab745185f6",
+    "78gOt_HqBV7.dylib": "20e38252053995e08001bafa37e1a5a8f84209ec4dd719f1f724b363a42ed1ec",
+    "Tzw28_HqBV7.dylib": "ba9670335dba7e41076e1572900b614c221c24c4b61e754ccfd8011e29d0c3f3",
+    "ACjY3_HqBV7.dylib": "2584eae2d1d7d9de4544fb237ee8b9e7cf25cf4b61af9695d52beb9412b10596",
+    "UcVoM_pt9xS.dylib": "2d3b60551cee49adf1543950fa66b41c6ca519d3cf175a9542c298a7a72c9724",
+    "ME9At_HqBV7.dylib": "a6939a12559c017396f4c029b251dc828a3c3da29545be5f2763b163c97535cc",
+    "mjrwE_pt9xS.dylib": "ac575eb404aa7771b51b53ff6220a8c174fccd8960a0f3e15eef9dfedf1ca610",
+    "G9ZYP_pt9xS.dylib": "96c8a2addb469c703c513950d071ecebade71b5d0b673840e1c3bee61c70e41c",
+    "SIw1t_pt9xS.dylib": "f1e4802f97cfbc2f1cd1945c04bd3bf37f0f12f2eb11fe4ffe38f07ae921574d",
+    "LPCgu_HqBV7.dylib": "d5c3aae2222fdf176692c2b2a0f20122b58594384eb0eb6cbac2b27e6f2e3186",
+    "cOum2_HqBV7.dylib": "39620e74cd7c632fc0b2d2b5ca4da71f03b4c62430b6d24e277565f427bff32d",
+    "xjq3Q_pt9xS.dylib": "f395fde781f01cfcbbb28513a4cf6a68e469c60a64389809e06b0b3044778f39",
+    "KTGSA_pt9xS.dylib": "561a5bab443c3ebc755d8c39e4d59b5285b89fa4ea7850420a1baf8c7e497a8b",
+    "dfuGM_pt9xS.dylib": "23a9be72f73dcca6fb5402c13ef71a62fbee599e05c0df28f0423b3b13dcaffe",
+    "libLLVM.dylib": "31496c904ed3cf808601147019742e6b1fb8bf1ac563133638b2743d7ff100de",
+    "libamd.3.3.3.dylib": "058b64c50066f3e40bdd53463f97b7ffbee759218a630f5abcb67f187fc433f9",
+    "libblastrampoline.5.dylib": "62981c8ceac4b417dea4325e0d838996da0f8ece3fbb353ea2f9148cd8973c1e",
+    "libbtf.2.3.2.dylib": "daf55a50428e0c274873b9368969c9b1d15afcecdf96b2bec703bf878c59a902",
+    "libcamd.3.3.3.dylib": "7654df2a29f2203a020fa4f68a28ebc4d10c43c24870050105adf196c748e124",
+    "libccolamd.3.3.4.dylib": "26efec083d4110e9779df1c95921177299821791453919fb8d02202dcaac2bcf",
+    "libcholmod.5.3.0.dylib": "62da94dd5185c4662e9e894869c0afba72710ca72a5bad7e7c2a6d5d453e6dde",
+    "libcolamd.3.3.4.dylib": "62f39949d7985a97d159b3f806746e99881983f4365f0bafbd109f5dca73c5ce",
+    "libcrypto.3.dylib": "0188de8c00b2b9219bda70c4fce9ea553eb973dce9e94d2e9c33fddfdd1bd7c6",
+    "libcurl.4.dylib": "2a48b80ec63796c9672dc83ab4778f1243387af1f1a5e70e730fdf72e9728bd6",
+    "libgcc_s.1.1.dylib": "145a5cae0f20adcc2287120e626c6c137b550c491c5cdab636af957ea90e14c1",
+    "libgfortran.5.dylib": "a72b8368e6ba2f9e37ac14f9c10cafb0d6d0d9746fae0c479a7990a5a4e3bfb1",
+    "libgit2.1.9.0.dylib": "c13f337cca94ceae652dff9262c8c39566ec4fc50d383009392f64ef32f264a8",
+    "libgmp.10.dylib": "78a0e76e1e93b1b9aba25c777d5cfed07fd3235ef5a009e57a80a003cd8c13a0",
+    "libgomp.1.dylib": "eada7cdb8992f30047dbe30dd52ba5ba63e7fa5bca4d5e214859ce9037528554",
+    "libjulia-codegen.1.12.7.dylib": "709710909d2747045931ebc9ae300a6c32d560095d2960bfd890400f1ae6eab8",
+    "libjulia-internal.1.12.7.dylib": "48c411e9fc13c8fc27664f78f061847991b1cd6a7c6e32cde41eb537a5740560",
+    "libklu.2.3.5.dylib": "b25385da751a18691786fc038fc5f751ee941369b8a5f0c78460d86ed8638327",
+    "libldl.3.3.2.dylib": "01793e9195334ac92a55cd3491104f7a48b13b9bb2aa0c82bf8d9e2666e8d82b",
+    "libmpfr.6.dylib": "d6fd5c7e9ca66a819308af7e8e244400b62dd4af79bc0a39a2e29bafd3567844",
+    "libnghttp2.14.dylib": "a80e9efd36a5aaab943ea97493d84ee0b089a41c59017f24b68f75fa937a024b",
+    "libopenblas64_.dylib": "0a1d2340c8bcd23b8e42b9cecef2069f3717fb548e2df8d5c392df6e889a5538",
+    "libopenlibm.4.0.dylib": "d6913c05cc3ec33ffebb005daf2b01bb9a89bbb456f9a3901d2c1648c74c8299",
+    "libpcre2-8.0.dylib": "99ef827ad6e4f16e6d99dbcd3b33056555b41f139fb4d02a0be37fa9288c7660",
+    "libquadmath.0.dylib": "a171209468e2f83bf06d3ecae975218c7dc9d75a04714cda0178334b893cd555",
+    "librbio.4.3.4.dylib": "4786041d60f2bb7ac4c8a47712822df93825ed9384bdd00d5cc0d344ccd5bebb",
+    "libspqr.4.3.4.dylib": "28d9045c06e26fdfadd4c226f638a722fdfe0ff2d1398dc6e32f0a4acf6eee3c",
+    "libssh2.1.0.1.dylib": "8b2f0ee7e046c6e9d1fb07b149c3216ca9c7bae5232f788e36815ef4632a1a50",
+    "libssl.3.dylib": "a2992a6ec382d0e18ec4780b30e872440b4c96ea932cfc6e89b0908efc1593d6",
+    "libssp.0.dylib": "5f01836d0c6031bb9a9839b536792ddafe837698175c2c873be1d943c50a2223",
+    "libstdc++.6.dylib": "0e37fbd38ffb1e517e2a9ebe94404dd4b12b4dfcd099a5632c680fd673265cd3",
+    "libsuitesparseconfig.7.8.3.dylib": "eb9bfaaaf9ca41698abe54f7cc2399c873eb27831d74a5c0e182432d8a45b038",
+    "libumfpack.6.3.5.dylib": "39f36e644d7ed026b156737ff0dccf8b55aa78abc97c34cb42246985560345dd",
+    "libunwind.1.0.dylib": "c962d4fad2664e51e9231106d97b874a1845c6b4949a1d794e1e47f991bd7297",
+    "libz.1.3.1.dylib": "451fbe4a9a94e34f69597b4bc85ec2670dd679daf3cfaf7d1c4334ccc06673be",
+    "sys.dylib": "8d9b391314a7e515806a21a843f39e4c86d5b2c158669991cfa984a0d95bb85c",
+    "libjulia.1.12.7.dylib": "90c008d25cf92a7606aead2de2390f6aae81592f00705f14323f533782e0102e",
+    "/usr/lib/system/libsystem_kernel.dylib": "fb1753efbfd41622f00757d89b57172984a7e4f6957b94a222ae8fd735e970f5",
+    "/usr/lib/system/libsystem_platform.dylib": "0e4588f3c7e7f855acbfc0e540b9517b318545e8d60ccf5c31ddd04966fc791c",
+    "/usr/lib/system/libsystem_pthread.dylib": "684d6f4e2c2acfbe307ec93620f4fa2052d1ad395e86d9f6c3cb9943b0f057dd"
+  },
+  "julia_replay": {
+    "passed": true,
+    "checked_stages": 20,
+    "relative_tolerance": 1e-12,
+    "absolute_tolerance": 1e-14,
+    "hashes": [
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91",
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91",
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91",
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91",
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91",
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91",
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91",
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91",
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91",
+      "a6b4380282ca9b86f1f2b71531649a817e6b832bb9c69af8b98e0b01a14e7a78",
+      "0805169ea73075c7775c881cb08ad9289019ffdc17ecdeef281577494b4f7e91"
+    ],
+    "fields": [
+      "grid",
+      "T",
+      "Y",
+      "velocity",
+      "inlet_Y",
+      "state",
+      "P"
+    ],
+    "max_abs": [
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ]
+    ]
+  },
+  "julia_blas_library_hashes": {
+    "libopenblas64_.dylib": "0a1d2340c8bcd23b8e42b9cecef2069f3717fb548e2df8d5c392df6e889a5538",
+    "libblastrampoline.5.dylib": "62981c8ceac4b417dea4325e0d838996da0f8ece3fbb353ea2f9148cd8973c1e"
+  },
+  "threads_after": {
+    "threadpools": [
+      {
+        "file": "libgomp.1.dylib",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.30.dylib",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ],
+    "accelerate_threading_mode": 1,
+    "environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "JULIA_NUM_THREADS": "1"
+    }
+  },
+  "actual_loaded_cantera_hashes": {
+    "libcantera_shared.4.0.0.dylib": "295943c1cd2c73ae85d1c9683a047ad42d0204d8e588878efac799b84e5a042b",
+    "_cantera.cpython-313-darwin.so": "b9dcc98aa66410e9d1896e2a5a6e398b0491af8adb7e82c6738ed9281db5a417"
+  },
+  "accuracy": {
+    "reference": "First-order CT extrapolation from controlled whole-grid bisection, with last-extrapolation change retained.",
+    "criteria": {
+      "speed": 0.01,
+      "temperature": 0.01,
+      "species": 0.05,
+      "species_floor": 1e-07,
+      "elements": 1e-06
+    },
+    "required_modes": [
+      "mole",
+      "multi"
+    ],
+    "results": {
+      "mole": {
+        "native_points": 75,
+        "native_domain": [
+          0.0,
+          0.01
+        ],
+        "reference_levels": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "reference_points": [
+          97,
+          193
+        ],
+        "reference_domain": [
+          0.0,
+          0.01
+        ],
+        "profiles": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.003097064023850292,
+              "normalized_peak_error": 0.0012830494729853818,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 8.224840506764278e-06,
+              "normalized_peak_error": 0.00798448574952722,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 6.855460581073118e-06,
+              "normalized_peak_error": 0.004589461439983285,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.1822985854377833,
+              "normalized_peak_error": 0.00047660808503992085,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 2.96009770219125e-05,
+              "normalized_peak_error": 0.006595829407854834,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.12932467962740993,
+              "normalized_peak_error": 0.00046605659943861985,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 5.2705046914692133e-05,
+              "normalized_peak_error": 0.03555193743736092,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 4.499232566293177e-05,
+              "normalized_peak_error": 0.018755406578256105,
+              "pass": true
+            },
+            "C": {
+              "peak_reference": 7.257933261497465e-10,
+              "normalized_peak_error": 9.587657722906691e-05,
+              "pass": true
+            },
+            "CH": {
+              "peak_reference": 8.534012549307758e-09,
+              "normalized_peak_error": 0.0008042313123816045,
+              "pass": true
+            },
+            "CH2": {
+              "peak_reference": 9.380642426337163e-07,
+              "normalized_peak_error": 0.006364249130721384,
+              "pass": true
+            },
+            "CH2(S)": {
+              "peak_reference": 2.8474357645664524e-08,
+              "normalized_peak_error": 0.0018523639440493108,
+              "pass": true
+            },
+            "CH3": {
+              "peak_reference": 0.0003027424340947666,
+              "normalized_peak_error": 0.003346147118380812,
+              "pass": true
+            },
+            "CH4": {
+              "peak_reference": 0.05612534444560343,
+              "normalized_peak_error": 0.0003967034724573472,
+              "pass": true
+            },
+            "CO": {
+              "peak_reference": 0.06325285686480393,
+              "normalized_peak_error": 0.0022134759408614234,
+              "pass": true
+            },
+            "CO2": {
+              "peak_reference": 0.09889068477489954,
+              "normalized_peak_error": 0.0025279922567944865,
+              "pass": true
+            },
+            "HCO": {
+              "peak_reference": 1.038597196821027e-06,
+              "normalized_peak_error": 0.0026527230994018527,
+              "pass": true
+            },
+            "CH2O": {
+              "peak_reference": 0.0009502237086043469,
+              "normalized_peak_error": 0.0014343793042226253,
+              "pass": true
+            },
+            "CH2OH": {
+              "peak_reference": 1.9098001150850182e-07,
+              "normalized_peak_error": 0.0056628457288184645,
+              "pass": true
+            },
+            "CH3O": {
+              "peak_reference": 6.016371658394474e-07,
+              "normalized_peak_error": 0.011919904741082487,
+              "pass": true
+            },
+            "CH3OH": {
+              "peak_reference": 0.0001438463040995383,
+              "normalized_peak_error": 0.0025594642942031887,
+              "pass": true
+            },
+            "C2H": {
+              "peak_reference": 2.2190153640951583e-08,
+              "normalized_peak_error": 0.0017440789329623114,
+              "pass": true
+            },
+            "C2H2": {
+              "peak_reference": 0.001367804237499105,
+              "normalized_peak_error": 0.0016980789888786582,
+              "pass": true
+            },
+            "C2H3": {
+              "peak_reference": 3.1852813461838393e-06,
+              "normalized_peak_error": 0.005778209144041556,
+              "pass": true
+            },
+            "C2H4": {
+              "peak_reference": 0.0018886934289986913,
+              "normalized_peak_error": 0.0018322634928319601,
+              "pass": true
+            },
+            "C2H5": {
+              "peak_reference": 8.198864752683858e-06,
+              "normalized_peak_error": 0.002659420267958821,
+              "pass": true
+            },
+            "C2H6": {
+              "peak_reference": 0.0010395921619496843,
+              "normalized_peak_error": 0.0034794070530820465,
+              "pass": true
+            },
+            "HCCO": {
+              "peak_reference": 7.48312347655293e-06,
+              "normalized_peak_error": 0.006019274244866349,
+              "pass": true
+            },
+            "CH2CO": {
+              "peak_reference": 0.0005161209680147002,
+              "normalized_peak_error": 0.0016815521568767202,
+              "pass": true
+            },
+            "HCCOH": {
+              "peak_reference": 1.3669839759504292e-06,
+              "normalized_peak_error": 0.0028963420659105,
+              "pass": true
+            },
+            "N": {
+              "peak_reference": 5.208238090472408e-10,
+              "normalized_peak_error": 5.11710773719866e-05,
+              "pass": true
+            },
+            "NH": {
+              "peak_reference": 6.131757661343494e-10,
+              "normalized_peak_error": 3.779905533011537e-05,
+              "pass": true
+            },
+            "NH2": {
+              "peak_reference": 6.0484249160119795e-09,
+              "normalized_peak_error": 0.000539024681022894,
+              "pass": true
+            },
+            "NH3": {
+              "peak_reference": 5.945753803088128e-07,
+              "normalized_peak_error": 0.00304575030934134,
+              "pass": true
+            },
+            "NNH": {
+              "peak_reference": 2.5823339721386337e-10,
+              "normalized_peak_error": 2.130276721913027e-05,
+              "pass": true
+            },
+            "NO": {
+              "peak_reference": 6.437947469409356e-07,
+              "normalized_peak_error": 0.0051520888196861896,
+              "pass": true
+            },
+            "NO2": {
+              "peak_reference": 1.7557844877043268e-07,
+              "normalized_peak_error": 0.013593052131134592,
+              "pass": true
+            },
+            "N2O": {
+              "peak_reference": 3.256597141995141e-08,
+              "normalized_peak_error": 0.001256840042960787,
+              "pass": true
+            },
+            "HNO": {
+              "peak_reference": 9.198415415998723e-10,
+              "normalized_peak_error": 6.499737375288097e-05,
+              "pass": true
+            },
+            "CN": {
+              "peak_reference": 4.1631557612065854e-11,
+              "normalized_peak_error": 4.041088944161368e-06,
+              "pass": true
+            },
+            "HCN": {
+              "peak_reference": 1.6813416010970995e-06,
+              "normalized_peak_error": 0.0024162727653486175,
+              "pass": true
+            },
+            "H2CN": {
+              "peak_reference": 1.5158496500038303e-11,
+              "normalized_peak_error": 1.3322732360452843e-06,
+              "pass": true
+            },
+            "HCNN": {
+              "peak_reference": 1.7421451332510705e-10,
+              "normalized_peak_error": 1.6208792384642413e-05,
+              "pass": true
+            },
+            "HCNO": {
+              "peak_reference": 2.661552268854851e-08,
+              "normalized_peak_error": 0.002432038049998338,
+              "pass": true
+            },
+            "HOCN": {
+              "peak_reference": 5.89098602377464e-10,
+              "normalized_peak_error": 1.6808653778198786e-05,
+              "pass": true
+            },
+            "HNCO": {
+              "peak_reference": 1.8786066772903573e-07,
+              "normalized_peak_error": 0.007511616186757615,
+              "pass": true
+            },
+            "NCO": {
+              "peak_reference": 6.555422201270483e-10,
+              "normalized_peak_error": 3.7695843593921366e-05,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 0.7142463926234436,
+              "normalized_peak_error": 6.444112666330074e-05,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 3.964955769449224e-95,
+              "normalized_peak_error": 3.964955769449224e-88,
+              "pass": true
+            },
+            "C3H7": {
+              "peak_reference": 1.904971503355299e-08,
+              "normalized_peak_error": 0.000786936937686766,
+              "pass": true
+            },
+            "C3H8": {
+              "peak_reference": 2.355348206041041e-05,
+              "normalized_peak_error": 0.0053776774679377545,
+              "pass": true
+            },
+            "CH2CHO": {
+              "peak_reference": 4.743610011753369e-07,
+              "normalized_peak_error": 0.004810177202881498,
+              "pass": true
+            },
+            "CH3CHO": {
+              "peak_reference": 1.2033043904415837e-05,
+              "normalized_peak_error": 0.0021857942501098365,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 0.2069428443421657,
+            "normalized_peak_error": 0.0001301813401962509
+          },
+          "all_species_pass": true
+        },
+        "reference_extrapolation_change": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.003097064023850292,
+              "normalized_peak_error": 0.0009818610531915062,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 8.224840506764278e-06,
+              "normalized_peak_error": 0.008734584115476184,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 6.855460581073118e-06,
+              "normalized_peak_error": 0.0045827300838695365,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.1822985854377833,
+              "normalized_peak_error": 0.0005129857906194551,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 2.96009770219125e-05,
+              "normalized_peak_error": 0.007838330544918906,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.12932467962740993,
+              "normalized_peak_error": 0.000501296959721373,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 5.2705046914692133e-05,
+              "normalized_peak_error": 0.005882101443262071,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 4.499232566293177e-05,
+              "normalized_peak_error": 0.006055988374494991,
+              "pass": true
+            },
+            "C": {
+              "peak_reference": 7.257933261497465e-10,
+              "normalized_peak_error": 0.00012263861583448787,
+              "pass": true
+            },
+            "CH": {
+              "peak_reference": 8.534012549307758e-09,
+              "normalized_peak_error": 0.001105356400987624,
+              "pass": true
+            },
+            "CH2": {
+              "peak_reference": 9.380642426337163e-07,
+              "normalized_peak_error": 0.009618327747110461,
+              "pass": true
+            },
+            "CH2(S)": {
+              "peak_reference": 2.8474357645664524e-08,
+              "normalized_peak_error": 0.0027538971655044243,
+              "pass": true
+            },
+            "CH3": {
+              "peak_reference": 0.0003027424340947666,
+              "normalized_peak_error": 0.003909052568056414,
+              "pass": true
+            },
+            "CH4": {
+              "peak_reference": 0.05612534444560343,
+              "normalized_peak_error": 0.00044733981928738717,
+              "pass": true
+            },
+            "CO": {
+              "peak_reference": 0.06325285686480393,
+              "normalized_peak_error": 0.001367283712339861,
+              "pass": true
+            },
+            "CO2": {
+              "peak_reference": 0.09889068477489954,
+              "normalized_peak_error": 0.0020125226444819757,
+              "pass": true
+            },
+            "HCO": {
+              "peak_reference": 1.038597196821027e-06,
+              "normalized_peak_error": 0.0030408321623531377,
+              "pass": true
+            },
+            "CH2O": {
+              "peak_reference": 0.0009502237086043469,
+              "normalized_peak_error": 0.0033778093413816,
+              "pass": true
+            },
+            "CH2OH": {
+              "peak_reference": 1.9098001150850182e-07,
+              "normalized_peak_error": 0.0070738525391537905,
+              "pass": true
+            },
+            "CH3O": {
+              "peak_reference": 6.016371658394474e-07,
+              "normalized_peak_error": 0.006419823890406695,
+              "pass": true
+            },
+            "CH3OH": {
+              "peak_reference": 0.0001438463040995383,
+              "normalized_peak_error": 0.003594040048247778,
+              "pass": true
+            },
+            "C2H": {
+              "peak_reference": 2.2190153640951583e-08,
+              "normalized_peak_error": 0.0020869837486581955,
+              "pass": true
+            },
+            "C2H2": {
+              "peak_reference": 0.001367804237499105,
+              "normalized_peak_error": 0.002005945762427575,
+              "pass": true
+            },
+            "C2H3": {
+              "peak_reference": 3.1852813461838393e-06,
+              "normalized_peak_error": 0.006719250509466158,
+              "pass": true
+            },
+            "C2H4": {
+              "peak_reference": 0.0018886934289986913,
+              "normalized_peak_error": 0.0020081677390504367,
+              "pass": true
+            },
+            "C2H5": {
+              "peak_reference": 8.198864752683858e-06,
+              "normalized_peak_error": 0.004905474385957302,
+              "pass": true
+            },
+            "C2H6": {
+              "peak_reference": 0.0010395921619496843,
+              "normalized_peak_error": 0.0023787723301345325,
+              "pass": true
+            },
+            "HCCO": {
+              "peak_reference": 7.48312347655293e-06,
+              "normalized_peak_error": 0.008790534506324471,
+              "pass": true
+            },
+            "CH2CO": {
+              "peak_reference": 0.0005161209680147002,
+              "normalized_peak_error": 0.002297916832125951,
+              "pass": true
+            },
+            "HCCOH": {
+              "peak_reference": 1.3669839759504292e-06,
+              "normalized_peak_error": 0.002986763036492936,
+              "pass": true
+            },
+            "N": {
+              "peak_reference": 5.208238090472408e-10,
+              "normalized_peak_error": 7.474687838004657e-05,
+              "pass": true
+            },
+            "NH": {
+              "peak_reference": 6.131757661343494e-10,
+              "normalized_peak_error": 4.910255395539349e-05,
+              "pass": true
+            },
+            "NH2": {
+              "peak_reference": 6.0484249160119795e-09,
+              "normalized_peak_error": 0.0005360621286209068,
+              "pass": true
+            },
+            "NH3": {
+              "peak_reference": 5.945753803088128e-07,
+              "normalized_peak_error": 0.002977505017419244,
+              "pass": true
+            },
+            "NNH": {
+              "peak_reference": 2.5823339721386337e-10,
+              "normalized_peak_error": 2.3136237798744576e-05,
+              "pass": true
+            },
+            "NO": {
+              "peak_reference": 6.437947469409356e-07,
+              "normalized_peak_error": 0.001733416467146976,
+              "pass": true
+            },
+            "NO2": {
+              "peak_reference": 1.7557844877043268e-07,
+              "normalized_peak_error": 0.007563794537358603,
+              "pass": true
+            },
+            "N2O": {
+              "peak_reference": 3.256597141995141e-08,
+              "normalized_peak_error": 0.0012851978960285073,
+              "pass": true
+            },
+            "HNO": {
+              "peak_reference": 9.198415415998723e-10,
+              "normalized_peak_error": 8.145021310695586e-05,
+              "pass": true
+            },
+            "CN": {
+              "peak_reference": 4.1631557612065854e-11,
+              "normalized_peak_error": 4.320268794445448e-06,
+              "pass": true
+            },
+            "HCN": {
+              "peak_reference": 1.6813416010970995e-06,
+              "normalized_peak_error": 0.0016206319320064009,
+              "pass": true
+            },
+            "H2CN": {
+              "peak_reference": 1.5158496500038303e-11,
+              "normalized_peak_error": 1.734313159385728e-06,
+              "pass": true
+            },
+            "HCNN": {
+              "peak_reference": 1.7421451332510705e-10,
+              "normalized_peak_error": 2.14472748226023e-05,
+              "pass": true
+            },
+            "HCNO": {
+              "peak_reference": 2.661552268854851e-08,
+              "normalized_peak_error": 0.002319543155044128,
+              "pass": true
+            },
+            "HOCN": {
+              "peak_reference": 5.89098602377464e-10,
+              "normalized_peak_error": 1.2014486827202544e-05,
+              "pass": true
+            },
+            "HNCO": {
+              "peak_reference": 1.8786066772903573e-07,
+              "normalized_peak_error": 0.006610604585274595,
+              "pass": true
+            },
+            "NCO": {
+              "peak_reference": 6.555422201270483e-10,
+              "normalized_peak_error": 4.471855303317596e-05,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 0.7142463926234436,
+              "normalized_peak_error": 2.696789332715779e-05,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 3.964955769449224e-95,
+              "normalized_peak_error": 2.6366095698506517e-79,
+              "pass": true
+            },
+            "C3H7": {
+              "peak_reference": 1.904971503355299e-08,
+              "normalized_peak_error": 0.0013917335488228455,
+              "pass": true
+            },
+            "C3H8": {
+              "peak_reference": 2.355348206041041e-05,
+              "normalized_peak_error": 0.002329395213140957,
+              "pass": true
+            },
+            "CH2CHO": {
+              "peak_reference": 4.743610011753369e-07,
+              "normalized_peak_error": 0.011598191108900757,
+              "pass": true
+            },
+            "CH3CHO": {
+              "peak_reference": 1.2033043904415837e-05,
+              "normalized_peak_error": 0.004051187894591149,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 0.376619026660137,
+            "normalized_peak_error": 0.0002369193764098386
+          },
+          "all_species_pass": true
+        },
+        "speed_relative_error": 2.0449922855111916e-05,
+        "Tmax_relative_error": 4.506380754219735e-05,
+        "elements": {
+          "O": {
+            "inlet": 0.21655593762772102,
+            "outlet": 0.21655593762772102,
+            "abs_error": 0.0,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.017737039856701397,
+            "outlet": 0.017737039856701397,
+            "abs_error": 0.0,
+            "pass": true
+          },
+          "C": {
+            "inlet": 0.05283719883899813,
+            "outlet": 0.05283719883899815,
+            "abs_error": 2.0816681711721685e-17,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.7128698236765795,
+            "outlet": 0.7128698236765795,
+            "abs_error": 0.0,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.0,
+            "outlet": 0.0,
+            "abs_error": 0.0,
+            "pass": true
+          }
+        },
+        "gates": {
+          "species_profiles": true,
+          "temperature_profile": true,
+          "peak_temperature": true,
+          "elements": true
+        },
+        "passed": true
+      },
+      "multi": {
+        "native_points": 80,
+        "native_domain": [
+          0.0,
+          0.01
+        ],
+        "reference_levels": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "reference_points": [
+          265,
+          529
+        ],
+        "reference_domain": [
+          0.0,
+          0.01
+        ],
+        "profiles": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.0031001437599931804,
+              "normalized_peak_error": 0.0011658499060964265,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 8.253220715428617e-06,
+              "normalized_peak_error": 0.005835601750621369,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 6.864597262159158e-06,
+              "normalized_peak_error": 0.0030379925542469897,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.18127565486735678,
+              "normalized_peak_error": 0.0002063315524581458,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 2.9691547252957683e-05,
+              "normalized_peak_error": 0.004839006820270999,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.12931948648634423,
+              "normalized_peak_error": 0.0004937981613911154,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 5.188283480281816e-05,
+              "normalized_peak_error": 0.015802016723559756,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 4.3873391274975166e-05,
+              "normalized_peak_error": 0.00817672112349707,
+              "pass": true
+            },
+            "C": {
+              "peak_reference": 7.351640910684916e-10,
+              "normalized_peak_error": 5.3579626522595926e-05,
+              "pass": true
+            },
+            "CH": {
+              "peak_reference": 8.586709226110923e-09,
+              "normalized_peak_error": 0.0005223958033901502,
+              "pass": true
+            },
+            "CH2": {
+              "peak_reference": 9.413668226360801e-07,
+              "normalized_peak_error": 0.003993140535585184,
+              "pass": true
+            },
+            "CH2(S)": {
+              "peak_reference": 2.8559995510735894e-08,
+              "normalized_peak_error": 0.001174140809139108,
+              "pass": true
+            },
+            "CH3": {
+              "peak_reference": 0.00030331324572750463,
+              "normalized_peak_error": 0.002419441395961196,
+              "pass": true
+            },
+            "CH4": {
+              "peak_reference": 0.05686059394993275,
+              "normalized_peak_error": 0.00019866642542873002,
+              "pass": true
+            },
+            "CO": {
+              "peak_reference": 0.06326052067190818,
+              "normalized_peak_error": 0.0021271116264006125,
+              "pass": true
+            },
+            "CO2": {
+              "peak_reference": 0.09888247244341976,
+              "normalized_peak_error": 0.0025853796559335757,
+              "pass": true
+            },
+            "HCO": {
+              "peak_reference": 1.039291015725366e-06,
+              "normalized_peak_error": 0.0018239430734302926,
+              "pass": true
+            },
+            "CH2O": {
+              "peak_reference": 0.00094703159711182,
+              "normalized_peak_error": 0.0005831761983740237,
+              "pass": true
+            },
+            "CH2OH": {
+              "peak_reference": 1.9150356340345616e-07,
+              "normalized_peak_error": 0.0036102439168571605,
+              "pass": true
+            },
+            "CH3O": {
+              "peak_reference": 5.949771280579243e-07,
+              "normalized_peak_error": 0.005920820748278523,
+              "pass": true
+            },
+            "CH3OH": {
+              "peak_reference": 0.00014323980718101704,
+              "normalized_peak_error": 0.0013591101243322413,
+              "pass": true
+            },
+            "C2H": {
+              "peak_reference": 2.2254824987354675e-08,
+              "normalized_peak_error": 0.001273452071362684,
+              "pass": true
+            },
+            "C2H2": {
+              "peak_reference": 0.0013628010544590179,
+              "normalized_peak_error": 0.0013555193694657051,
+              "pass": true
+            },
+            "C2H3": {
+              "peak_reference": 3.1941950519091046e-06,
+              "normalized_peak_error": 0.0037614069944175857,
+              "pass": true
+            },
+            "C2H4": {
+              "peak_reference": 0.0018970652809491304,
+              "normalized_peak_error": 0.0008689756096707094,
+              "pass": true
+            },
+            "C2H5": {
+              "peak_reference": 8.205252299578182e-06,
+              "normalized_peak_error": 0.001760024526513718,
+              "pass": true
+            },
+            "C2H6": {
+              "peak_reference": 0.0010459532714865091,
+              "normalized_peak_error": 0.0009331289851238069,
+              "pass": true
+            },
+            "HCCO": {
+              "peak_reference": 7.490050616953825e-06,
+              "normalized_peak_error": 0.0038343654639970957,
+              "pass": true
+            },
+            "CH2CO": {
+              "peak_reference": 0.0005176692887245406,
+              "normalized_peak_error": 0.0011720332991124035,
+              "pass": true
+            },
+            "HCCOH": {
+              "peak_reference": 1.3635736889592038e-06,
+              "normalized_peak_error": 0.002331885396693248,
+              "pass": true
+            },
+            "N": {
+              "peak_reference": 5.250188217448416e-10,
+              "normalized_peak_error": 2.6543235319815974e-05,
+              "pass": true
+            },
+            "NH": {
+              "peak_reference": 6.196271065508478e-10,
+              "normalized_peak_error": 1.880025512165975e-05,
+              "pass": true
+            },
+            "NH2": {
+              "peak_reference": 6.103781160214693e-09,
+              "normalized_peak_error": 0.0003971099429267894,
+              "pass": true
+            },
+            "NH3": {
+              "peak_reference": 5.978126472698004e-07,
+              "normalized_peak_error": 0.003286193810175617,
+              "pass": true
+            },
+            "NNH": {
+              "peak_reference": 2.59268782038725e-10,
+              "normalized_peak_error": 1.5600965566039175e-05,
+              "pass": true
+            },
+            "NO": {
+              "peak_reference": 6.504707296195395e-07,
+              "normalized_peak_error": 0.003827219703160251,
+              "pass": true
+            },
+            "NO2": {
+              "peak_reference": 1.763298704289673e-07,
+              "normalized_peak_error": 0.005705342504809203,
+              "pass": true
+            },
+            "N2O": {
+              "peak_reference": 3.251423492736979e-08,
+              "normalized_peak_error": 0.0007871013269655854,
+              "pass": true
+            },
+            "HNO": {
+              "peak_reference": 9.287772526376295e-10,
+              "normalized_peak_error": 4.1581056662747194e-05,
+              "pass": true
+            },
+            "CN": {
+              "peak_reference": 4.206823185443292e-11,
+              "normalized_peak_error": 2.901917928832214e-06,
+              "pass": true
+            },
+            "HCN": {
+              "peak_reference": 1.6922782230741317e-06,
+              "normalized_peak_error": 0.001167584114597512,
+              "pass": true
+            },
+            "H2CN": {
+              "peak_reference": 1.5304109676343367e-11,
+              "normalized_peak_error": 8.198043206449065e-07,
+              "pass": true
+            },
+            "HCNN": {
+              "peak_reference": 1.751965139947062e-10,
+              "normalized_peak_error": 1.0955768467866352e-05,
+              "pass": true
+            },
+            "HCNO": {
+              "peak_reference": 2.6824756027300254e-08,
+              "normalized_peak_error": 0.0017657148408356438,
+              "pass": true
+            },
+            "HOCN": {
+              "peak_reference": 5.926538487835973e-10,
+              "normalized_peak_error": 1.121287325846003e-05,
+              "pass": true
+            },
+            "HNCO": {
+              "peak_reference": 1.8932294121315513e-07,
+              "normalized_peak_error": 0.005587237858430832,
+              "pass": true
+            },
+            "NCO": {
+              "peak_reference": 6.622678626380958e-10,
+              "normalized_peak_error": 2.18417972884957e-05,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 0.7141207823575433,
+              "normalized_peak_error": 5.8439234719768836e-05,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 1.8842993328459904e-15,
+              "normalized_peak_error": 1.980255786021325e-08,
+              "pass": true
+            },
+            "C3H7": {
+              "peak_reference": 1.903939006990493e-08,
+              "normalized_peak_error": 0.0005219494081383621,
+              "pass": true
+            },
+            "C3H8": {
+              "peak_reference": 2.3592004876725953e-05,
+              "normalized_peak_error": 0.0012672975749999152,
+              "pass": true
+            },
+            "CH2CHO": {
+              "peak_reference": 4.7384957962965034e-07,
+              "normalized_peak_error": 0.004942334939890205,
+              "pass": true
+            },
+            "CH3CHO": {
+              "peak_reference": 1.1991928846751349e-05,
+              "normalized_peak_error": 0.001541890524718222,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 0.1125095500324278,
+            "normalized_peak_error": 7.077813052582976e-05
+          },
+          "all_species_pass": true
+        },
+        "reference_extrapolation_change": {
+          "species": {
+            "H2": {
+              "peak_reference": 0.0031001437599931804,
+              "normalized_peak_error": 0.00021286695236461274,
+              "pass": true
+            },
+            "H": {
+              "peak_reference": 8.253220715428617e-06,
+              "normalized_peak_error": 0.002640255664498358,
+              "pass": true
+            },
+            "O": {
+              "peak_reference": 6.864597262159158e-06,
+              "normalized_peak_error": 0.0006607588789094189,
+              "pass": true
+            },
+            "O2": {
+              "peak_reference": 0.18127565486735678,
+              "normalized_peak_error": 6.011205290585249e-05,
+              "pass": true
+            },
+            "OH": {
+              "peak_reference": 2.9691547252957683e-05,
+              "normalized_peak_error": 0.002393974958666992,
+              "pass": true
+            },
+            "H2O": {
+              "peak_reference": 0.12931948648634423,
+              "normalized_peak_error": 0.00011116641395409577,
+              "pass": true
+            },
+            "HO2": {
+              "peak_reference": 5.188283480281816e-05,
+              "normalized_peak_error": 0.0014011782414071984,
+              "pass": true
+            },
+            "H2O2": {
+              "peak_reference": 4.3873391274975166e-05,
+              "normalized_peak_error": 0.0007355174499547351,
+              "pass": true
+            },
+            "C": {
+              "peak_reference": 7.351640910684916e-10,
+              "normalized_peak_error": 1.8186133268638965e-05,
+              "pass": true
+            },
+            "CH": {
+              "peak_reference": 8.586709226110923e-09,
+              "normalized_peak_error": 0.00011747080300034234,
+              "pass": true
+            },
+            "CH2": {
+              "peak_reference": 9.413668226360801e-07,
+              "normalized_peak_error": 0.0015129822730936596,
+              "pass": true
+            },
+            "CH2(S)": {
+              "peak_reference": 2.8559995510735894e-08,
+              "normalized_peak_error": 0.00037973837450232066,
+              "pass": true
+            },
+            "CH3": {
+              "peak_reference": 0.00030331324572750463,
+              "normalized_peak_error": 0.0011685533320616173,
+              "pass": true
+            },
+            "CH4": {
+              "peak_reference": 0.05686059394993275,
+              "normalized_peak_error": 4.905559061515216e-05,
+              "pass": true
+            },
+            "CO": {
+              "peak_reference": 0.06326052067190818,
+              "normalized_peak_error": 0.0003660079799543489,
+              "pass": true
+            },
+            "CO2": {
+              "peak_reference": 0.09888247244341976,
+              "normalized_peak_error": 0.0004993029019916013,
+              "pass": true
+            },
+            "HCO": {
+              "peak_reference": 1.039291015725366e-06,
+              "normalized_peak_error": 0.0007055000546707602,
+              "pass": true
+            },
+            "CH2O": {
+              "peak_reference": 0.00094703159711182,
+              "normalized_peak_error": 0.00023902657234413529,
+              "pass": true
+            },
+            "CH2OH": {
+              "peak_reference": 1.9150356340345616e-07,
+              "normalized_peak_error": 0.0012090408644979684,
+              "pass": true
+            },
+            "CH3O": {
+              "peak_reference": 5.949771280579243e-07,
+              "normalized_peak_error": 0.0009305749229780935,
+              "pass": true
+            },
+            "CH3OH": {
+              "peak_reference": 0.00014323980718101704,
+              "normalized_peak_error": 0.00020706487932185133,
+              "pass": true
+            },
+            "C2H": {
+              "peak_reference": 2.2254824987354675e-08,
+              "normalized_peak_error": 0.000629437048628589,
+              "pass": true
+            },
+            "C2H2": {
+              "peak_reference": 0.0013628010544590179,
+              "normalized_peak_error": 0.0004524623401411519,
+              "pass": true
+            },
+            "C2H3": {
+              "peak_reference": 3.1941950519091046e-06,
+              "normalized_peak_error": 0.0008484417174368354,
+              "pass": true
+            },
+            "C2H4": {
+              "peak_reference": 0.0018970652809491304,
+              "normalized_peak_error": 0.00033072544743748005,
+              "pass": true
+            },
+            "C2H5": {
+              "peak_reference": 8.205252299578182e-06,
+              "normalized_peak_error": 0.0007214497747814666,
+              "pass": true
+            },
+            "C2H6": {
+              "peak_reference": 0.0010459532714865091,
+              "normalized_peak_error": 0.00042667726847309015,
+              "pass": true
+            },
+            "HCCO": {
+              "peak_reference": 7.490050616953825e-06,
+              "normalized_peak_error": 0.001511769838825635,
+              "pass": true
+            },
+            "CH2CO": {
+              "peak_reference": 0.0005176692887245406,
+              "normalized_peak_error": 0.0003682363042837275,
+              "pass": true
+            },
+            "HCCOH": {
+              "peak_reference": 1.3635736889592038e-06,
+              "normalized_peak_error": 0.0006006812852049541,
+              "pass": true
+            },
+            "N": {
+              "peak_reference": 5.250188217448416e-10,
+              "normalized_peak_error": 1.6417036053758353e-05,
+              "pass": true
+            },
+            "NH": {
+              "peak_reference": 6.196271065508478e-10,
+              "normalized_peak_error": 1.5297802796784076e-05,
+              "pass": true
+            },
+            "NH2": {
+              "peak_reference": 6.103781160214693e-09,
+              "normalized_peak_error": 0.00016119811729049766,
+              "pass": true
+            },
+            "NH3": {
+              "peak_reference": 5.978126472698004e-07,
+              "normalized_peak_error": 0.0006928094061998166,
+              "pass": true
+            },
+            "NNH": {
+              "peak_reference": 2.59268782038725e-10,
+              "normalized_peak_error": 7.013825024232271e-06,
+              "pass": true
+            },
+            "NO": {
+              "peak_reference": 6.504707296195395e-07,
+              "normalized_peak_error": 0.00036611661853025587,
+              "pass": true
+            },
+            "NO2": {
+              "peak_reference": 1.763298704289673e-07,
+              "normalized_peak_error": 0.0008670032415129686,
+              "pass": true
+            },
+            "N2O": {
+              "peak_reference": 3.251423492736979e-08,
+              "normalized_peak_error": 0.00038900066463960504,
+              "pass": true
+            },
+            "HNO": {
+              "peak_reference": 9.287772526376295e-10,
+              "normalized_peak_error": 2.5340063317782557e-05,
+              "pass": true
+            },
+            "CN": {
+              "peak_reference": 4.206823185443292e-11,
+              "normalized_peak_error": 1.3353055063370886e-06,
+              "pass": true
+            },
+            "HCN": {
+              "peak_reference": 1.6922782230741317e-06,
+              "normalized_peak_error": 0.0003059193366441367,
+              "pass": true
+            },
+            "H2CN": {
+              "peak_reference": 1.5304109676343367e-11,
+              "normalized_peak_error": 1.9916341451886564e-07,
+              "pass": true
+            },
+            "HCNN": {
+              "peak_reference": 1.751965139947062e-10,
+              "normalized_peak_error": 2.2516167400737193e-06,
+              "pass": true
+            },
+            "HCNO": {
+              "peak_reference": 2.6824756027300254e-08,
+              "normalized_peak_error": 0.0005381362528260374,
+              "pass": true
+            },
+            "HOCN": {
+              "peak_reference": 5.926538487835973e-10,
+              "normalized_peak_error": 2.068788702894526e-06,
+              "pass": true
+            },
+            "HNCO": {
+              "peak_reference": 1.8932294121315513e-07,
+              "normalized_peak_error": 0.0015691661219752971,
+              "pass": true
+            },
+            "NCO": {
+              "peak_reference": 6.622678626380958e-10,
+              "normalized_peak_error": 8.587455399199824e-06,
+              "pass": true
+            },
+            "N2": {
+              "peak_reference": 0.7141207823575433,
+              "normalized_peak_error": 7.913503927299347e-06,
+              "pass": true
+            },
+            "AR": {
+              "peak_reference": 1.8842993328459904e-15,
+              "normalized_peak_error": 2.8870369024057302e-08,
+              "pass": true
+            },
+            "C3H7": {
+              "peak_reference": 1.903939006990493e-08,
+              "normalized_peak_error": 0.00021581141643665732,
+              "pass": true
+            },
+            "C3H8": {
+              "peak_reference": 2.3592004876725953e-05,
+              "normalized_peak_error": 0.0006396456019782923,
+              "pass": true
+            },
+            "CH2CHO": {
+              "peak_reference": 4.7384957962965034e-07,
+              "normalized_peak_error": 0.0008913985435469007,
+              "pass": true
+            },
+            "CH3CHO": {
+              "peak_reference": 1.1991928846751349e-05,
+              "normalized_peak_error": 0.0005503135528914777,
+              "pass": true
+            }
+          },
+          "temperature": {
+            "max_abs_error_K": 0.16530297431643248,
+            "normalized_peak_error": 0.00010398971010997898
+          },
+          "all_species_pass": true
+        },
+        "speed_relative_error": 8.117998578749034e-06,
+        "Tmax_relative_error": 1.88719475378809e-05,
+        "elements": {
+          "O": {
+            "inlet": 0.21655593762772102,
+            "outlet": 0.2165559376277211,
+            "abs_error": 8.326672684688674e-17,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.017737039856701397,
+            "outlet": 0.017737039856701404,
+            "abs_error": 6.938893903907228e-18,
+            "pass": true
+          },
+          "C": {
+            "inlet": 0.05283719883899813,
+            "outlet": 0.05283719883899813,
+            "abs_error": 0.0,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.7128698236765795,
+            "outlet": 0.7128698236765796,
+            "abs_error": 1.1102230246251565e-16,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.0,
+            "outlet": 7.948362126000587e-23,
+            "abs_error": 7.948362126000587e-23,
+            "pass": true
+          }
+        },
+        "gates": {
+          "species_profiles": true,
+          "temperature_profile": true,
+          "peak_temperature": true,
+          "elements": true
+        },
+        "passed": true
+      }
+    },
+    "failures": [],
+    "passed": true
+  },
+  "input_and_source_bytes_unchanged": true,
+  "cantera_seconds": [
+    0.6020660421345383,
+    0.6009853750001639,
+    0.6039195420453325,
+    0.6014206249965355,
+    0.6015508330892771,
+    0.6018997080391273,
+    0.5995812920155004,
+    0.6027810419909656,
+    0.6014658749336377,
+    0.6016541669378057
+  ],
+  "julia_seconds": [
+    6.878482083,
+    6.44783775,
+    6.527233417,
+    6.456918249999999,
+    6.527376167,
+    6.445746250000001,
+    6.530798541,
+    6.454387707,
+    6.54576175,
+    6.449419959
+  ],
+  "median_speed_ratio_cantera_over_julia": 0.09316376788404859,
+  "ratio_threshold_met": false,
+  "physical_gate_application": "Last repetition of every source stage checked against refined references; strict numerical replay establishes the same outputs for all first/warm repetitions.",
+  "raw_report_sha256": "7279b4c5b89c77c384f1a551829a16280152dcb027fbf6372d019222c8f8a3d3",
+  "native_commit_scope": "Numerical src files; public examples and benchmark drivers are separately identified by their measured hashes.",
+  "example": "onedim/flame_fixed_T",
+  "correctness_pass": true,
+  "speed_ratio": 0.09316376788404859,
+  "minimum_speed_ratio": 0.95,
+  "cantera_warm_median_seconds": 0.6015508330892771,
+  "julia_warm_median_seconds": 6.456918249999999
+}

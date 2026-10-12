@@ -63,6 +63,8 @@ function _convert_precision(reaction::Reaction, ::Type{T}) where {T<:AbstractFlo
         _precision_sparse(reaction.vk, T, "net stoichiometry"),
         _precision_array(reaction.vk_sum, T, "net stoichiometric sums"),
         _convert_precision(reaction.plog, T),
+        BlowersMaselData(copy(reaction.blowers_masel.reaction_indices),
+            _precision_array(reaction.blowers_masel.coefficients,T,"Blowers–Masel coefficients")),
     )
 end
 
@@ -70,11 +72,17 @@ function _convert_precision(
     thermo::IdealGasThermo,
     ::Type{T},
 ) where {T<:AbstractFloat}
+    extra = isnothing(thermo.extra) ? nothing : SpeciesThermoData(
+        copy(thermo.extra.models),
+        [_precision_array(values,T,"species temperature ranges") for values in thermo.extra.ranges],
+        [_precision_array(values,T,"extended species thermo coefficients") for values in thermo.extra.coefficients],
+    )
     return IdealGasThermo(
         _precision_array(thermo.nasa_low, T, "low-temperature NASA coefficients"),
         _precision_array(thermo.nasa_high, T, "high-temperature NASA coefficients"),
         _precision_array(thermo.Trange, T, "thermodynamic temperature ranges"),
         thermo.isTcommon,
+        extra,
     )
 end
 
@@ -84,6 +92,7 @@ function _convert_precision(transport::Transport, ::Type{T}) where {T<:AbstractF
         _precision_array(transport.species_viscosities_poly, T, "viscosity coefficients"),
         _precision_array(transport.thermal_conductivity_poly, T, "thermal-conductivity coefficients"),
         _precision_array(transport.binary_diff_coeffs_poly, T, "binary-diffusion coefficients"),
+        transport.model,
     )
 end
 

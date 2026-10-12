@@ -1,0 +1,221 @@
+{
+  "example": "thermo/coverage_dependent_surf",
+  "cantera_version": "4.0.0a2",
+  "cantera_source_sha": "726522be4e2a13454d8415b7ef799d621f665cf3",
+  "published_source_sha256": "b92ddf6180e3798bb5ef3d7475385f94f76f2ff7491bc9ac00eb6521bbef931d",
+  "mechanism_sha256": "2561d8df4df258291eb583dd1e11912a65ad0e55431895c767139295bd5b7e35",
+  "parameter_archives_sha256": {
+    "covdep_lin": "c4f6996fa206f735ef853bd64c99445bf8468cbd696281bda7363ccde1d335cf",
+    "covdep_pwlin": "5f1eca1a74e694fc64812a4010b6cdfc660471dcb7a7686043faa9cd2bda114b",
+    "covdep_poly": "fc932bcd87ff263aa433665b535a82019fe5d65eca273b515ebd836709ccff3b",
+    "covdep_int": "02e91e920a2b3ad800229a0b042bf3b65d2d50fa94762903a20fbe3a03e1b9b6",
+    "covdep_cross": "224bd3663a364563afe4acddf85b0cd96941dfd6e7f22c2c210ea956ab3c7dc0"
+  },
+  "parameter_exporter_sha256": "80a5dc32095569566801168a6aac3b26241002f270aa0d73d4ace95b08baee7a",
+  "cantera_build_record_sha256": "b151c4c9065364940a1a9409f6b3060a8b0a744ef1817076f17754a3121edfff",
+  "loaded_libraries_match_build_record": true,
+  "cantera_shared_libraries_sha256": {
+    "libcantera_shared.4.0.0.dylib": "295943c1cd2c73ae85d1c9683a047ad42d0204d8e588878efac799b84e5a042b"
+  },
+  "cantera_extension_sha256": "b9dcc98aa66410e9d1896e2a5a6e398b0491af8adb7e82c6738ed9281db5a417",
+  "harness_sha256": "85c32ccfbf20824c2809bdc9bfdd0b5d31a7e5624e9ca9602c67b183e1cd5146",
+  "environment_helper_sha256": "a7fb9c06cf45edf95872d38cf0a66ae19e8eadb834641c0b4d0ab08614b350fb",
+  "native_metadata": {
+    "kernel_release": "25.6.0",
+    "example/thermodynamics/coverage_dependent_surf.jl_sha256": "993bde0716350ff5ccc53b71136ec55ebffef2b3cd2faf4e04806098a3a87c17",
+    "timestamp_utc": "2026-09-11T16:41:36.911",
+    "mechanism_source_sha256": "2561d8df4df258291eb583dd1e11912a65ad0e55431895c767139295bd5b7e35",
+    "src/CoverageDependentThermo.jl_sha256": "a85d5a7b350d1027a1df8bb5fd3083696c892f2699a109e6ebd4b0d8cc0072d1",
+    "archive_covdep_lin_sha256": "c4f6996fa206f735ef853bd64c99445bf8468cbd696281bda7363ccde1d335cf",
+    "validation/numerical_threads.jl_sha256": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739",
+    "cpu": "Apple M4",
+    "first_call_scope": "First elapsed call inside the measurement wrapper; model preparation, wrapper specialization, process startup and imports are excluded. This is not whole-process cold latency.",
+    "archive_covdep_cross_sha256": "224bd3663a364563afe4acddf85b0cd96941dfd6e7f22c2c210ea956ab3c7dc0",
+    "phase_names": "covdep_lin\ncovdep_pwlin\ncovdep_poly\ncovdep_int\ncovdep_cross",
+    "archive_covdep_poly_sha256": "fc932bcd87ff263aa433665b535a82019fe5d65eca273b515ebd836709ccff3b",
+    "src/SurfaceKinetics.jl_sha256": "5e09d9431acafaefac61620793d978a106636a41850f262f4c6c5ca620f1e45d",
+    "src/Constants.jl_sha256": "2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83",
+    "qualification": "controlled",
+    "archive_covdep_int_sha256": "02e91e920a2b3ad800229a0b042bf3b65d2d50fa94762903a20fbe3a03e1b9b6",
+    "system": "Darwin",
+    "archive_covdep_pwlin_sha256": "5f1eca1a74e694fc64812a4010b6cdfc660471dcb7a7686043faa9cd2bda114b",
+    "numerical_thread_names": "accelerate_threading_mode\nblas_threads\njulia_threads",
+    "julia_version": "1.12.7",
+    "harness_sha256": "7f9ea90628a882f1a112452613c24a28912d3df472bafe1f8283ada82ed2d96a"
+  },
+  "native_artifact_sha256": "7a2ecead0bbd25d81d19cd2adf4c36e81019c7c2b25e9639b368557d0629706d",
+  "reference_artifact": "cantera4_m4_coverage_thermo.reference.npz",
+  "reference_artifact_sha256": "32db6000230f7ca7cdedd4688aadedf51e72f4fc99d3d23d6e4a418707fdeae9",
+  "hardware": {
+    "cpu": "Apple M4",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "kernel_release": "25.6.0",
+    "system": "Darwin",
+    "machine": "arm64",
+    "logical_cpus": 10
+  },
+  "benchmark_target": "apple-m4",
+  "numerical_threads": {
+    "threadpools": [
+      {
+        "file": "libgomp.1.dylib",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.30.dylib",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ],
+    "accelerate_threading_mode": 1
+  },
+  "numerical_threads_after": {
+    "threadpools": [
+      {
+        "file": "libgomp.1.dylib",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.30.dylib",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ],
+    "accelerate_threading_mode": 1
+  },
+  "native_numerical_threads": {
+    "accelerate_threading_mode": 1,
+    "blas_threads": 1,
+    "julia_threads": 1
+  },
+  "timestamp_utc": "2026-09-11T16:41:37Z",
+  "scope": "five prepared interface phases at 300 K/1 atm; four 101-state h/RT and s/R curves plus the 5151-state triangular cross-interaction h/RT map per complete call; phase construction, imports, plots and checks excluded",
+  "checks": {
+    "coverages": {
+      "pass": true,
+      "native_shape": [
+        101
+      ],
+      "reference_shape": [
+        101
+      ],
+      "expected_shape": [
+        101
+      ],
+      "relative_tolerance": 1e-11,
+      "absolute_tolerance": 1e-12,
+      "maximum_absolute_error": 1.1102230246251565e-16,
+      "worst_index": [
+        57
+      ],
+      "native_at_worst": 0.57,
+      "cantera_at_worst": 0.5700000000000001
+    },
+    "curves": {
+      "pass": true,
+      "native_shape": [
+        2,
+        101,
+        4
+      ],
+      "reference_shape": [
+        2,
+        101,
+        4
+      ],
+      "expected_shape": [
+        2,
+        101,
+        4
+      ],
+      "relative_tolerance": 1e-11,
+      "absolute_tolerance": 1e-12,
+      "maximum_absolute_error": 2.842170943040401e-14,
+      "worst_index": [
+        0,
+        27,
+        1
+      ],
+      "native_at_worst": -108.27812801557846,
+      "cantera_at_worst": -108.27812801557843
+    },
+    "cross": {
+      "pass": true,
+      "native_shape": [
+        101,
+        101
+      ],
+      "reference_shape": [
+        101,
+        101
+      ],
+      "expected_shape": [
+        101,
+        101
+      ],
+      "relative_tolerance": 1e-11,
+      "absolute_tolerance": 1e-12,
+      "maximum_absolute_error": 2.842170943040401e-14,
+      "worst_index": [
+        0,
+        21
+      ],
+      "native_at_worst": -109.4534675347513,
+      "cantera_at_worst": -109.45346753475127
+    },
+    "cross_upper_triangle": {
+      "pass": true,
+      "unevaluated_states": 5050,
+      "evaluated_states": 5555,
+      "scope": "exactly zero entries above the occupied-site boundary in both implementations; all 5151 triangular states plus the 404 curve states are evaluated, endpoints included"
+    }
+  },
+  "correctness_pass": true,
+  "phase_names": [
+    "covdep_lin",
+    "covdep_pwlin",
+    "covdep_poly",
+    "covdep_int",
+    "covdep_cross"
+  ],
+  "cantera_import_seconds": 0.09453695896081626,
+  "cantera_prepare_seconds": 0.001867000013589859,
+  "julia_import_seconds": 3.164500626,
+  "julia_prepare_seconds": 0.301930458,
+  "cantera_first_seconds": 0.003504666965454817,
+  "julia_first_seconds": 0.017201041,
+  "cantera_warm_seconds": [
+    0.0037185278488323092,
+    0.003723458522775521,
+    0.0036998469925795994,
+    0.003776840341743082,
+    0.0036554793283964195,
+    0.0037347641579496362,
+    0.003636277629993856,
+    0.0037435906706377864,
+    0.0036480835212084153
+  ],
+  "julia_warm_seconds": [
+    0.0005266281538461538,
+    0.0005270224102564105,
+    0.0005306976153846153,
+    0.0005382276153846153,
+    0.0005242713589743589,
+    0.0005222211282051284,
+    0.0005362286410256411,
+    0.0005302372051282052,
+    0.0005321238205128206
+  ],
+  "sample_definition": "mean timed seconds per complete 5555-state sweep within each warm batch; checks excluded",
+  "batch_policy": "ceil(0.020 / warmup seconds), clamped to 1..1000 complete calculations",
+  "cantera_batch_size": 6,
+  "julia_batch_size": 39,
+  "warm_outputs_checked": 54,
+  "native_warm_outputs_checked": 351,
+  "speed_ratio": 7.0129515863248635,
+  "minimum_speed_ratio": 0.95,
+  "qualification": "controlled",
+  "performance_pass": true
+}

@@ -37,6 +37,15 @@ struct Reaction{T<:AbstractFloat}
     vk::SparseMatrixCSC{T,Int64}
     vk_sum::Array{T,1}
     plog::PlogData{T}
+    blowers_masel::BlowersMaselData{T}
+end
+
+# Preserve the pre-Blowers–Masel constructor used by downstream mechanisms.
+function Reaction(product,reactant,orders,reversible,arrhenius,low,troe,third,falloff,
+        falloff_troe,efficiencies,reactant_indices,product_indices,n,vk,vk_sum,plog::PlogData{T}) where T
+    return Reaction(product,reactant,orders,reversible,arrhenius,low,troe,third,falloff,
+        falloff_troe,efficiencies,reactant_indices,product_indices,n,vk,vk_sum,plog,
+        BlowersMaselData(Int64[],zeros(T,0,4)))
 end
 
 abstract type Thermo end
@@ -46,7 +55,12 @@ struct Transport{T<:AbstractFloat}
     species_viscosities_poly::Array{T,2}
     thermal_conductivity_poly::Array{T,2}
     binary_diff_coeffs_poly::Array{T,2}
+    model::Symbol
 end
+Transport(order::Integer, viscosity::Matrix{T}, conductivity::Matrix{T}, binary::Matrix{T}) where {T<:AbstractFloat} =
+    Transport(Int64(order),viscosity,conductivity,binary,:mixture_averaged)
+Transport{T}(order::Integer, viscosity::Matrix{T}, conductivity::Matrix{T}, binary::Matrix{T}) where {T<:AbstractFloat} =
+    Transport{T}(Int64(order),viscosity,conductivity,binary,:mixture_averaged)
 
 struct Solution{T<:AbstractFloat,Th<:Thermo}
     n_species::Int64

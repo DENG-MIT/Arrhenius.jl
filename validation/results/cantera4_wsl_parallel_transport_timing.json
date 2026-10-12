@@ -1,0 +1,293 @@
+{
+  "example": "transport/multiprocessing_viscosity",
+  "passed": true,
+  "performance_qualified": true,
+  "minimum_speed_ratio": 0.95,
+  "speed_ratio": 0.9850616257648896,
+  "speed_ratio_definition": "median(Cantera seconds) / median(Julia seconds)",
+  "scope": "Four complete 5000-temperature property calls including fresh phases/workspaces and four-worker pool creation/teardown. One first call, one full warmup, nine complete warm repetitions. Julia compilation/imports are outside warm timing. Plotting and output file writes are excluded.",
+  "reference_rule": "Per repetition, minimum of verified-worker adjusted total, uninstrumented original-function total and unchanged source-script timer total. Source-script timers are reduced by 0.0005 s per printed value for rounding. Worker audit subtraction retains initialization through the latest original initializer return timestamp.",
+  "source_url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/transport/multiprocessing_viscosity.py",
+  "source_sha256": "6dd426c24a6af5a5b9d2e87d2d9b33e78de83645952b946e81d34e727debc1de",
+  "cantera_version": "4.0.0a2",
+  "cantera_loaded_sha256": {
+    "_cantera.cpython-312-x86_64-linux-gnu.so": "cb6f63a9170b57a6e8f3a0ba1eeb92ecfb43becf64f92fcae867a9f2a5e4f6ac",
+    "libcantera_shared.so.4.0.0": "1edb2105be995bea941fad7b942651788835d13737fe3b15dff342c0e64571f6"
+  },
+  "native_example_sha256": "df0115d70f61a982fe8a547838968dd94f7e0fcfa5e23fbaca23ea3516aea1b5",
+  "native_core_sha256": {
+    "Arrhenius.jl": "ce9bb812b602bd3775a44cac0f652bd22fc7c4d707e3a3843927385ea35bd6d0",
+    "BlowersMasel.jl": "6e2266794056367d648a68a9160f15d839fde8d9bab923a4f350fbafec7cb95d",
+    "CatalyticFlames.jl": "8e8fab0b4eea80daf99d73e1e587b188f6ff0810a11c0667efdeba966e0d3222",
+    "CondensedEquilibrium.jl": "7017f51d280908bff54593f46d6241f2f471b4be34c3d4b774c1d2f3dd469026",
+    "Constants.jl": "2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83",
+    "CounterflowFlames.jl": "7a0ca9c3cdea0bd58c23a5d9e453b3a52400b1aaf50f6d5eb469d802213ea1c1",
+    "CoverageDependentThermo.jl": "cf3e8f5adde603343c58717b7deefe54694284475cb8833b923fa584823eb4df",
+    "CriticalProperties.jl": "90cc6911489ffe90748b15965e5da14dbde9232a0beea03312fc4ec31e5f63ba",
+    "DataStructure.jl": "07acaddb93237a04d978e9a73fdc136cde20ff4d922a00db790e9c4a67e85f1e",
+    "DustyGasTransport.jl": "b87c8a982bff05c3976c4cad27578a05098124d32fc31dce6f4756d4db0701a4",
+    "Equilibrium.jl": "ce2091af79c5b2ce4340735fd3936659ba269091c3f619451fef304699c7d9a2",
+    "FlameDerivatives.jl": "c9ead3f2c74d4c51c7b686e82c5d2ecca9f704b569d913a332f6bd5dee647562",
+    "FlameIO.jl": "e78b0366d1c680d744d95b14f1d5591bcd9efa8c2ac20b2d0bd1598b1f0e8021",
+    "Flames.jl": "070c23a6b6ac5d577b6ca1317ebbb62691ec044af2ee715771f445c9eed1d07b",
+    "IdealGasMixing.jl": "5ab4e26a5912a1b3a154777cbf886ddf66f48a5e26cd41af9006206d6eb87046",
+    "IdealGasStates.jl": "46b90818b147c9c55cfe6c6caafaf3b8f194b8eaf14b2a2828d3d26c80ec3000",
+    "Kinetics.jl": "eeecf3a212264d5ff41b7e7110dced88937d6da6a76df8bfffb091837fd43a4e",
+    "Magic.jl": "9386419d03e7f481a134f2d56a2b59c4b340f1ba276bbc6ce52861597805c8e0",
+    "MovingWallReactors.jl": "c14ee93fa7c0a3e5e10b1e3c6b51764ff52f32929f79cf71372b21a1881f9d00",
+    "MulticomponentTransport.jl": "b798c622769beb0cda757abce23a05501938e7d1bba3553afab2f4ced267206a",
+    "Precision.jl": "970165da7f441088adacc1a5c8fa14dbcbc699df73b57d5681d9d05ab52949fd",
+    "PremixedCounterflowFlames.jl": "b9cda647f2cf6d6dfff79f7da558dd14f425f4ece8709024c2c7205f12114991",
+    "PureWater.jl": "234a75cf5ea3a06886c9003ce19f0a8d6f7492e38022b3af23604d1b3a512955",
+    "ReactorNetworks.jl": "e9b9410cb69d72fe92b737d958e4c5cac51be277faa7457ccf9bcbe40e5bee9b",
+    "Reactors.jl": "6753e519f66fd240f85622a7ea993beff2eb41050d8d61140c090a8558dd5994",
+    "RealGasReactors.jl": "4c62099789aa1f7a19c5728f3519714ad68c4a684e9e8dcaa575e54596c79e50",
+    "RealGasThermo.jl": "83d8015787f947b9e8dc84ab71f6131191530f13b57cb29914f706488398833a",
+    "Solution.jl": "7e3dbc589eebb3e9904d22a3f9bd1fd8f88ddc36712ef3a248d334770b6339c4",
+    "SurfaceFlowReactors.jl": "c7f39a9f1ae4ac6b63548d104dbd4895ae8674fc69df592e101ac58b674f4909",
+    "SurfaceKinetics.jl": "d55b05829c4bdeee4f56a79d78ae676750600187c9a543ce72deed690ac8409e",
+    "Thermo.jl": "e09107c74cc4fa0379204e92ba43517df81fa01f19785fa4c5956ee02a6492c3",
+    "Thermo/IdealGasThermo.jl": "e85feaf3272a8da51792935207ad7fbf2ab8a2b00f7c67dd0a6fae58a5b0cf31",
+    "Transport.jl": "c75b8b87274d08e1c1df6c9d40e39746980fc0098040fe9be6ca87518bf844a3",
+    "_Arrhenius_dev.jl": "6b08d913208a17d66dda42345ecb14d164c53dcfda9292cda5f68e60e7056eed",
+    "_transport_test.jl": "8e2ad5c75074bce96ee9cb7a72cbdfb041cc6c9c3b0cc7983b3f370327ee4ee3"
+  },
+  "input_sha256": {
+    "mechanism": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+    "sidecar": "c8ade97b2d85d5fba5a835ee9638810e2b2e9a5e2a302b4163d576250b252d31",
+    "transport": "74b5467111c42b7d4b0b2a38fe5a49b5766be5abebebd1d31fabb6bae541ed45"
+  },
+  "measured_driver_sha256": {
+    "native": "bbffef12bbb286328f3393963c0fb763753281c636c4aa29428ec7d50b4bb0bd",
+    "controlled_reference": "ca0865b0224f04b5e9836010214901687690deeadc9fc83b727a8e397c113ef7",
+    "exact_source": "b4b56f3fbffabf3afffd70073e6beb007f2832043e7f74290da7978a2d1816ce"
+  },
+  "host": {
+    "cpu": "Intel(R) Core(TM) Ultra 7 155H",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "kernel_release": "6.6.87.2-microsoft-standard-WSL2",
+    "system": "Linux",
+    "machine": "x86_64",
+    "logical_cpus": 18
+  },
+  "julia_version": "1.12.7",
+  "julia_threads": 4,
+  "source_processes": 4,
+  "numerical_threads": 1,
+  "worker_lifecycles_verified": 88,
+  "multiprocessing_start_method": "fork",
+  "uninstrumented_child_settings_unverified": true,
+  "initializer_runtime_settings_unverified": true,
+  "worker_verification_scope": "Controlled workers after original initializer return and before/after the original property map. Unwrapped function calls and exact-script runs are unverified timing caps.",
+  "exact_script_output_arrays_checked": false,
+  "exact_script_verification": "Pinned source bytes, successful execution and all four original printed timers per call; output-array replay comes from the controlled/unwrapped reference calls.",
+  "correctness": {
+    "rtol": 1e-10,
+    "atol": 1e-15,
+    "maximum_absolute_errors": {
+      "T": 1.1368683772161603e-13,
+      "conductivity_parallel": 4.3021142204224816e-16,
+      "conductivity_serial": 4.3021142204224816e-16,
+      "viscosity_parallel": 3.3881317890172014e-19,
+      "viscosity_serial": 3.3881317890172014e-19
+    }
+  },
+  "checks": {
+    "T": true,
+    "conductivity_parallel": true,
+    "conductivity_serial": true,
+    "viscosity_parallel": true,
+    "viscosity_serial": true,
+    "native_internal_checks": true,
+    "reference_internal_checks": true,
+    "exact_script_checks": true,
+    "source_and_mechanism": true,
+    "native_inputs": true,
+    "pinned_cantera_build": true,
+    "native_threads": true,
+    "host_match": true,
+    "target_host": true,
+    "tested_core_bytes": true,
+    "driver_bytes": true,
+    "native_example_bytes": true,
+    "worker_lifecycles_and_exclusions": true,
+    "all_reference_arrays_replayed": true,
+    "timing_vectors": true
+  },
+  "native_first_call_seconds": 9.08666834,
+  "native_warm_seconds": [
+    1.459310254,
+    1.515203122,
+    1.512006272,
+    1.566446652,
+    1.486440331,
+    1.497694504,
+    1.404541936,
+    1.501694933,
+    1.531299914
+  ],
+  "original_function_warm_seconds": [
+    1.5203175195492804,
+    1.6054399874992669,
+    1.5519925286062062,
+    1.4932792158797383,
+    1.4519825647585094,
+    1.479262052103877,
+    1.5166773395612836,
+    1.5999622852541506,
+    1.4970397255383432
+  ],
+  "controlled_adjusted_warm_seconds": [
+    1.478410929441452,
+    1.5643960875459015,
+    1.6068058139644563,
+    1.6240897281095386,
+    1.5785421137697995,
+    1.565139479469508,
+    1.5532947485335171,
+    1.4473948278464377,
+    1.5468909395858645
+  ],
+  "controlled_raw_property_seconds": [
+    [
+      0.4466081876307726,
+      0.8709948700852692,
+      0.2385422270745039,
+      0.11140406504273415
+    ],
+    [
+      0.48225716780871153,
+      0.9148351368494332,
+      0.23290192615240812,
+      0.11151277320459485
+    ],
+    [
+      0.5305369840934873,
+      0.9236166919581592,
+      0.2113226130604744,
+      0.11391258100047708
+    ],
+    [
+      0.5095705110579729,
+      0.9551194310188293,
+      0.2277264199219644,
+      0.11078591598197818
+    ],
+    [
+      0.4119267938658595,
+      0.9930768068879843,
+      0.20973404310643673,
+      0.12373797222971916
+    ],
+    [
+      0.5144692221656442,
+      0.9028044990263879,
+      0.19591321889311075,
+      0.10755191603675485
+    ],
+    [
+      0.4619327927939594,
+      0.9465929069556296,
+      0.18364611500874162,
+      0.1146668940782547
+    ],
+    [
+      0.4446828649379313,
+      0.8685698038898408,
+      0.19305080408230424,
+      0.10602471232414246
+    ],
+    [
+      0.4721260382793844,
+      0.9016563012264669,
+      0.23425729759037495,
+      0.1113381115719676
+    ]
+  ],
+  "controlled_excluded_property_seconds": [
+    [
+      0.09022406348958611,
+      0.0,
+      0.0989143569022417,
+      0.0
+    ],
+    [
+      0.09018706670030951,
+      0.0,
+      0.08692384976893663,
+      0.0
+    ],
+    [
+      0.08910565776750445,
+      0.0,
+      0.08347739838063717,
+      0.0
+    ],
+    [
+      0.09285422693938017,
+      0.0,
+      0.08625832293182611,
+      0.0
+    ],
+    [
+      0.07952718622982502,
+      0.0,
+      0.08040631609037519,
+      0.0
+    ],
+    [
+      0.08097518282011151,
+      0.0,
+      0.07462419383227825,
+      0.0
+    ],
+    [
+      0.07897523883730173,
+      0.0,
+      0.07456872146576643,
+      0.0
+    ],
+    [
+      0.08101494517177343,
+      0.0,
+      0.08391841221600771,
+      0.0
+    ],
+    [
+      0.07920176489278674,
+      0.0,
+      0.09328504418954253,
+      0.0
+    ]
+  ],
+  "exact_source_rounded_lower_bound_warm_seconds": [
+    1.602,
+    1.627,
+    1.699,
+    1.6460000000000001,
+    1.5730000000000002,
+    1.6400000000000001,
+    1.479,
+    1.5410000000000001,
+    1.571
+  ],
+  "reference_conservative_warm_seconds": [
+    1.478410929441452,
+    1.5643960875459015,
+    1.5519925286062062,
+    1.4932792158797383,
+    1.4519825647585094,
+    1.479262052103877,
+    1.479,
+    1.4473948278464377,
+    1.4970397255383432
+  ],
+  "native_median_seconds": 1.501694933,
+  "reference_median_seconds": 1.479262052103877,
+  "evidence_sha256": {
+    "native": "27dfa201d3d339e6727831154a385a313556e11a898850c2b0afed8e047d5bbd",
+    "reference": "cef333afce9cc6ad42f746aea06a0bafbca8814ed789d80987ba44b68f49fb29",
+    "worker_and_timing_receipts": "c3fd7ea81923ff2dda817f40aa0b3e7eac701d7b9abdff32a6044aa5faf0c60d",
+    "exact_source_receipts": "21769ba1429cc1e9cc18b0488ce7c253f1c0bf4d7019636626b4eecf1bf24368"
+  }
+}

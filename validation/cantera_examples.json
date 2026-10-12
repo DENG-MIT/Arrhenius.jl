@@ -1,0 +1,1095 @@
+{
+  "index_url": "https://cantera.org/dev/examples/python/index.html",
+  "retrieved_utc": "2026-09-11T18:37:13.329205+08:00",
+  "index_sha256": "a0c350db370d3f72a584f5cdf923213f909b1ea3eaad81234e45afc74e50df02",
+  "minimum_speed_ratio": 0.95,
+  "speed_ratio_definition": "Cantera elapsed / Arrhenius elapsed",
+  "examples": [
+    {
+      "id": "kinetics/blowers_masel",
+      "url": "https://cantera.org/dev/examples/python/kinetics/blowers_masel.html",
+      "status": "calculation_validated",
+      "julia_example": "example/kinetics/blowers_masel.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_properties.json",
+        "case": "blowers_masel",
+        "scope": "32 temperature states and 100 reaction-enthalpy shifts; every output and warm repetition checked"
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_properties.json",
+        "case": "blowers_masel",
+        "speed_ratio": 13.293599314751699,
+        "scope": "Warm calculation on prepared phases; native enthalpy shifts evaluated directly; imports and compilation separate"
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_properties.json",
+        "case": "blowers_masel",
+        "speed_ratio": 28.771171360994067,
+        "scope": "Warm calculation on prepared phases; native enthalpy shifts evaluated directly; imports and compilation separate"
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "kinetics/custom_reactions",
+      "url": "https://cantera.org/dev/examples/python/kinetics/custom_reactions.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "kinetics/diamond_cvd",
+      "url": "https://cantera.org/dev/examples/python/kinetics/diamond_cvd.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "kinetics/extract_submechanism",
+      "url": "https://cantera.org/dev/examples/python/kinetics/extract_submechanism.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "kinetics/interactive_path_diagram",
+      "url": "https://cantera.org/dev/examples/python/kinetics/interactive_path_diagram.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "kinetics/jet_stirred_reactor",
+      "url": "https://cantera.org/dev/examples/python/kinetics/jet_stirred_reactor.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "kinetics/lithium_ion_battery",
+      "url": "https://cantera.org/dev/examples/python/kinetics/lithium_ion_battery.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "kinetics/mechanism_reduction",
+      "url": "https://cantera.org/dev/examples/python/kinetics/mechanism_reduction.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "kinetics/reaction_path",
+      "url": "https://cantera.org/dev/examples/python/kinetics/reaction_path.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "kinetics/shock_tube",
+      "url": "https://cantera.org/dev/examples/python/kinetics/shock_tube.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "kinetics/sofc",
+      "url": "https://cantera.org/dev/examples/python/kinetics/sofc.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/adiabatic_flame",
+      "url": "https://cantera.org/dev/examples/python/onedim/adiabatic_flame.html",
+      "status": "calculation_validated",
+      "julia_example": "example/flames/adiabatic_flame.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_flames_10dad59.json",
+        "case": "onedim/adiabatic_flame",
+        "scope": "Complete published transport sequence; every stage checked against independently refined Cantera references, with every first/warm result replayed."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_flames_5ca6641.json",
+        "case": "onedim/adiabatic_flame",
+        "speed_ratio": 0.6599693774114765,
+        "scope": "Nine formal warm complete public calculation sequences; model preparation, snapshots and file output excluded; first measured sequence separate and not whole-process cold latency."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_flames_10dad59.json",
+        "case": "onedim/adiabatic_flame",
+        "speed_ratio": 1.146501799334978,
+        "conservative_speed_ratio": 1.0986865214233401,
+        "verdict": "qualified",
+        "scope": "CLOCK_MONOTONIC_RAW; three fixed batches of32 warm complete public sequences, loaded mechanisms reused with fresh flame state and solver setup; required numerical profiles and automaticGC included. Imports/JIT, loading, explicit warmup collection, validation and file I/O excluded."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "onedim/burner_flame",
+      "url": "https://cantera.org/dev/examples/python/onedim/burner_flame.html",
+      "status": "calculation_validated",
+      "julia_example": "example/flames/burner_flame.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_flames_10dad59.json",
+        "case": "onedim/burner_flame",
+        "scope": "Complete published transport sequence; every stage checked against independently refined Cantera references, with every first/warm result replayed."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_flames_5ca6641.json",
+        "case": "onedim/burner_flame",
+        "speed_ratio": 2.1591673462414662,
+        "scope": "Nine formal warm complete public calculation sequences; model preparation, snapshots and file output excluded; first measured sequence separate and not whole-process cold latency."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_flames_10dad59.json",
+        "case": "onedim/burner_flame",
+        "speed_ratio": 1.9802536307668814,
+        "conservative_speed_ratio": 1.7305988311377378,
+        "verdict": "inconclusive",
+        "scope": "CLOCK_MONOTONIC_RAW; three fixed batches of32 warm complete public sequences, loaded mechanisms reused with fresh flame state and solver setup; required numerical profiles and automaticGC included. Imports/JIT, loading, explicit warmup collection, validation and file I/O excluded."
+      },
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/catalytic_combustion",
+      "url": "https://cantera.org/dev/examples/python/onedim/catalytic_combustion.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/diffusion_flame",
+      "url": "https://cantera.org/dev/examples/python/onedim/diffusion_flame.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/diffusion_flame_batch",
+      "url": "https://cantera.org/dev/examples/python/onedim/diffusion_flame_batch.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/diffusion_flame_continuation",
+      "url": "https://cantera.org/dev/examples/python/onedim/diffusion_flame_continuation.html",
+      "status": "calculation_validated",
+      "julia_example": "example/flames/diffusion_flame_continuation.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_counterflow_continuation_d512dbc.json",
+        "case": "onedim/diffusion_flame_continuation",
+        "scope": "Complete fresh H2/O2 two-point controlled counterflow continuation through both branches to the source termination condition. All 133 native profiles are validated against independently solved Cantera flames at matching control points. Adaptive paths differ: 132 native rows and 134 stock Cantera rows.",
+        "replay_report": "validation/results/cantera4_counterflow_residual_reuse_bb3af69.json"
+      },
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_counterflow_continuation_d512dbc.json",
+        "case": "onedim/diffusion_flame_continuation",
+        "speed_ratio": 0.03577497503008666,
+        "conservative_speed_ratio": 0.035203432170826936,
+        "verdict": "below_target",
+        "scope": "Initialization, solver setup, solve, required numeric outputs and automatic GC are timed; mechanism loading, JIT, validation, file I/O and explicit collection after warmup are excluded. Native also captures every profile for replay; the pinned Cantera source extractor excludes save calls. These cost observations do not qualify final speed."
+      },
+      "performance_status": "below_target"
+    },
+    {
+      "id": "onedim/diffusion_flame_extinction",
+      "url": "https://cantera.org/dev/examples/python/onedim/diffusion_flame_extinction.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/flame_fixed_T",
+      "url": "https://cantera.org/dev/examples/python/onedim/flame_fixed_T.html",
+      "status": "calculation_validated",
+      "julia_example": "example/flames/flame_fixed_T.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_flames_10dad59.json",
+        "case": "onedim/flame_fixed_T",
+        "scope": "Complete published transport sequence; every stage checked against independently refined Cantera references, with every first/warm result replayed."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_flames_5ca6641.json",
+        "case": "onedim/flame_fixed_T",
+        "speed_ratio": 1.9322964404688678,
+        "scope": "Nine formal warm complete public calculation sequences; model preparation, snapshots and file output excluded; first measured sequence separate and not whole-process cold latency."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_flames_10dad59.json",
+        "case": "onedim/flame_fixed_T",
+        "speed_ratio": 1.7281944328338568,
+        "conservative_speed_ratio": 1.6992245085576931,
+        "verdict": "inconclusive",
+        "scope": "CLOCK_MONOTONIC_RAW; three fixed batches of32 warm complete public sequences, loaded mechanisms reused with fresh flame state and solver setup; required numerical profiles and automaticGC included. Imports/JIT, loading, explicit warmup collection, validation and file I/O excluded."
+      },
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/flame_initial_guess",
+      "url": "https://cantera.org/dev/examples/python/onedim/flame_initial_guess.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/flame_solver_timestep_controls",
+      "url": "https://cantera.org/dev/examples/python/onedim/flame_solver_timestep_controls.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/flame_speed",
+      "url": "https://cantera.org/dev/examples/python/onedim/flame_speed.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/flame_speed_convergence_analysis",
+      "url": "https://cantera.org/dev/examples/python/onedim/flame_speed_convergence_analysis.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/flamespeed_sensitivity",
+      "url": "https://cantera.org/dev/examples/python/onedim/flamespeed_sensitivity.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/ion_burner_flame",
+      "url": "https://cantera.org/dev/examples/python/onedim/ion_burner_flame.html",
+      "status": "calculation_validated",
+      "julia_example": "example/flames/source_ion_flame_sequence.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_ion_burner_correctness_ced4114.json",
+        "case": "onedim/ion_burner_flame",
+        "scope": "run_ion_source_sequence(gas, \"burner\"): complete fresh native frozen-field and enabled-field stages; full independent profiles, conservation and reference-uncertainty gates; exact first/warm replay in both runtimes."
+      },
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_ion_burner_repeated_caeb50c.json",
+        "case": "onedim/ion_burner_flame",
+        "speed_ratio": 1.9340573942713977,
+        "conservative_speed_ratio": 1.9136720426670961,
+        "verdict": "qualified",
+        "scope": "CLOCK_MONOTONIC_RAW; three fixed batches of 4 warm complete frozen-field and enabled-field sequences, loaded mechanisms reused with fresh flame state and solver setup; native initialization, required numerical profiles and automatic GC included. Imports/JIT, loading, explicit warmup collection, validation and file I/O excluded."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "onedim/ion_free_flame",
+      "url": "https://cantera.org/dev/examples/python/onedim/ion_free_flame.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/premixed_counterflow_flame",
+      "url": "https://cantera.org/dev/examples/python/onedim/premixed_counterflow_flame.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/premixed_counterflow_twin_flame",
+      "url": "https://cantera.org/dev/examples/python/onedim/premixed_counterflow_twin_flame.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "onedim/stagnation_flame",
+      "url": "https://cantera.org/dev/examples/python/onedim/stagnation_flame.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/1D_packed_bed",
+      "url": "https://cantera.org/dev/examples/python/reactors/1D_packed_bed.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/1D_pfr_surfchem",
+      "url": "https://cantera.org/dev/examples/python/reactors/1D_pfr_surfchem.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/combustor",
+      "url": "https://cantera.org/dev/examples/python/reactors/combustor.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/continuous_reactor",
+      "url": "https://cantera.org/dev/examples/python/reactors/continuous_reactor.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/custom",
+      "url": "https://cantera.org/dev/examples/python/reactors/custom.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/custom2",
+      "url": "https://cantera.org/dev/examples/python/reactors/custom2.html",
+      "status": "calculation_validated",
+      "julia_example": "example/reactors/custom2.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_custom2.json",
+        "additional_report": "validation/results/cantera4_m4_custom2.json",
+        "scope": "Complete pinned 0.5-second inertial-wall ignition source loop on WSL and Apple M4; all species/state/thermodynamic outputs, wall velocity, conservation and actual CLI CSV replay"
+      },
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/fuel_injection",
+      "url": "https://cantera.org/dev/examples/python/reactors/fuel_injection.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/ic_engine",
+      "url": "https://cantera.org/dev/examples/python/reactors/ic_engine.html",
+      "status": "calculation_validated",
+      "julia_example": "example/reactors/ic_engine.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_ic_engine.json",
+        "scope": "Complete pinned eight-revolution ideal-gas n-dodecane engine on WSL and Apple M4; all 25 switching intervals, species/thermal trajectories, conservation and converged heat/work/CO integrals",
+        "additional_report": "validation/results/cantera4_m4_ic_engine.json"
+      },
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/mix1",
+      "url": "https://cantera.org/dev/examples/python/reactors/mix1.html",
+      "status": "calculation_validated",
+      "julia_example": "example/reactors/mix1.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_mix1.json",
+        "scope": "Complete stationary reacting mixer with distinct air and GRI mechanisms, original initial state, bulk/species outputs and conservation; native WSL, Windows and Apple M4 checked against independent Cantera source/refined references",
+        "additional_report": "validation/results/cantera4_m4_mix1.json"
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_reactor_mixing_timing.json",
+        "case": "reactors/mix1",
+        "speed_ratio": 13.658133199803256,
+        "scope": "Nine warm complete fresh-network construction and stationary solves on prepared models; mechanism loading, startup, output checks and diagram/report generation excluded."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_reactor_mixing_timing.json",
+        "case": "reactors/mix1",
+        "speed_ratio": 12.634617449203034,
+        "scope": "Nine warm complete fresh-network construction and stationary solves on prepared models; mechanism loading, startup, output checks and diagram/report generation excluded."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "reactors/nanosecond_pulse_discharge",
+      "url": "https://cantera.org/dev/examples/python/reactors/nanosecond_pulse_discharge.html",
+      "status": "calculation_validated",
+      "julia_example": "example/reactors/nanosecond_pulse_discharge.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_nanosecond_pulse_repeated.json",
+        "scope": "Repeated complete energy-coupled pulse validation: 7,550 trajectory, EEDF, conservation, initialization, and timing-contract checks."
+      },
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_nanosecond_pulse_repeated.json",
+        "case": "reactors/nanosecond_pulse_discharge",
+        "speed_ratio": 0.9745467094568752,
+        "scope": "Three batches of three complete fresh pulse calculations with one loaded mechanism; the conservative repeated ratio and noise gates pass."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "reactors/non_ideal_shock_tube",
+      "url": "https://cantera.org/dev/examples/python/reactors/non_ideal_shock_tube.html",
+      "status": "calculation_validated",
+      "julia_example": "example/reactors/non_ideal_shock_tube.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_m4_non_ideal_shock_tube.json",
+        "case": "full_34_trajectories",
+        "scope": "All 34 source ideal-gas/Redlich-Kwong ignition trajectories on M4 using the optional signed/scaled QNDF adapter; independent refined reference at every native saved state and overshooting endpoint, OH peak and physical balances checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_non_ideal_shock_tube.json",
+        "case": "full_34_trajectories",
+        "speed_ratio": 0.7123960689469533,
+        "scope": "Complete public 34-case calculation, first plus seven warm calls; source-default Cantera timing and refined-reference accuracy reported separately. Below the 0.95 target."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_non_ideal_shock_tube_failure.json",
+        "case": "full_34_trajectories",
+        "speed_ratio": null,
+        "scope": "Native first plus seven warm replays completed; Cantera stopped at its first warm trajectory replay guard. No qualified paired timing."
+      },
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/periodic_cstr",
+      "url": "https://cantera.org/dev/examples/python/reactors/periodic_cstr.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/pfr",
+      "url": "https://cantera.org/dev/examples/python/reactors/pfr.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/piston",
+      "url": "https://cantera.org/dev/examples/python/reactors/piston.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/plasma",
+      "url": "https://cantera.org/dev/examples/python/reactors/plasma.html",
+      "status": "calculation_validated",
+      "julia_example": "example/reactors/plasma.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_plasma.json",
+        "scope": "Complete native YAML/state/reactor example; all1002 times and species trajectories, independent fixed-state and signed-Jacobian checks, conservation and local CI."
+      },
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_plasma.json",
+        "case": "reactors/plasma",
+        "speed_ratio": 15.336798373385658,
+        "scope": "Three32-run batches of complete fresh calculations with one loaded mechanism; setup, solve and required time/electron-mole-fraction outputs included."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "reactors/porous_media_burner",
+      "url": "https://cantera.org/dev/examples/python/reactors/porous_media_burner.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/preconditioned_integration",
+      "url": "https://cantera.org/dev/examples/python/reactors/preconditioned_integration.html",
+      "status": "calculation_validated",
+      "julia_example": "example/reactors/preconditioned_integration.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_preconditioned_integration.json",
+        "scope": "Both native modes for the complete 1268-species source example; all adaptive saved states independently checked at exact times against tighter Cantera, with conservation, negative-state and solver-work checks."
+      },
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_preconditioned_integration.json",
+        "case": "reactors/preconditioned_integration",
+        "speed_ratio": 1.8055484046884154,
+        "scope": "One warmup and two measured complete two-mode pairs, one reused mechanism per language, fresh reactor/solver setup + default adaptive solve + four source outputs; load/JIT, validation and I/O excluded. Individual structured mode is below target and is reported separately."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "reactors/preconditioned_network",
+      "url": "https://cantera.org/dev/examples/python/reactors/preconditioned_network.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/reactor1",
+      "url": "https://cantera.org/dev/examples/python/reactors/reactor1.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/reactor2",
+      "url": "https://cantera.org/dev/examples/python/reactors/reactor2.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/sensitivity1",
+      "url": "https://cantera.org/dev/examples/python/reactors/sensitivity1.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/surf_pfr",
+      "url": "https://cantera.org/dev/examples/python/reactors/surf_pfr.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "reactors/surf_pfr_chain",
+      "url": "https://cantera.org/dev/examples/python/reactors/surf_pfr_chain.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "thermo/adiabatic",
+      "url": "https://cantera.org/dev/examples/python/thermo/adiabatic.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/adiabatic.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_adiabatic.json",
+        "additional_report": "validation/results/cantera4_m4_adiabatic.json",
+        "case": "thermo/adiabatic",
+        "scope": "All 50 source fuel/air mixtures: HP equilibrium temperature and all 54 gas/solid species amounts; independently refined reference, element and enthalpy balances, phase affinity and complementarity, and every warm replay checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_adiabatic.json",
+        "case": "thermo/adiabatic",
+        "speed_ratio": 66.84888454995895,
+        "scope": "Complete 50-point public adiabatic_calculation on prepared gas/solid models; nine fresh warm sweeps; imports, model preparation, compilation, printing and I/O excluded."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_adiabatic.json",
+        "case": "thermo/adiabatic",
+        "speed_ratio": 68.44546301685044,
+        "scope": "Complete 50-point public adiabatic_calculation on prepared gas/solid models; nine fresh warm sweeps; imports, model preparation, compilation, printing and I/O excluded."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/coverage_dependent_surf",
+      "url": "https://cantera.org/dev/examples/python/thermo/coverage_dependent_surf.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/coverage_dependent_surf.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_coverage_thermo.json",
+        "case": "thermo/coverage_dependent_surf",
+        "scope": "All four 101-state standard enthalpy/entropy curves and the full5151-state triangular cross-interaction map, including occupied-site endpoints; every warm output checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_coverage_thermo.json",
+        "case": "thermo/coverage_dependent_surf",
+        "speed_ratio": 7.0129515863248635,
+        "scope": "Complete warm 5555-state surface coverage calculation on five prepared phases; nine normalized batches, all output replays checked; imports/model construction, plotting and checks excluded."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_coverage_thermo.json",
+        "case": "thermo/coverage_dependent_surf",
+        "speed_ratio": 8.748068585081622,
+        "scope": "Complete warm 5555-state surface coverage calculation on five prepared phases; nine normalized batches, all output replays checked; imports/model construction, plotting and checks excluded."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/critical_properties",
+      "url": "https://cantera.org/dev/examples/python/thermo/critical_properties.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/critical_properties.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_critical_properties.json",
+        "case": "thermo/critical_properties",
+        "scope": "All40 critical temperature, pressure, density, molecular weight and calculated compressibility values for the complete eight-fluid source example; every warm output checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_critical_properties.json",
+        "case": "thermo/critical_properties",
+        "speed_ratio": 4.178983797171245,
+        "scope": "Complete warm eight-fluid property table on prepared models; nine normalized batches; imports/model construction, printing, plots and checks excluded."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_critical_properties.json",
+        "case": "thermo/critical_properties",
+        "speed_ratio": 4.876722875685724,
+        "scope": "Complete warm eight-fluid property table on prepared models; nine normalized batches; imports/model construction, printing, plots and checks excluded."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/equations_of_state",
+      "url": "https://cantera.org/dev/examples/python/thermo/equations_of_state.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/equations_of_state.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_equations_of_state.json",
+        "additional_report": "validation/results/cantera4_m4_equations_of_state.json",
+        "case": "thermo/equations_of_state",
+        "scope": "Complete 1,000-pressure, three-EOS CO2 calculation on WSL and M4, with all 15,000 source properties, 3,000 densities, gas/liquid phase and native identity/replay checks."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_equations_of_state_timing.json",
+        "case": "thermo/equations_of_state",
+        "speed_ratio": 19.728821265957045,
+        "scope": "Complete warm 1,000-pressure, three-EOS sweep on prepared models; nine normalized batches, every repeated output checked. Imports, model loading, pristine state restore, plotting and checks excluded."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_equations_of_state_timing.json",
+        "case": "thermo/equations_of_state",
+        "speed_ratio": 26.07568816609372,
+        "scope": "Complete warm 1,000-pressure, three-EOS sweep on prepared models; nine normalized batches, every repeated output checked. Imports, model loading, pristine state restore, plotting and checks excluded."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/equivalenceRatio",
+      "url": "https://cantera.org/dev/examples/python/thermo/equivalenceRatio.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/equivalence_ratio.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "equivalence_ratio",
+        "scope": "All nine mixture compositions and 16 scalar outputs, including source HP equilibration. Every warm output checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_thermo.json",
+        "case": "equivalence_ratio",
+        "speed_ratio": 6.3577855741312135,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "equivalence_ratio",
+        "speed_ratio": 5.9532056798858815,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/isentropic",
+      "url": "https://cantera.org/dev/examples/python/thermo/isentropic.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/isentropic.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "isentropic",
+        "scope": "Complete 200-pressure nozzle on the stock ten-species h2o2 mechanism; full temperature, velocity, area and Mach profiles. Every warm output checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_thermo.json",
+        "case": "isentropic",
+        "speed_ratio": 2.2213158496235397,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "isentropic",
+        "speed_ratio": 2.1579985127246593,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/isentropic_units",
+      "url": "https://cantera.org/dev/examples/python/thermo/isentropic_units.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/isentropic_units.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "isentropic_units",
+        "scope": "Complete ten-pressure GRI-Mech nozzle; explicit SI unit conversions, without Pint wrapper overhead. Every warm output checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_thermo.json",
+        "case": "isentropic_units",
+        "speed_ratio": 2.9132579757156614,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "isentropic_units",
+        "speed_ratio": 2.680803431932546,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/mixing",
+      "url": "https://cantera.org/dev/examples/python/thermo/mixing.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/mixing.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_mixing.json",
+        "case": "thermo/mixing",
+        "scope": "HP mixing followed by TP equilibrium; all 53 species fractions, both complete thermodynamic states, reported chemical potentials, and independent mass/enthalpy/element conservation; every warm output checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_mixing.json",
+        "case": "thermo/mixing",
+        "speed_ratio": 1.27507548909278,
+        "scope": "Complete warm stream construction, mixing, equilibrium and numerical reports on a prepared phase; nine normalized batches; every reset and replay check outside the timer."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_mixing.json",
+        "case": "thermo/mixing",
+        "speed_ratio": 1.5817022226329038,
+        "scope": "Complete warm stream construction, mixing, equilibrium and numerical reports on a prepared phase; nine normalized batches; every reset and replay check outside the timer."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/plasma-eedf",
+      "url": "https://cantera.org/dev/examples/python/thermo/plasma-eedf.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/plasma_eedf.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_plasma_eedf.json",
+        "additional_report": "validation/results/cantera4_m4_plasma_eedf.json",
+        "scope": "Original 43-collision air EEDF, all 41 edge values and every complete repetition; independent mathematical tests and BOLOS reference discrepancy reported."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_plasma_eedf.json",
+        "case": "thermo/plasma-eedf",
+        "speed_ratio": 0.9805862340774717,
+        "scope": "Nine warm complete fresh model-to-EEDF calls, first call separate; all outputs checked."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_plasma_eedf.json",
+        "case": "thermo/plasma-eedf",
+        "speed_ratio": 1.3873059403023973,
+        "scope": "Nine warm complete fresh model-to-EEDF calls, first call separate; all outputs checked."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/plasma_equilibrium",
+      "url": "https://cantera.org/dev/examples/python/thermo/plasma_equilibrium.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "thermo/rankine",
+      "url": "https://cantera.org/dev/examples/python/thermo/rankine.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/water_rankine.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_m4_water.json",
+        "case": "rankine",
+        "scope": "Native calculation outputs; plotting and presentation excluded"
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_water.json",
+        "case": "rankine",
+        "scope": "Warm calculation; compilation and imports reported separately",
+        "minimum_speed_ratio": 0.95
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_water.json",
+        "speed_ratio": 11.64756889366467,
+        "scope": "fresh water model + source calculation; excludes plots, reports, dataframe presentation, file I/O",
+        "case": "rankine"
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/rankine_units",
+      "url": "https://cantera.org/dev/examples/python/thermo/rankine_units.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/water_rankine_units.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_m4_water.json",
+        "case": "rankine_units",
+        "scope": "Native calculation outputs; plotting and presentation excluded"
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_water.json",
+        "case": "rankine_units",
+        "scope": "Warm calculation; compilation and imports reported separately",
+        "minimum_speed_ratio": 0.95
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_water.json",
+        "speed_ratio": 11.587242003159272,
+        "scope": "fresh water model + source calculation; excludes plots, reports, dataframe presentation, file I/O",
+        "case": "rankine_units"
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/sound_speed",
+      "url": "https://cantera.org/dev/examples/python/thermo/sound_speed.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/sound_speed.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "sound_speed",
+        "scope": "All 24 temperatures, equilibrium/frozen speeds and final states; independent entropy and equilibrium refinement checks. Every warm output checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_thermo.json",
+        "case": "sound_speed",
+        "speed_ratio": 3.8732695954039893,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "sound_speed",
+        "speed_ratio": 4.021175408288677,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/sound_speed_units",
+      "url": "https://cantera.org/dev/examples/python/thermo/sound_speed_units.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/sound_speed_units.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "sound_speed_units",
+        "scope": "All 25 Fahrenheit temperatures, equilibrium/frozen speeds and final states; explicit unit conversions and independent refinement checks. Every warm output checked."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_thermo.json",
+        "case": "sound_speed_units",
+        "speed_ratio": 2.5766475353433678,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_thermo.json",
+        "case": "sound_speed_units",
+        "speed_ratio": 2.7294863625649666,
+        "scope": "Warm complete calculation on prepared phases; nine normalized batches with resets and correctness checks outside each timer; first call and imports separate."
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "thermo/vapordome",
+      "url": "https://cantera.org/dev/examples/python/thermo/vapordome.html",
+      "status": "calculation_validated",
+      "julia_example": "example/thermodynamics/water_vapordome.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_m4_water.json",
+        "case": "vapordome",
+        "scope": "Native calculation outputs; plotting and presentation excluded"
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_water.json",
+        "case": "vapordome",
+        "scope": "Warm calculation; compilation and imports reported separately",
+        "minimum_speed_ratio": 0.95
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_water.json",
+        "speed_ratio": 14.365932834353703,
+        "scope": "fresh water model + source calculation; excludes plots, reports, dataframe presentation, file I/O",
+        "case": "vapordome"
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "transport/dusty_gas",
+      "url": "https://cantera.org/dev/examples/python/transport/dusty_gas.html",
+      "status": "calculation_validated",
+      "julia_example": "example/transport/dusty_gas.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_properties.json",
+        "case": "dusty_gas",
+        "scope": "Full diffusion matrix, conductivity, uniform and pressure-gradient molar fluxes; every warm repetition checked"
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_properties.json",
+        "case": "dusty_gas",
+        "speed_ratio": 1.885151459498951,
+        "scope": "Warm calculation on fresh transport workspaces; preparation, imports and compilation separate"
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_properties.json",
+        "case": "dusty_gas",
+        "speed_ratio": 4.793215136258884,
+        "scope": "Warm calculation on fresh transport workspaces; preparation, imports and compilation separate"
+      },
+      "performance_status": "validated"
+    },
+    {
+      "id": "transport/high_pressure_transport",
+      "url": "https://cantera.org/dev/examples/python/transport/high_pressure_transport.html",
+      "status": "not_validated",
+      "julia_example": null,
+      "correctness_evidence": null,
+      "m4_timing_evidence": null,
+      "wsl_timing_evidence": null,
+      "performance_status": "not_validated"
+    },
+    {
+      "id": "transport/multiprocessing_viscosity",
+      "url": "https://cantera.org/dev/examples/python/transport/multiprocessing_viscosity.html",
+      "status": "calculation_validated",
+      "julia_example": "example/transport/multiprocessing_viscosity.jl",
+      "correctness_evidence": {
+        "report": "validation/results/cantera4_wsl_parallel_transport.json",
+        "additional_report": "validation/results/cantera4_m4_parallel_transport.json",
+        "case": "transport/multiprocessing_viscosity",
+        "scope": "All four original 5,000-temperature multicomponent conductivity and viscosity sweeps; serial/parallel replay and independent Cantera 4.0 comparisons on both hosts. Four Julia tasks own separate phase and transport storage."
+      },
+      "m4_timing_evidence": {
+        "report": "validation/results/cantera4_m4_parallel_transport_timing.json",
+        "case": "transport/multiprocessing_viscosity",
+        "speed_ratio": 1.080695327173588,
+        "scope": "Nine warm complete four-sweep calls including fresh phases/workspaces and pool lifecycle; controlled worker verification, with uninstrumented calls and the unchanged source script providing conservative timing caps."
+      },
+      "wsl_timing_evidence": {
+        "report": "validation/results/cantera4_wsl_parallel_transport_timing.json",
+        "case": "transport/multiprocessing_viscosity",
+        "speed_ratio": 0.9850616257648896,
+        "scope": "Nine warm complete four-sweep calls including fresh phases/workspaces and pool lifecycle; controlled worker verification, with uninstrumented calls and the unchanged source script providing conservative timing caps."
+      },
+      "performance_status": "validated"
+    }
+  ],
+  "performance_target": "WSL",
+  "performance_targets": [
+    "wsl"
+  ],
+  "performance_status_legend": {
+    "not_validated": "No complete WSL performance measurement with source calculation validation.",
+    "validated": "Performance meets the minimum speed ratio on WSL and the source calculation is validated.",
+    "below_target": "A complete WSL measurement is below the minimum speed ratio; historical M4 evidence, if present, remains reported separately."
+  },
+  "status_legend": {
+    "not_validated": "Complete per-example calculation validation remains outstanding.",
+    "calculation_validated": "Source calculation outputs validated; performance tracked separately for the target host."
+  },
+  "repeated_run_timing_contract": "Warm repeated calculations reuse the loaded mechanism in both Arrhenius and Cantera. Each reactor repetition starts from fresh state and includes reactor and solver setup, calculation, and required numerical output extraction. Imports, compilation, one-time mechanism/sidecar loading, file I/O, and validation checks are separate. Historical per-case evidence retains its recorded boundary and is not relabeled."
+}

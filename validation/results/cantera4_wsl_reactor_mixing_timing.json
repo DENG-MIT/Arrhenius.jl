@@ -1,0 +1,363 @@
+{
+  "example": "reactors/mix1",
+  "passed": true,
+  "performance_qualified": true,
+  "minimum_speed_ratio": 0.95,
+  "speed_ratio": 12.634617449203034,
+  "speed_ratio_definition": "median(Cantera seconds) / median(Julia seconds)",
+  "host_id": "wsl",
+  "host": {
+    "cpu": "Intel(R) Core(TM) Ultra 7 155H",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "kernel_release": "6.6.87.2-microsoft-standard-WSL2",
+    "system": "Linux",
+    "machine": "x86_64",
+    "logical_cpus": 18
+  },
+  "julia_version": "1.12.7",
+  "cantera_version": "4.0.0a2",
+  "scope": "Fresh construction of all reservoirs, reactor, flow devices and network followed by the complete stationary reacting mixer solve on prepared air and GRI-Mech 3.0 models.",
+  "exclusions": [
+    "mechanism file loading and numerical sidecar preparation",
+    "Julia imports and compilation",
+    "reference/output validation and archive writing",
+    "terminal reporting and Graphviz diagram creation"
+  ],
+  "repetitions": 9,
+  "warmup_calls_per_runtime": 1,
+  "prepared_model_rule": "Both runtimes reuse parsed mechanism models. Cantera retains all original construction and solve statements, replacing exactly its two Solution file loads with those prepared models. Each call resets the original source initial state and constructs a fresh network.",
+  "source": {
+    "url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/reactors/mix1.py",
+    "commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+    "sha256": "87ccbfa629cb6cd494afae82d206c60b215261e16982675264db017be4314e11"
+  },
+  "julia_seconds": [
+    0.01347511,
+    0.013498198000000001,
+    0.013054752000000001,
+    0.013075016,
+    0.0139114,
+    0.015184502,
+    0.014507024,
+    0.013466146,
+    0.015396159000000001
+  ],
+  "cantera_seconds": [
+    0.17000894714146852,
+    0.18313327804207802,
+    0.17054456798359752,
+    0.1766991289332509,
+    0.16658912505954504,
+    0.17205149587243795,
+    0.16871481528505683,
+    0.16951980907469988,
+    0.1708643981255591
+  ],
+  "julia_median_seconds": 0.013498198000000001,
+  "cantera_median_seconds": 0.17054456798359752,
+  "numerical_settings": {
+    "native_before": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "native_after": {
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "cantera_before": {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ]
+    },
+    "cantera_after": {
+      "threadpools": [
+        {
+          "file": "libgomp.so.1.0.0",
+          "query": "omp_get_max_threads",
+          "threads": 1
+        },
+        {
+          "file": "libopenblasp-r0.3.34.so",
+          "query": "openblas_get_num_threads",
+          "threads": 1
+        }
+      ]
+    }
+  },
+  "loaded_libraries_sha256": {
+    "native_before": {
+      "libblastrampoline.so.5": "8222c2022d164add076130e376fadbcde143f7a47a5c2eb2bb590ea98a98589e",
+      "libgomp.so.1": "7626e1975f0bed37947c5538e72b043c37676497f2a0ddbe1ff90f91d8f1992a",
+      "libopenblas64_.so": "8ee07277bc2a35049697c73f10c419eb16b235845f15666b74cf284476d91097"
+    },
+    "native_after": {
+      "libblastrampoline.so.5": "8222c2022d164add076130e376fadbcde143f7a47a5c2eb2bb590ea98a98589e",
+      "libgomp.so.1": "7626e1975f0bed37947c5538e72b043c37676497f2a0ddbe1ff90f91d8f1992a",
+      "libopenblas64_.so": "8ee07277bc2a35049697c73f10c419eb16b235845f15666b74cf284476d91097"
+    },
+    "cantera_before": {
+      "libcantera_shared.so.4.0.0": "1edb2105be995bea941fad7b942651788835d13737fe3b15dff342c0e64571f6",
+      "_cantera.cpython-312-x86_64-linux-gnu.so": "cb6f63a9170b57a6e8f3a0ba1eeb92ecfb43becf64f92fcae867a9f2a5e4f6ac"
+    },
+    "cantera_after": {
+      "libcantera_shared.so.4.0.0": "1edb2105be995bea941fad7b942651788835d13737fe3b15dff342c0e64571f6",
+      "_cantera.cpython-312-x86_64-linux-gnu.so": "cb6f63a9170b57a6e8f3a0ba1eeb92ecfb43becf64f92fcae867a9f2a5e4f6ac"
+    }
+  },
+  "repeated_output_checks": {
+    "passed": true,
+    "native_state_initial_state_flows_Y": "Exact equality to the validated native result for the warmup and all nine measured calls.",
+    "native_saved_states_bitwise_rechecked": 9,
+    "native_iterations": [
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7
+    ],
+    "native_physical_residuals_per_s": [
+      5.238965688116917e-11,
+      5.238965688116917e-11,
+      5.238965688116917e-11,
+      5.238965688116917e-11,
+      5.238965688116917e-11,
+      5.238965688116917e-11,
+      5.238965688116917e-11,
+      5.238965688116917e-11,
+      5.238965688116917e-11
+    ],
+    "native_physical_residual_limit_per_s": 1e-09,
+    "cantera_snapshots_rechecked": 10,
+    "cantera_arrays_rechecked": 140,
+    "cantera_properties": [
+      "X",
+      "Y",
+      "cp",
+      "cv",
+      "density",
+      "enthalpy",
+      "entropy",
+      "flows",
+      "gibbs",
+      "internal_energy",
+      "mass",
+      "mean_molecular_weight",
+      "pressure",
+      "temperature"
+    ],
+    "cantera_rtol": 2e-12,
+    "cantera_atol": 1e-12
+  },
+  "correctness": {
+    "report": "validation/results/cantera4_wsl_mix1.json",
+    "report_sha256": "6b3ce3f741cbb27de38786ce1ec42adb4488d632e4c5f06c0f09b1554e210a0a",
+    "source_and_refined_reference_gates": {
+      "reference_passed": true,
+      "converged": true,
+      "chemistry_enabled": true,
+      "separate_species_sets": true,
+      "original_initial_state": true,
+      "all_outputs_match": true,
+      "physical_residual": true,
+      "physical_species_domain": true,
+      "mass_fraction_sum": true,
+      "steady_energy_balance": true,
+      "element_balance": true,
+      "energy_ledger": true
+    },
+    "reference_tolerances": {
+      "original": {
+        "rtol": 1e-09,
+        "atol": 1e-15
+      },
+      "refined": {
+        "rtol": 1e-12,
+        "atol": 1e-20
+      }
+    }
+  },
+  "provenance": {
+    "candidate_base_commit": "dccb254e29cfd7f9c5717051c2b72b085ae3f296",
+    "native_core_commit": "7625d94d84e160f6015712ade3f8055e6a5b3fca",
+    "core_identity_rule": "Raw measured core hashes retained; CRLF-normalized source bytes match the candidate base commit.",
+    "native_source_sha256": {
+      "example/reactors/mixing_solver.jl": "8917b51db92e4dcc4d675a291fe48486b6814e071845c1b2a868964dca4eb75d",
+      "example/reactors/network_cases.jl": "77337231b5e3365bdd4e7938ca5c815e67fee81ba20dfa68933cac8055b6ff01",
+      "inputs/air.yaml": "c352ce80a7d9e673d3436968ed5833799a6dc874f9ea3fee9e01506632d9ceca",
+      "inputs/air.yaml.npz": "abf2bfa2c603d98bafc10fb81b5cdb310957bc69b05f4616492bb31fabce7919",
+      "inputs/gri30.yaml": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+      "inputs/gri30.yaml.npz": "c8ade97b2d85d5fba5a835ee9638810e2b2e9a5e2a302b4163d576250b252d31",
+      "src/Arrhenius.jl": "ce9bb812b602bd3775a44cac0f652bd22fc7c4d707e3a3843927385ea35bd6d0",
+      "src/BlowersMasel.jl": "6e2266794056367d648a68a9160f15d839fde8d9bab923a4f350fbafec7cb95d",
+      "src/CatalyticFlames.jl": "8e8fab0b4eea80daf99d73e1e587b188f6ff0810a11c0667efdeba966e0d3222",
+      "src/CondensedEquilibrium.jl": "7017f51d280908bff54593f46d6241f2f471b4be34c3d4b774c1d2f3dd469026",
+      "src/Constants.jl": "2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83",
+      "src/CounterflowFlames.jl": "7a0ca9c3cdea0bd58c23a5d9e453b3a52400b1aaf50f6d5eb469d802213ea1c1",
+      "src/CoverageDependentThermo.jl": "cf3e8f5adde603343c58717b7deefe54694284475cb8833b923fa584823eb4df",
+      "src/CriticalProperties.jl": "90cc6911489ffe90748b15965e5da14dbde9232a0beea03312fc4ec31e5f63ba",
+      "src/DataStructure.jl": "07acaddb93237a04d978e9a73fdc136cde20ff4d922a00db790e9c4a67e85f1e",
+      "src/DustyGasTransport.jl": "b87c8a982bff05c3976c4cad27578a05098124d32fc31dce6f4756d4db0701a4",
+      "src/Equilibrium.jl": "ce2091af79c5b2ce4340735fd3936659ba269091c3f619451fef304699c7d9a2",
+      "src/FlameDerivatives.jl": "c9ead3f2c74d4c51c7b686e82c5d2ecca9f704b569d913a332f6bd5dee647562",
+      "src/FlameIO.jl": "e78b0366d1c680d744d95b14f1d5591bcd9efa8c2ac20b2d0bd1598b1f0e8021",
+      "src/Flames.jl": "070c23a6b6ac5d577b6ca1317ebbb62691ec044af2ee715771f445c9eed1d07b",
+      "src/IdealGasMixing.jl": "5ab4e26a5912a1b3a154777cbf886ddf66f48a5e26cd41af9006206d6eb87046",
+      "src/IdealGasStates.jl": "46b90818b147c9c55cfe6c6caafaf3b8f194b8eaf14b2a2828d3d26c80ec3000",
+      "src/Kinetics.jl": "eeecf3a212264d5ff41b7e7110dced88937d6da6a76df8bfffb091837fd43a4e",
+      "src/Magic.jl": "9386419d03e7f481a134f2d56a2b59c4b340f1ba276bbc6ce52861597805c8e0",
+      "src/MovingWallReactors.jl": "c14ee93fa7c0a3e5e10b1e3c6b51764ff52f32929f79cf71372b21a1881f9d00",
+      "src/MulticomponentTransport.jl": "b798c622769beb0cda757abce23a05501938e7d1bba3553afab2f4ced267206a",
+      "src/Precision.jl": "970165da7f441088adacc1a5c8fa14dbcbc699df73b57d5681d9d05ab52949fd",
+      "src/PremixedCounterflowFlames.jl": "b9cda647f2cf6d6dfff79f7da558dd14f425f4ece8709024c2c7205f12114991",
+      "src/PureWater.jl": "234a75cf5ea3a06886c9003ce19f0a8d6f7492e38022b3af23604d1b3a512955",
+      "src/ReactorNetworks.jl": "e9b9410cb69d72fe92b737d958e4c5cac51be277faa7457ccf9bcbe40e5bee9b",
+      "src/Reactors.jl": "6753e519f66fd240f85622a7ea993beff2eb41050d8d61140c090a8558dd5994",
+      "src/RealGasReactors.jl": "4c62099789aa1f7a19c5728f3519714ad68c4a684e9e8dcaa575e54596c79e50",
+      "src/RealGasThermo.jl": "83d8015787f947b9e8dc84ab71f6131191530f13b57cb29914f706488398833a",
+      "src/Solution.jl": "7e3dbc589eebb3e9904d22a3f9bd1fd8f88ddc36712ef3a248d334770b6339c4",
+      "src/SurfaceFlowReactors.jl": "c7f39a9f1ae4ac6b63548d104dbd4895ae8674fc69df592e101ac58b674f4909",
+      "src/SurfaceKinetics.jl": "d55b05829c4bdeee4f56a79d78ae676750600187c9a543ce72deed690ac8409e",
+      "src/Thermo.jl": "e09107c74cc4fa0379204e92ba43517df81fa01f19785fa4c5956ee02a6492c3",
+      "src/Thermo/IdealGasThermo.jl": "e85feaf3272a8da51792935207ad7fbf2ab8a2b00f7c67dd0a6fae58a5b0cf31",
+      "src/Transport.jl": "c75b8b87274d08e1c1df6c9d40e39746980fc0098040fe9be6ca87518bf844a3",
+      "src/_Arrhenius_dev.jl": "6b08d913208a17d66dda42345ecb14d164c53dcfda9292cda5f68e60e7056eed",
+      "src/_transport_test.jl": "8e2ad5c75074bce96ee9cb7a72cbdfb041cc6c9c3b0cc7983b3f370327ee4ee3",
+      "validated_native/native.npz": "a9051cd962c19218e8a64cf633b01b8542257ad30df7bcdab0785c2bc7ca9c2a",
+      "validated_native/native.toml": "c6db9dbca77b5fa155308023522dc354d3941729945b65cd334ef14083dd1be4",
+      "validation/numerical_threads.jl": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739",
+      "validation/reactor_mixing_timing.jl": "6b8d617a66855f3565622752096ba7939152fe26c943d1fd369b68b52335b4ad"
+    },
+    "cantera_source_sha256": {
+      "cantera/samples/python/reactors/mix1.py": "87ccbfa629cb6cd494afae82d206c60b215261e16982675264db017be4314e11",
+      "inputs/air.yaml": "c352ce80a7d9e673d3436968ed5833799a6dc874f9ea3fee9e01506632d9ceca",
+      "inputs/air.yaml.npz": "abf2bfa2c603d98bafc10fb81b5cdb310957bc69b05f4616492bb31fabce7919",
+      "inputs/gri30.yaml": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+      "inputs/gri30.yaml.npz": "c8ade97b2d85d5fba5a835ee9638810e2b2e9a5e2a302b4163d576250b252d31",
+      "validated_reference/original.npz": "f60a894ef25eb5c87115652c4d96c46e72e281ff0742d952e36fe771d712db80",
+      "validated_reference/reference.json": "6b697e88b993265faf3c5bc0910899f94d35a542e995959131dcfaf14f305b5a",
+      "validation/benchmark_environment.py": "a7fb9c06cf45edf95872d38cf0a66ae19e8eadb834641c0b4d0ab08614b350fb",
+      "validation/reactor_mixing_timing.py": "b85cfc5f601652d39a4ab3b1c460e7fa2e663790112f93f4aacd3f5b4c430466"
+    },
+    "normalized_core_sha256": {
+      "src/Arrhenius.jl": "2efddb7e93198ea70ac2a3b131e1a87209e864750d67c40fba5a3dd8bbd6740d",
+      "src/BlowersMasel.jl": "984f41457a3773bd5344d598c4c13dea39b44f163248eac3410bc4606c35b4e1",
+      "src/CatalyticFlames.jl": "556a56ffaba0efab9cfee3a8bf9446d9e878bf645ce358177476ae866c161ef1",
+      "src/CondensedEquilibrium.jl": "cc87745498cbf3a39cf31f9ff02039da3ee82fc5681fb9fd3965b53011617b6f",
+      "src/Constants.jl": "bfb9adcaca09a62fd066c192be0ef6b78d5c9ff3ba14dd0d15fa22f1a63b2f85",
+      "src/CounterflowFlames.jl": "2968bd0aa9148b1594adb913728289340fbb2afccf31b425c561597021a9e904",
+      "src/CoverageDependentThermo.jl": "a85d5a7b350d1027a1df8bb5fd3083696c892f2699a109e6ebd4b0d8cc0072d1",
+      "src/CriticalProperties.jl": "2e35232ae55571b659c6e0f9fa841a6687afb27cf8a5c71ad158d7b70ef65787",
+      "src/DataStructure.jl": "871144111ab1fcde069f9a305e4cc86b00873afd43c140cd11a9a08dd452fa39",
+      "src/DustyGasTransport.jl": "038c18a8a2f8896fe8df1b89a64f55c77e040c09d7490a7744615c5059caa702",
+      "src/Equilibrium.jl": "b18b1187cd32bcb1d7cf2d787e4a78eb2a5e5ff17ac1f1c296652bbe347cd3b2",
+      "src/FlameDerivatives.jl": "f99160db20ef5ef46d66dd26bed53a62dd6ab8529602d35717169cce9deffb68",
+      "src/FlameIO.jl": "329ad9b2a13b857eaa90b92c9b0c56781a59cb09b28c5efe4cf6ee529e42d219",
+      "src/Flames.jl": "7aabf01ab42bfcf3f4cd0f993d28e29b63c1ad306caa7a00b015086a26d3aa64",
+      "src/IdealGasMixing.jl": "b20393e4b2b585b4d6b425f9a234aa969ed3d19b006a0d43a6f2743668af9059",
+      "src/IdealGasStates.jl": "ff25fb32c0b3d0236e4056b7425e10009ed5ff3f624f6e6f7112e4b93cb6d793",
+      "src/Kinetics.jl": "93429db6a18ceb3ed06677368dccc06b218795a0223a1d98d7e0536cafcb3561",
+      "src/Magic.jl": "2668705b59a8c165e3ef83e7b2819e38e2621e556bb4dcd52ab9da5071547d05",
+      "src/MovingWallReactors.jl": "797eef9d601f6267c1c86230ca56f4b52a0cf0167b447ca8d5ebb3964f4e8042",
+      "src/MulticomponentTransport.jl": "be6c79094a461cacd89d4b32d071981d97dac155320e39773055476ff46a6f66",
+      "src/Precision.jl": "6479d7e824bb9202afdb35c451b8b2fd390e2f8aa6da7242fa89c9482b9661d4",
+      "src/PremixedCounterflowFlames.jl": "6fa806b11f9e1b3fa0093a4899cfd73c026e7ec1178e0d94e1a513e8746f6a22",
+      "src/PureWater.jl": "0a7c0cac82ecd2a4ec03ec39244a3bb3ea8f9c24dd17515f411801a481fccbac",
+      "src/ReactorNetworks.jl": "2280b2d488e7951666211689faaad6a32bfe1cf49c1934527f9eb88d926651a3",
+      "src/Reactors.jl": "4b21174754b99820366f7d58a31a8d37eb003790a183331bababe1456da7b9db",
+      "src/RealGasReactors.jl": "4eff53bd105b96d5fae54b104d1fc7a52c07013dce5b1b007de8dcfe5593be0e",
+      "src/RealGasThermo.jl": "f6d766ef9309436d20865b0935098d5a4639250a0d86e9327b2e640c7dc9e1c4",
+      "src/Solution.jl": "9d81a9db797edef3eaa39c33f42a005efc2400d3279f976e09a989c5ace87498",
+      "src/SurfaceFlowReactors.jl": "ea0c99c30548f8bd6c88d7d3ee11bb0dabaa82298afbdba1f20cdd28afa485f9",
+      "src/SurfaceKinetics.jl": "5e09d9431acafaefac61620793d978a106636a41850f262f4c6c5ca620f1e45d",
+      "src/Thermo.jl": "c62484dab57278889893e23484e94d4e97dd40ea9afd3c13d8e78a67433e31bd",
+      "src/Thermo/IdealGasThermo.jl": "da7b665352be8eef480c7e4af4ee0056a48aeb3971c711e58f0eec6e44383df2",
+      "src/Transport.jl": "89720c2d0ad3ba0f197f2a45ba27684b8ee3def7222684b42e20e80a7af76ee3",
+      "src/_Arrhenius_dev.jl": "d1dc25ca8db181fc3c9210e62fd6f1f96de0cea1311f7cf7d0764680cead3c68",
+      "src/_transport_test.jl": "c05ea401d9a45a591f4158c01a267d2719c7926003645551a1a3245a52c8bd51"
+    },
+    "sources_inputs_and_libraries_unchanged": true,
+    "measured_driver_renames": {
+      "validation/reactor_mixing_timing.jl": {
+        "measured_basename": "mixing_timing_v2.jl",
+        "published_path": "validation/reactor_mixing_timing.jl",
+        "sha256": "6b8d617a66855f3565622752096ba7939152fe26c943d1fd369b68b52335b4ad",
+        "bytes_unchanged": true
+      },
+      "validation/reactor_mixing_timing.py": {
+        "measured_basename": "mixing_reference_timing.py",
+        "published_path": "validation/reactor_mixing_timing.py",
+        "sha256": "b85cfc5f601652d39a4ab3b1c460e7fa2e663790112f93f4aacd3f5b4c430466",
+        "bytes_unchanged": true
+      }
+    },
+    "saved_artifact_sha256": {
+      "native/timing.toml": "841ece4975f9428a3b980249a5d192423d5dbb4e98056bcec7e789abbf9bb1d1",
+      "native/states.npz": "95232c0d1d8d25ebc67692903bf9d663511544486bd4ea7e1b96f8171afcb79f",
+      "reference/timing.json": "c47a828c553336025a01fc37742bba77c848003996d4db7f74574968432ae863",
+      "reference/outputs.npz": "66271c19f737375ace422b5abda9069951a2665cde3c08b368868612155b7a3f",
+      "validated_native/native.npz": "a9051cd962c19218e8a64cf633b01b8542257ad30df7bcdab0785c2bc7ca9c2a",
+      "validated_native/native.toml": "c6db9dbca77b5fa155308023522dc354d3941729945b65cd334ef14083dd1be4",
+      "validated_reference/original.npz": "f60a894ef25eb5c87115652c4d96c46e72e281ff0742d952e36fe771d712db80",
+      "validated_reference/refined.npz": "3b08727a77e91f03621bd620e66a11dce9a144ba2c8618d50dc255301d30e8e0",
+      "validated_reference/reference.json": "6b697e88b993265faf3c5bc0910899f94d35a542e995959131dcfaf14f305b5a",
+      "physical_comparison.json": "614346fd72d2ea0f0adc6a5f3342d66cb9ac4a3c3fd3b78d429f6edc9e3ac68a"
+    }
+  },
+  "checks": {
+    "both_reports_passed": true,
+    "physical_proof_passed": true,
+    "native_sources_frozen": true,
+    "reference_sources_frozen": true,
+    "native_libraries_frozen": true,
+    "reference_libraries_frozen": true,
+    "actual_native_threads": true,
+    "actual_reference_threads": true,
+    "nine_native_samples": true,
+    "nine_reference_samples": true,
+    "medians_exact": true,
+    "exact_native_state_replays": true,
+    "repeated_iterations": true,
+    "physical_residuals": true,
+    "reference_snapshot_count": true,
+    "native_artifact_binding": true,
+    "native_record_binding": true,
+    "reference_artifact_binding": true,
+    "reference_record_binding": true,
+    "loaded_reference_same_as_proof": true,
+    "measured_drivers_bound": true,
+    "same_host": true,
+    "target_host": true,
+    "all_140_reference_outputs_replayed": true,
+    "all_four_prepared_inputs_bound": true,
+    "measured_helpers_equal_current_git_bytes": true,
+    "core_proof_and_normalized_current_git_binding": true,
+    "speed_threshold": true
+  },
+  "reproduction": {
+    "commands": [
+      "python validation/mixing_reference.py --cantera-source \"$CANTERA\" --output \"$PWD/mixer-reference\"",
+      "julia --threads=1 --project=. validation/mixing_case.jl \"$PWD/mixer-reference/inputs\" \"$PWD/mixer-native\"",
+      "python validation/mixing_compare.py --native \"$PWD/mixer-native\" --reference \"$PWD/mixer-reference\" --output \"$PWD/mixer-comparison.json\"",
+      "julia --threads=1 --project=. validation/reactor_mixing_timing.jl \"$PWD\" \"$PWD/mixer-reference/inputs\" \"$PWD/mixer-native\" \"$PWD/mixer-native-timing\"",
+      "python validation/reactor_mixing_timing.py --source-root \"$PWD\" --cantera-source \"$CANTERA\" --reference \"$PWD/mixer-reference\" --output \"$PWD/mixer-reference-timing\""
+    ],
+    "requirements": "Run these Bash commands from this repository with CANTERA set to the absolute pinned Cantera checkout path. Use its Cantera 4.0.0a2 Python runtime, one Julia thread, and OPENBLAS_NUM_THREADS=OMP_NUM_THREADS=MKL_NUM_THREADS=VECLIB_MAXIMUM_THREADS=1. The commands pass absolute source/output paths. Output directories must be new."
+  },
+  "limitations": [
+    "Warm prepared-model stationary mixer scope only; mechanism parsing and startup are excluded.",
+    "This report does not qualify other reactor examples or arbitrary network topologies."
+  ]
+}

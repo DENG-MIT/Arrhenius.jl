@@ -1,0 +1,139 @@
+{
+  "example": "transport/multiprocessing_viscosity",
+  "cantera_version": "4.0.0a2",
+  "source_sha256": "6dd426c24a6af5a5b9d2e87d2d9b33e78de83645952b946e81d34e727debc1de",
+  "mechanism_sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+  "sidecar_sha256": "342f217b9d9e5b3b338350bf1428e32d833e9aa61ee05e97fc91a2e47c7b7b80",
+  "multicomponent_sha256": "96de489cd830bcfd6e2fdcb8344e6ac157cdee549a030b22754d51727e4bebc6",
+  "fullreference_sha256": "7e870561db510a174fc8f21dcf90dc57b12f63343683723463fdd89f1bb24e5f",
+  "cantera_loaded_sha256": {
+    "_cantera.cpython-313-darwin.so": "b9dcc98aa66410e9d1896e2a5a6e398b0491af8adb7e82c6738ed9281db5a417",
+    "libcantera_shared.4.0.0.dylib": "295943c1cd2c73ae85d1c9683a047ad42d0204d8e588878efac799b84e5a042b"
+  },
+  "host": {
+    "cpu": "Apple M4",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "kernel_release": "25.6.0",
+    "system": "Darwin",
+    "machine": "arm64",
+    "logical_cpus": 10
+  },
+  "source_processes": 4,
+  "temperatures": 5000,
+  "pressure_Pa": 101325.0,
+  "composition": "CH4:1.0, O2:1.0, N2:3.76",
+  "transport_model": "multicomponent",
+  "rtol": 1e-10,
+  "atol": 1e-15,
+  "performance_qualified": false,
+  "source_url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/transport/multiprocessing_viscosity.py",
+  "checks": {
+    "reference_conductivity_replay": {
+      "pass": true,
+      "comparison": "exact parallel/serial replay"
+    },
+    "reference_viscosity_replay": {
+      "pass": true,
+      "comparison": "exact parallel/serial replay"
+    }
+  },
+  "native_status": "validated",
+  "native_artifact_sha256": "3319a754a03b3ce9fb6cbcccccf7952e238cda0c9d21a3407e6ae3a71f3a0ce8",
+  "native_metadata": {
+    "julia_version": "1.12.7",
+    "cpu": "Apple M4",
+    "system": "Darwin",
+    "kernel_release": "25.6.0"
+  },
+  "native_checks": {
+    "schema": {
+      "pass": true,
+      "missing": []
+    },
+    "T": {
+      "pass": true,
+      "rtol": 1e-10,
+      "atol": 1e-15,
+      "maximum_absolute_error": 1.1368683772161603e-13
+    },
+    "conductivity_parallel": {
+      "pass": true,
+      "rtol": 1e-10,
+      "atol": 1e-15,
+      "maximum_absolute_error": 5.134781488891349e-16
+    },
+    "conductivity_serial": {
+      "pass": true,
+      "rtol": 1e-10,
+      "atol": 1e-15,
+      "maximum_absolute_error": 5.134781488891349e-16
+    },
+    "viscosity_parallel": {
+      "pass": true,
+      "rtol": 1e-10,
+      "atol": 1e-15,
+      "maximum_absolute_error": 3.4558944247975454e-19
+    },
+    "viscosity_serial": {
+      "pass": true,
+      "rtol": 1e-10,
+      "atol": 1e-15,
+      "maximum_absolute_error": 3.4558944247975454e-19
+    },
+    "native_conductivity_replay": {
+      "pass": true,
+      "comparison": "exact parallel/serial replay"
+    },
+    "native_viscosity_replay": {
+      "pass": true,
+      "comparison": "exact parallel/serial replay"
+    },
+    "native_checks_pass": {
+      "pass": true
+    },
+    "julia_threads": {
+      "pass": true,
+      "value": 4
+    },
+    "blas_threads": {
+      "pass": true,
+      "value": 1
+    }
+  },
+  "native_provenance": {
+    "example_sha256": {
+      "pass": true,
+      "file": "multiprocessing_viscosity.jl",
+      "sha256": "50f05430a6e06732d3e03d99ef69282b9486c96baa043d1da4c6eea9e9fd570a"
+    },
+    "harness_sha256": {
+      "pass": true,
+      "file": "parallel_transport_cases.jl",
+      "sha256": "7dd53ddf7b4d35a1cee0db5119e873ff6d1e7e0262e173c3ddaa678e90c3b9e0"
+    },
+    "mechanism_sha256": {
+      "pass": true,
+      "file": "gri30.yaml",
+      "sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345"
+    },
+    "sidecar_sha256": {
+      "pass": true,
+      "file": "gri30.yaml.npz",
+      "sha256": "342f217b9d9e5b3b338350bf1428e32d833e9aa61ee05e97fc91a2e47c7b7b80"
+    },
+    "transport_sha256": {
+      "pass": true,
+      "file": "gri30.yaml.multicomponent.npz",
+      "sha256": "96de489cd830bcfd6e2fdcb8344e6ac157cdee549a030b22754d51727e4bebc6"
+    },
+    "core_source_tree": {
+      "pass": true,
+      "files": 35
+    }
+  },
+  "passed": true,
+  "validation_harness_sha256": {
+    "parallel_transport_cases.py": "47320b6b21f3a95a862e94cf619aa97121c95a81e65aedfee207da05d1f95078",
+    "parallel_transport_cases.jl": "7dd53ddf7b4d35a1cee0db5119e873ff6d1e7e0262e173c3ddaa678e90c3b9e0"
+  }
+}

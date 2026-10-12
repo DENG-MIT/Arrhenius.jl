@@ -4,6 +4,49 @@ using LinearAlgebra
 using SHA
 using Test
 
+include("plasma_eedf_loader.jl")
+include("plasma_eedf_numerics.jl")
+include("plasma_native.jl")
+include("plasma_thermochemistry.jl")
+include("plasma_energy.jl")
+include("equilibrium_native.jl")
+include("signed_equilibrium_native.jl")
+include("condensed_equilibrium_native.jl")
+include("ideal_gas_states.jl")
+include("ideal_gas_mixing_native.jl")
+include("species_thermo_native.jl")
+include("thermo_means_native.jl")
+include("reactors_native.jl")
+include("reactor_networks_native.jl")
+include("moving_wall_native.jl")
+include("network_allocations_native.jl")
+include("ic_engine_native.jl")
+include("surfaces_native.jl")
+include("coverage_thermo_native.jl")
+include("surface_flow_native.jl")
+include("pure_water_native.jl")
+include("critical_properties_native.jl")
+include("real_gas_native.jl")
+include("real_gas_reactors_native.jl")
+include("real_gas_ad_jacobian_native.jl")
+include("real_gas_trial_native.jl")
+include("reverse_rate_refresh_native.jl")
+include("flames_native.jl")
+include("conservative_flames_native.jl")
+include("flame_derivatives_native.jl")
+include("flame_profile_grid_native.jl")
+include("counterflow_native.jl")
+include("counterflow_premixed.jl")
+include("catalytic_flames_native.jl")
+include("dusty_gas.jl")
+include("kinetics_cache.jl")
+include("blowers_masel_native.jl")
+include("inert_phase.jl")
+include("imported_gas_native.jl")
+include("ion_transport_native.jl")
+include("ionized_flames_native.jl")
+include("ion_conservative_native.jl")
+
 @testset "sidecar provenance" begin
     mechanism, stream = mktemp()
     write(stream, "mechanism fixture\n")
@@ -25,6 +68,16 @@ using Test
     unknown = copy(metadata)
     unknown["sidecar_format_utf8"] = collect(codeunits("arrhenius-sidecar-v99"))
     @test_throws ArgumentError Arrhenius._validate_sidecar_metadata(unknown, mechanism)
+
+    for source in ("species:\n  - H2\n", "species:\r\n  - H2\r\n")
+        metadata["source_sha256_utf8"] = collect(codeunits(bytes2hex(SHA.sha256(source))))
+        for checkout in ("species:\n  - H2\n", "species:\r\n  - H2\r\n")
+            write(mechanism, checkout)
+            @test Arrhenius._validate_sidecar_metadata(metadata, mechanism) === nothing
+        end
+        write(mechanism, "species:\n  - O2\n")
+        @test_throws ArgumentError Arrhenius._validate_sidecar_metadata(metadata, mechanism)
+    end
 end
 
 @testset "single-region NASA7" begin
@@ -112,7 +165,7 @@ end
 @testset "jl" begin
     # Write your tests here.
 
-    gas = CreateSolution("../mechanism/gri30.yaml")
+    gas = CreateSolution(joinpath(@__DIR__,"..","mechanism","gri30.yaml"))
     ns = gas.n_species
 
     Y0 = ones(ns) ./ ns

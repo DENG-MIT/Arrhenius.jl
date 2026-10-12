@@ -1,0 +1,293 @@
+{
+  "example": "transport/multiprocessing_viscosity",
+  "passed": true,
+  "performance_qualified": true,
+  "minimum_speed_ratio": 0.95,
+  "speed_ratio": 1.080695327173588,
+  "speed_ratio_definition": "median(Cantera seconds) / median(Julia seconds)",
+  "scope": "Four complete 5000-temperature property calls including fresh phases/workspaces and four-worker pool creation/teardown. One first call, one full warmup, nine complete warm repetitions. Julia compilation/imports are outside warm timing. Plotting and output file writes are excluded.",
+  "reference_rule": "Per repetition, minimum of verified-worker adjusted total, uninstrumented original-function total and unchanged source-script timer total. Source-script timers are reduced by 0.0005 s per printed value for rounding. Worker audit subtraction retains initialization through the latest original initializer return timestamp.",
+  "source_url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/transport/multiprocessing_viscosity.py",
+  "source_sha256": "6dd426c24a6af5a5b9d2e87d2d9b33e78de83645952b946e81d34e727debc1de",
+  "cantera_version": "4.0.0a2",
+  "cantera_loaded_sha256": {
+    "_cantera.cpython-313-darwin.so": "b9dcc98aa66410e9d1896e2a5a6e398b0491af8adb7e82c6738ed9281db5a417",
+    "libcantera_shared.4.0.0.dylib": "295943c1cd2c73ae85d1c9683a047ad42d0204d8e588878efac799b84e5a042b"
+  },
+  "native_example_sha256": "df0115d70f61a982fe8a547838968dd94f7e0fcfa5e23fbaca23ea3516aea1b5",
+  "native_core_sha256": {
+    "Arrhenius.jl": "ce9bb812b602bd3775a44cac0f652bd22fc7c4d707e3a3843927385ea35bd6d0",
+    "BlowersMasel.jl": "6e2266794056367d648a68a9160f15d839fde8d9bab923a4f350fbafec7cb95d",
+    "CatalyticFlames.jl": "8e8fab0b4eea80daf99d73e1e587b188f6ff0810a11c0667efdeba966e0d3222",
+    "CondensedEquilibrium.jl": "7017f51d280908bff54593f46d6241f2f471b4be34c3d4b774c1d2f3dd469026",
+    "Constants.jl": "2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83",
+    "CounterflowFlames.jl": "7a0ca9c3cdea0bd58c23a5d9e453b3a52400b1aaf50f6d5eb469d802213ea1c1",
+    "CoverageDependentThermo.jl": "cf3e8f5adde603343c58717b7deefe54694284475cb8833b923fa584823eb4df",
+    "CriticalProperties.jl": "90cc6911489ffe90748b15965e5da14dbde9232a0beea03312fc4ec31e5f63ba",
+    "DataStructure.jl": "07acaddb93237a04d978e9a73fdc136cde20ff4d922a00db790e9c4a67e85f1e",
+    "DustyGasTransport.jl": "b87c8a982bff05c3976c4cad27578a05098124d32fc31dce6f4756d4db0701a4",
+    "Equilibrium.jl": "ce2091af79c5b2ce4340735fd3936659ba269091c3f619451fef304699c7d9a2",
+    "FlameDerivatives.jl": "c9ead3f2c74d4c51c7b686e82c5d2ecca9f704b569d913a332f6bd5dee647562",
+    "FlameIO.jl": "e78b0366d1c680d744d95b14f1d5591bcd9efa8c2ac20b2d0bd1598b1f0e8021",
+    "Flames.jl": "070c23a6b6ac5d577b6ca1317ebbb62691ec044af2ee715771f445c9eed1d07b",
+    "IdealGasMixing.jl": "5ab4e26a5912a1b3a154777cbf886ddf66f48a5e26cd41af9006206d6eb87046",
+    "IdealGasStates.jl": "46b90818b147c9c55cfe6c6caafaf3b8f194b8eaf14b2a2828d3d26c80ec3000",
+    "Kinetics.jl": "eeecf3a212264d5ff41b7e7110dced88937d6da6a76df8bfffb091837fd43a4e",
+    "Magic.jl": "9386419d03e7f481a134f2d56a2b59c4b340f1ba276bbc6ce52861597805c8e0",
+    "MovingWallReactors.jl": "c14ee93fa7c0a3e5e10b1e3c6b51764ff52f32929f79cf71372b21a1881f9d00",
+    "MulticomponentTransport.jl": "b798c622769beb0cda757abce23a05501938e7d1bba3553afab2f4ced267206a",
+    "Precision.jl": "970165da7f441088adacc1a5c8fa14dbcbc699df73b57d5681d9d05ab52949fd",
+    "PremixedCounterflowFlames.jl": "b9cda647f2cf6d6dfff79f7da558dd14f425f4ece8709024c2c7205f12114991",
+    "PureWater.jl": "234a75cf5ea3a06886c9003ce19f0a8d6f7492e38022b3af23604d1b3a512955",
+    "ReactorNetworks.jl": "e9b9410cb69d72fe92b737d958e4c5cac51be277faa7457ccf9bcbe40e5bee9b",
+    "Reactors.jl": "6753e519f66fd240f85622a7ea993beff2eb41050d8d61140c090a8558dd5994",
+    "RealGasReactors.jl": "4c62099789aa1f7a19c5728f3519714ad68c4a684e9e8dcaa575e54596c79e50",
+    "RealGasThermo.jl": "83d8015787f947b9e8dc84ab71f6131191530f13b57cb29914f706488398833a",
+    "Solution.jl": "7e3dbc589eebb3e9904d22a3f9bd1fd8f88ddc36712ef3a248d334770b6339c4",
+    "SurfaceFlowReactors.jl": "c7f39a9f1ae4ac6b63548d104dbd4895ae8674fc69df592e101ac58b674f4909",
+    "SurfaceKinetics.jl": "d55b05829c4bdeee4f56a79d78ae676750600187c9a543ce72deed690ac8409e",
+    "Thermo.jl": "e09107c74cc4fa0379204e92ba43517df81fa01f19785fa4c5956ee02a6492c3",
+    "Thermo/IdealGasThermo.jl": "e85feaf3272a8da51792935207ad7fbf2ab8a2b00f7c67dd0a6fae58a5b0cf31",
+    "Transport.jl": "c75b8b87274d08e1c1df6c9d40e39746980fc0098040fe9be6ca87518bf844a3",
+    "_Arrhenius_dev.jl": "6b08d913208a17d66dda42345ecb14d164c53dcfda9292cda5f68e60e7056eed",
+    "_transport_test.jl": "8e2ad5c75074bce96ee9cb7a72cbdfb041cc6c9c3b0cc7983b3f370327ee4ee3"
+  },
+  "input_sha256": {
+    "mechanism": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+    "sidecar": "342f217b9d9e5b3b338350bf1428e32d833e9aa61ee05e97fc91a2e47c7b7b80",
+    "transport": "96de489cd830bcfd6e2fdcb8344e6ac157cdee549a030b22754d51727e4bebc6"
+  },
+  "measured_driver_sha256": {
+    "native": "bbffef12bbb286328f3393963c0fb763753281c636c4aa29428ec7d50b4bb0bd",
+    "controlled_reference": "ca0865b0224f04b5e9836010214901687690deeadc9fc83b727a8e397c113ef7",
+    "exact_source": "b4b56f3fbffabf3afffd70073e6beb007f2832043e7f74290da7978a2d1816ce"
+  },
+  "host": {
+    "cpu": "Apple M4",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "kernel_release": "25.6.0",
+    "system": "Darwin",
+    "machine": "arm64",
+    "logical_cpus": 10
+  },
+  "julia_version": "1.12.7",
+  "julia_threads": 4,
+  "source_processes": 4,
+  "numerical_threads": 1,
+  "worker_lifecycles_verified": 88,
+  "multiprocessing_start_method": "spawn",
+  "uninstrumented_child_settings_unverified": true,
+  "initializer_runtime_settings_unverified": true,
+  "worker_verification_scope": "Controlled workers after original initializer return and before/after the original property map. Unwrapped function calls and exact-script runs are unverified timing caps.",
+  "exact_script_output_arrays_checked": false,
+  "exact_script_verification": "Pinned source bytes, successful execution and all four original printed timers per call; output-array replay comes from the controlled/unwrapped reference calls.",
+  "correctness": {
+    "rtol": 1e-10,
+    "atol": 1e-15,
+    "maximum_absolute_errors": {
+      "T": 1.1368683772161603e-13,
+      "conductivity_parallel": 5.134781488891349e-16,
+      "conductivity_serial": 5.134781488891349e-16,
+      "viscosity_parallel": 3.4558944247975454e-19,
+      "viscosity_serial": 3.4558944247975454e-19
+    }
+  },
+  "checks": {
+    "T": true,
+    "conductivity_parallel": true,
+    "conductivity_serial": true,
+    "viscosity_parallel": true,
+    "viscosity_serial": true,
+    "native_internal_checks": true,
+    "reference_internal_checks": true,
+    "exact_script_checks": true,
+    "source_and_mechanism": true,
+    "native_inputs": true,
+    "pinned_cantera_build": true,
+    "native_threads": true,
+    "host_match": true,
+    "target_host": true,
+    "tested_core_bytes": true,
+    "driver_bytes": true,
+    "native_example_bytes": true,
+    "worker_lifecycles_and_exclusions": true,
+    "all_reference_arrays_replayed": true,
+    "timing_vectors": true
+  },
+  "native_first_call_seconds": 4.07928125,
+  "native_warm_seconds": [
+    1.007030208,
+    1.012523458,
+    0.989623041,
+    1.01406575,
+    1.013527041,
+    0.985326583,
+    1.013309,
+    0.998986125,
+    1.009420792
+  ],
+  "original_function_warm_seconds": [
+    1.0949135419214144,
+    1.0899930011946708,
+    1.092355249915272,
+    1.095812625135295,
+    1.089457374997437,
+    1.0920120428781956,
+    1.0892347932094708,
+    1.0878584169549868,
+    1.0908763330662623
+  ],
+  "controlled_adjusted_warm_seconds": [
+    1.0999591269064695,
+    1.092108541750349,
+    1.0925949150696397,
+    1.0938597510103136,
+    1.0932705409359187,
+    1.117703667958267,
+    1.100684667006135,
+    1.0966592488111928,
+    1.0920142091345042
+  ],
+  "controlled_raw_property_seconds": [
+    [
+      0.3893440419342369,
+      0.4826521249487996,
+      0.2562050410779193,
+      0.06807483395095915
+    ],
+    [
+      0.3811518750153482,
+      0.484361834009178,
+      0.25391158391721547,
+      0.06776537490077317
+    ],
+    [
+      0.3805440840078518,
+      0.4833519159583375,
+      0.2550145420245826,
+      0.06801320798695087
+    ],
+    [
+      0.3831089169252664,
+      0.48242412495892495,
+      0.25799424992874265,
+      0.06857108301483095
+    ],
+    [
+      0.38062737497966737,
+      0.4837574999546632,
+      0.2575058749644086,
+      0.0678244159789756
+    ],
+    [
+      0.38274237501900643,
+      0.48000779189169407,
+      0.2835251670330763,
+      0.06766854203306139
+    ],
+    [
+      0.38701866706833243,
+      0.48264499998185784,
+      0.2566242499742657,
+      0.06709541601594537
+    ],
+    [
+      0.3856570409843698,
+      0.48129020794294775,
+      0.26276299997698516,
+      0.06816087500192225
+    ],
+    [
+      0.3814961250172928,
+      0.4792006250936538,
+      0.2597567919874564,
+      0.06822708295658231
+    ]
+  ],
+  "controlled_excluded_property_seconds": [
+    [
+      0.049012540956027806,
+      0.0,
+      0.047304374049417675,
+      0.0
+    ],
+    [
+      0.0485187090234831,
+      0.0,
+      0.04656341706868261,
+      0.0
+    ],
+    [
+      0.04681883391458541,
+      0.0,
+      0.04751000099349767,
+      0.0
+    ],
+    [
+      0.04920633288566023,
+      0.0,
+      0.04903229093179107,
+      0.0
+    ],
+    [
+      0.047392165986821055,
+      0.0,
+      0.04905245895497501,
+      0.0
+    ],
+    [
+      0.04728491709101945,
+      0.0,
+      0.04895529092755169,
+      0.0
+    ],
+    [
+      0.04645587410777807,
+      0.0,
+      0.04624279192648828,
+      0.0
+    ],
+    [
+      0.05047866702079773,
+      0.0,
+      0.050733208074234426,
+      0.0
+    ],
+    [
+      0.04793687502387911,
+      0.0,
+      0.048729540896601975,
+      0.0
+    ]
+  ],
+  "exact_source_rounded_lower_bound_warm_seconds": [
+    1.101,
+    1.101,
+    1.094,
+    1.103,
+    1.1059999999999999,
+    1.1,
+    1.102,
+    1.099,
+    1.096
+  ],
+  "reference_conservative_warm_seconds": [
+    1.0949135419214144,
+    1.0899930011946708,
+    1.092355249915272,
+    1.0938597510103136,
+    1.089457374997437,
+    1.0920120428781956,
+    1.0892347932094708,
+    1.0878584169549868,
+    1.0908763330662623
+  ],
+  "native_median_seconds": 1.009420792,
+  "reference_median_seconds": 1.0908763330662623,
+  "evidence_sha256": {
+    "native": "0e37315bd61242e3d4050d8ccc20c694dfeabd1eec7692ecc338e6c3e2f7b8ae",
+    "reference": "7e870561db510a174fc8f21dcf90dc57b12f63343683723463fdd89f1bb24e5f",
+    "worker_and_timing_receipts": "89562c883d3163e3b248ca4cd96f1e6aad04b96de923c83ddd3b02f38928b239",
+    "exact_source_receipts": "803bac18b8d4df6c44f0cffda020f6aca5c0aa540e455ba137fea7ed4b9acc5d"
+  }
+}

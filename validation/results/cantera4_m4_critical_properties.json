@@ -1,0 +1,258 @@
+{
+  "example": "thermo/critical_properties",
+  "cantera_version": "4.0.0a2",
+  "cantera_source_sha": "726522be4e2a13454d8415b7ef799d621f665cf3",
+  "published_source_sha256": "fa710297d699c5de3af42b85799518fe752694871020a09d383441e86f8219b6",
+  "cantera_build_record_sha256": "b151c4c9065364940a1a9409f6b3060a8b0a744ef1817076f17754a3121edfff",
+  "loaded_libraries_match_build_record": true,
+  "cantera_shared_libraries_sha256": {
+    "libcantera_shared.4.0.0.dylib": "295943c1cd2c73ae85d1c9683a047ad42d0204d8e588878efac799b84e5a042b"
+  },
+  "cantera_extension_sha256": "b9dcc98aa66410e9d1896e2a5a6e398b0491af8adb7e82c6738ed9281db5a417",
+  "harness_sha256": "daceeaedc7da07ad5993255c3ce5a7acf9cdc94890000a5c014b1ff3c1c417ff",
+  "environment_helper_sha256": "a7fb9c06cf45edf95872d38cf0a66ae19e8eadb834641c0b4d0ab08614b350fb",
+  "native_metadata": {
+    "fluid_names": "water\nnitrogen\nmethane\nhydrogen\noxygen\ncarbon dioxide\nheptane\nHFC-134a",
+    "kernel_release": "25.6.0",
+    "timestamp_utc": "2026-09-11T15:54:00.469",
+    "property_names": "critical_temperature\ncritical_pressure\ncritical_density\nmean_molecular_weight\ncritical_compressibility",
+    "validation/numerical_threads.jl_sha256": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739",
+    "cpu": "Apple M4",
+    "first_call_scope": "First elapsed call inside the measurement wrapper; wrapper specialization, process startup and imports are excluded. This is not whole-process cold latency.",
+    "src/CriticalProperties.jl_sha256": "2e35232ae55571b659c6e0f9fa841a6687afb27cf8a5c71ad158d7b70ef65787",
+    "src/Constants.jl_sha256": "2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83",
+    "qualification": "controlled",
+    "system": "Darwin",
+    "example/thermodynamics/critical_properties.jl_sha256": "a2fe0475bb05dcea7ec806ea5cbc93b7e09ca512c463efb104a65c4ddc09cd59",
+    "numerical_thread_names": "accelerate_threading_mode\nblas_threads\njulia_threads",
+    "julia_version": "1.12.7",
+    "harness_sha256": "e7e39c54754b966bc37bff41c2b9b4458a4cf2c744363d68f11e44655666b295"
+  },
+  "native_artifact_sha256": "bc4f0c8487f93edad4ac96737468788a1baa1850e5b58daabc1a026ad5c43ea6",
+  "hardware": {
+    "cpu": "Apple M4",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "kernel_release": "25.6.0",
+    "system": "Darwin",
+    "machine": "arm64",
+    "logical_cpus": 10
+  },
+  "benchmark_target": "apple-m4",
+  "numerical_threads": {
+    "threadpools": [
+      {
+        "file": "libgomp.1.dylib",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.30.dylib",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ],
+    "accelerate_threading_mode": 1
+  },
+  "numerical_threads_after": {
+    "threadpools": [
+      {
+        "file": "libgomp.1.dylib",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.30.dylib",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ],
+    "accelerate_threading_mode": 1
+  },
+  "native_numerical_threads": {
+    "accelerate_threading_mode": 1,
+    "blas_threads": 1,
+    "julia_threads": 1
+  },
+  "timestamp_utc": "2026-09-11T15:54:00Z",
+  "scope": "complete eight-fluid table on prepared models: Tc, Pc, critical density, molecular weight and calculated Zc; plots, formatting, imports and model construction excluded",
+  "checks": {
+    "critical_temperature": {
+      "pass": true,
+      "maximum_relative_error": 0.0,
+      "relative_tolerance": 2e-14,
+      "absolute_tolerance": 0,
+      "native": [
+        647.286,
+        126.2,
+        190.555,
+        32.938,
+        154.581,
+        304.21,
+        537.68,
+        374.21
+      ],
+      "cantera": [
+        647.286,
+        126.2,
+        190.555,
+        32.938,
+        154.581,
+        304.21,
+        537.68,
+        374.21
+      ]
+    },
+    "critical_pressure": {
+      "pass": true,
+      "maximum_relative_error": 0.0,
+      "relative_tolerance": 2e-14,
+      "absolute_tolerance": 0,
+      "native": [
+        22089000.0,
+        3400000.0,
+        4598800.0,
+        1283800.0,
+        5042900.0,
+        7383500.0,
+        2619900.0,
+        4059280.0
+      ],
+      "cantera": [
+        22089000.0,
+        3400000.0,
+        4598800.0,
+        1283800.0,
+        5042900.0,
+        7383500.0,
+        2619900.0,
+        4059280.0
+      ]
+    },
+    "critical_density": {
+      "pass": true,
+      "maximum_relative_error": 0.0,
+      "relative_tolerance": 2e-14,
+      "absolute_tolerance": 0,
+      "native": [
+        317.0,
+        314.03,
+        160.43,
+        31.36,
+        436.15,
+        464.0,
+        197.6,
+        511.95
+      ],
+      "cantera": [
+        317.0,
+        314.03,
+        160.43,
+        31.36,
+        436.15,
+        464.0,
+        197.6,
+        511.95
+      ]
+    },
+    "mean_molecular_weight": {
+      "pass": true,
+      "maximum_relative_error": 1.1102230246251565e-16,
+      "relative_tolerance": 2e-14,
+      "absolute_tolerance": 0,
+      "native": [
+        18.016,
+        28.01348,
+        16.04996,
+        2.0159,
+        31.9994,
+        44.01,
+        100.2,
+        102.032
+      ],
+      "cantera": [
+        18.016,
+        28.01348,
+        16.04996,
+        2.0159,
+        31.999400000000005,
+        44.01,
+        100.2,
+        102.032
+      ]
+    },
+    "critical_compressibility": {
+      "pass": true,
+      "maximum_relative_error": 0.0,
+      "relative_tolerance": 2e-14,
+      "absolute_tolerance": 0,
+      "native": [
+        0.23326241478241033,
+        0.2890555421674521,
+        0.29038779548449295,
+        0.3013414626486952,
+        0.28786974104572927,
+        0.27687771110279114,
+        0.29717168631673263,
+        0.26002091804243904
+      ],
+      "cantera": [
+        0.23326241478241033,
+        0.2890555421674521,
+        0.29038779548449295,
+        0.3013414626486952,
+        0.28786974104572927,
+        0.27687771110279114,
+        0.29717168631673263,
+        0.26002091804243904
+      ]
+    }
+  },
+  "correctness_pass": true,
+  "fluid_names": [
+    "water",
+    "nitrogen",
+    "methane",
+    "hydrogen",
+    "oxygen",
+    "carbon dioxide",
+    "heptane",
+    "HFC-134a"
+  ],
+  "cantera_import_seconds": 0.09648366598412395,
+  "cantera_model_construction_seconds": 0.006195583031512797,
+  "julia_import_seconds": 0.428406292,
+  "cantera_first_seconds": 1.908303238451481e-05,
+  "julia_first_seconds": 7e-06,
+  "cantera_warm_seconds": [
+    2.382294391281903e-06,
+    2.4732322199270127e-06,
+    2.4559366283938288e-06,
+    2.487907069735229e-06,
+    2.493049134500325e-06,
+    2.4745361879467963e-06,
+    2.4709871504455803e-06,
+    2.4545970372855665e-06,
+    2.4674186715856195e-06
+  ],
+  "julia_warm_seconds": [
+    5.512050000000023e-07,
+    5.724149999999966e-07,
+    5.850419999999971e-07,
+    5.972129999999931e-07,
+    5.912889999999981e-07,
+    5.903389999999974e-07,
+    5.987959999999955e-07,
+    6.042039999999957e-07,
+    5.960969999999943e-07
+  ],
+  "sample_definition": "mean timed seconds per complete calculation within each warm batch; checks excluded",
+  "batch_policy": "ceil(0.020 / warmup seconds), clamped to 1..1000 complete calculations",
+  "cantera_batch_size": 1000,
+  "julia_batch_size": 1000,
+  "warm_outputs_checked": 9000,
+  "native_warm_outputs_checked": 9000,
+  "speed_ratio": 4.178983797171245,
+  "minimum_speed_ratio": 0.95,
+  "qualification": "controlled",
+  "performance_pass": true
+}
