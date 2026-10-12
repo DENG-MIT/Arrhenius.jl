@@ -511,10 +511,11 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
     correction_enabled && (age=21)
     # Pseudo-time steps end on Cantera's weighted-correction criterion.
     step_converged=previous!==nothing
-    weights=correction_enabled || step_converged ? _flame_correction_weights(u,previous!==nothing) : Float64[]
-    trial_correction=correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
+    weights=_flame_correction_weights(u,previous!==nothing)
+    trial_correction=Vector{Float64}(undef,length(u))
     residual_scales=correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     residual_valid = false
+    weighted_converged=false
     for iteration in 1:maxiters
         iterations[]=iteration
         if !residual_valid
@@ -567,7 +568,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
             u .+= step
             return true
         end
-        step_merit=correction_enabled ? _flame_correction_norm(step,weights) : 0.
+        step_merit=_flame_correction_norm(step,weights)
         # A fresh small correction and componentwise backward error can certify
         # a root when the absolute residual is limited by state resolution.
         if correction_enabled && refresh && within_bounds && step_merit<1 &&
@@ -582,14 +583,12 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
             counterflow_residual!(rt,f,trial,w;previous,dt)
             contracts=false
             if all(isfinite,rt)
-                if correction_enabled
-                    copyto!(trial_correction,vec(rt))
-                    LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,trial_correction)
-                    trial_merit=_flame_correction_norm(reshape(trial_correction,size(u)),weights)
-                    contracts=trial_merit<1 || trial_merit<step_merit
-                else
-                    contracts=norm(rt)<norm(r)*(1-1e-4*alpha)
-                end
+                # Cantera's dampStep accepts a damping when the next weighted
+                # correction s1 satisfies s1<1 or s1<s0 (MultiNewton.cpp).
+                copyto!(trial_correction,vec(rt))
+                LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,trial_correction)
+                trial_merit=_flame_correction_norm(reshape(trial_correction,size(u)),weights)
+                contracts=trial_merit<1 || trial_merit<step_merit
             end
             if contracts
                 u .= trial; accepted=true; break
@@ -598,8 +597,16 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         end
         loglevel>1 && println("Counterflow Newton ",iteration," residual=",residualnorm," damping=",alpha)
         if !accepted || alpha<=1e-10
+            weighted_converged && return true
             refresh && return false
             age=correction_enabled ? 21 : 5; continue
+        end
+        # Cantera's convergence is s1<1 after the damped step. Pseudo-time steps
+        # stop there; steady solves keep polishing toward the residual tolerance
+        # and fall back to it only when Newton cannot go further.
+        if !correction_enabled && trial_merit<1
+            previous===nothing || return true
+            weighted_converged=true
         end
         contraction=norm(rt)/norm(r)
         # Keep the old residual through the contraction test, then reuse the
@@ -608,13 +615,17 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         residual_valid = true
         age=correction_enabled && trial_merit<1 ? 21 : age+1
     end
-    return false
+    return weighted_converged
 end
 
 function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
     w=CounterflowWorkspace(f)
+    # A failed steady trial must not replace the pseudo-time state; Cantera
+    # writes trials to a separate vector (SteadyStateSystem::solve).
+    checkpoint=copy(f.state)
     _counterflow_newton!(f,w;loglevel,analytic) && return true
+    copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
     residual_at!(r,x,previous,dt)=counterflow_residual!(r,f,x,w;previous,dt)
     for step in 1:max_time_steps
@@ -625,7 +636,9 @@ function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0
             step_callback===nothing || step_callback(dt)
             if step%10==0
                 loglevel>0 && println("Counterflow transient ",step," dt=",dt)
+                copyto!(checkpoint,f.state)
                 _counterflow_newton!(f,w;loglevel,analytic) && return true
+                copyto!(f.state,checkpoint)
             end
         else
             f.state .= previous; dt*=.25; timestep[]=dt
