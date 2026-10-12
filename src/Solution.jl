@@ -140,16 +140,23 @@ function _validate_kinetics_dimensions(npz, ns, nr)
 end
 
 """
-    CreateSolution(mech; data_paths=String[])
+    CreateSolution(mech; data_paths=String[], phase=nothing)
     
-Load the first gas phase from a YAML mechanism and its preprocessed NPZ sidecar.
+Load the first gas phase, or the phase named `phase` with sidecar
+`<mech>.<phase>.npz`, from a YAML mechanism and its preprocessed NPZ sidecar.
 Imported species/reaction sections require a v4 sidecar. Imports are resolved
 relative to the mechanism first, then in `data_paths`. Thermochemistry and
 kinetics are evaluated in Julia after loading.
 """
-function CreateSolution(mech; data_paths=String[])
+function CreateSolution(mech; data_paths=String[], phase=nothing)
     yaml = YAML.load_file(mech)
-    npz = npzread("$mech.npz")
+    if phase !== nothing
+        names = [get(p,"name","") for p in yaml["phases"]]
+        selected = findfirst(==(String(phase)), names)
+        selected === nothing && throw(ArgumentError("phase $(phase) not found in $(mech)"))
+        yaml["phases"] = vcat([yaml["phases"][selected]], deleteat!(copy(yaml["phases"]), selected))
+    end
+    npz = npzread(phase === nothing ? "$mech.npz" : "$mech.$phase.npz")
     _validate_sidecar_metadata(npz, mech; data_paths)
     selection = _sidecar_selection(npz)
     phase = yaml["phases"][1]
@@ -244,6 +251,16 @@ function CreateSolution(mech; data_paths=String[])
             vec(Int64.(npz["Plog_rate_offsets"])),
             Matrix{Float64}(npz["Plog_Arrhenius"]),
         )
+        if haskey(npz, "Plog_LMR_offsets")
+            offsets = vec(Int64.(npz["Plog_LMR_offsets"]))
+            species = haskey(npz,"Plog_LMR_species") ? vec(Int64.(npz["Plog_LMR_species"])) : Int64[]
+            eps = haskey(npz,"Plog_LMR_eps") ? Matrix{Float64}(npz["Plog_LMR_eps"]) : zeros(0,3)
+            length(offsets) == length(plog_reaction_indices)+1 && offsets[end]-1 == length(species) ==
+                size(eps,1) && all(k -> 1 <= k <= n_species, species) ||
+                throw(ArgumentError("invalid linear-Burke sidecar arrays"))
+            plog = PlogData(plog.reaction_indices, plog.collider_indices, plog.group_offsets,
+                plog.pressures, plog.rate_offsets, plog.Arrhenius_coeffs, offsets, species, eps)
+        end
     elseif has_plog
         throw(ArgumentError(
             "mechanism contains pressure-dependent-Arrhenius reactions, but " *

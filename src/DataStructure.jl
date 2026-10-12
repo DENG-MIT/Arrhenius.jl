@@ -1,4 +1,11 @@
-"Flattened pressure groups and Arrhenius expressions for PLOG reactions."
+"""Flattened pressure groups and Arrhenius expressions for PLOG reactions.
+
+Linear-Burke (LMR-R) reactions whose additional colliders give only an
+efficiency are stored as the PLOG rate of collider `M` evaluated at the
+effective pressure ``P ε_mix``; `lmr_offsets` index each PLOG reaction's
+colliders in `lmr_species` and their efficiency Arrhenius rows `lmr_eps`
+(A, b, Ea in cal/mol, relative to `M`).
+"""
 struct PlogData{T<:AbstractFloat}
     reaction_indices::Vector{Int64}
     collider_indices::Vector{Int64}
@@ -6,6 +13,14 @@ struct PlogData{T<:AbstractFloat}
     pressures::Vector{T}
     rate_offsets::Vector{Int64}
     Arrhenius_coeffs::Matrix{T}
+    lmr_offsets::Vector{Int64}
+    lmr_species::Vector{Int64}
+    lmr_eps::Matrix{T}
+end
+
+function PlogData(reaction_indices, collider_indices, group_offsets, pressures, rate_offsets, coefficients)
+    return PlogData(reaction_indices, collider_indices, group_offsets, pressures, rate_offsets,
+        coefficients, ones(Int64, length(reaction_indices)+1), Int64[], zeros(eltype(pressures), 0, 3))
 end
 
 function PlogData(reaction_indices, group_offsets, pressures, rate_offsets, coefficients)
@@ -18,6 +33,8 @@ function PlogData(reaction_indices, group_offsets, pressures, rate_offsets, coef
         coefficients,
     )
 end
+
+@inline _plog_linear_burke(plog::PlogData, p) = @inbounds plog.lmr_offsets[p+1] > plog.lmr_offsets[p]
 
 struct Reaction{T<:AbstractFloat}
     product_stoich_coeffs::SparseMatrixCSC{T,Int64}

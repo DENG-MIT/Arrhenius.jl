@@ -41,6 +41,9 @@ function _convert_precision(plog::PlogData, ::Type{T}) where {T<:AbstractFloat}
         _precision_array(plog.pressures, T, "PLOG pressures"),
         copy(plog.rate_offsets),
         _precision_array(plog.Arrhenius_coeffs, T, "PLOG Arrhenius coefficients"),
+        copy(plog.lmr_offsets),
+        copy(plog.lmr_species),
+        _precision_array(plog.lmr_eps, T, "linear-Burke efficiencies"),
     )
 end
 
