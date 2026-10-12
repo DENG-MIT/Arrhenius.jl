@@ -754,7 +754,7 @@ _flame_correction_enabled(f) = _conservative_flame(f) &&
     !(f isa BurnerFlame && !isempty(f.imposed_temperature))
 
 function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
-        require_positive=false,minimum_iterations=0,loglevel=0)
+        require_positive=false,minimum_iterations=0,loglevel=0,analytic=true,iterations=Ref(0))
     u = f.state
     r,trial,rt = similar(u),similar(u),similar(u)
     bandwidth = 2*size(u,1)-1
@@ -773,6 +773,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     factored_region = similar(current_region)
     region_valid = false
     for iteration in 1:maxiters
+        iterations[] = iteration
         if !residual_valid
             flame_residual!(r,f,u,w; previous,dt,previous_enthalpy)
         end
@@ -792,7 +793,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         refresh = age >= 5 || last_contraction > .7 || region_changed
         step = try
             if refresh
-                J = _flame_jacobian(f,u,w,r; previous,dt,previous_enthalpy)
+                J = _flame_jacobian(f,u,w,r; previous,dt,previous_enthalpy,analytic)
                 _,pivots = LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
                 if region_enabled
                     copyto!(factored_region,current_region)
@@ -872,8 +873,31 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     return false
 end
 
+const _timestep_growth_strategies = (:fixed_growth,:steady_norm,:transient_residual,:residual_ratio,:newton_iterations)
+
+function _check_timestep_controls(growth,strategy,regrid,jacobian_mode)
+    isfinite(growth) && growth >= 1 || throw(ArgumentError("time step growth factor must be finite and at least 1"))
+    strategy in _timestep_growth_strategies || throw(ArgumentError("unknown time step growth strategy $strategy"))
+    regrid isa Integer && regrid >= 0 || throw(ArgumentError("time_step_regrid must be a nonnegative integer"))
+    jacobian_mode in (:auto,:finite_difference) || throw(ArgumentError("unknown jacobian_mode $jacobian_mode"))
+    return nothing
+end
+
+# Cantera's SteadyStateSystem::calculateTimeStepGrowthFactor after a successful
+# step from `before` to `after`; `residual!(r,x,previous,dt)` evaluates in `r`.
+function _timestep_growth(residual!,r,strategy,growth,before,after,dt,iterations)
+    strategy === :fixed_growth && return growth
+    strategy === :newton_iterations && return iterations <= 3 ? growth : 1.0
+    steady = strategy === :steady_norm
+    residual!(r,before,steady ? nothing : before,steady ? Inf : dt); a = norm(r,Inf)
+    residual!(r,after,steady ? nothing : before,steady ? Inf : dt); b = norm(r,Inf)
+    strategy === :residual_ratio || return b < a ? growth : 1.0
+    b > 0 && a > b || return 1.0
+    return min(growth,max(1.0,(a/b)^.2))
+end
+
 function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
-        clip_species=false)
+        clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
     w = FlameWorkspace(f)
     # Species reset and clipping apply to neutral premixed flames only; ionized
     # flames keep signed charged species.
@@ -881,22 +905,27 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
     clip_species && !neutral && return false
     neutral && (w.clip_species[] = clip_species)
     steady_state = _flame_checkpoint_steady(f) ? copy(f.state) : nothing
-    _flame_newton!(f,w; loglevel,tolerance) && return true
+    _flame_newton!(f,w; loglevel,tolerance,analytic) && return true
     # A failed steady trial must not replace the accepted pseudo-time state.
     steady_state === nothing || copyto!(f.state,steady_state)
     dt = timestep[]
     previous = similar(f.state)
     failures = 0
+    iterations = Ref(0)
+    growth_residual = similar(f.state)
+    residual_at!(r,x,previous,dt) = flame_residual!(r,f,x,w; previous,dt)
     for step in 1:max_time_steps
         copyto!(previous,f.state)
-        if _flame_newton!(f,w; previous,dt,maxiters=20,loglevel=0)
+        if _flame_newton!(f,w; previous,dt,maxiters=20,loglevel=0,analytic,iterations)
             failures = 0
-            dt = min(dt*1.5,1.0)
+            dt = min(dt*_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
+                previous,f.state,dt,iterations[]),1.0)
             timestep[] = dt
+            step_callback === nothing || step_callback(dt)
             if step % 10 == 0
                 loglevel > 0 && println("Transient step ",step," dt=",dt)
                 steady_state === nothing || copyto!(steady_state,f.state)
-                _flame_newton!(f,w; loglevel,tolerance) && return true
+                _flame_newton!(f,w; loglevel,tolerance,analytic) && return true
                 steady_state === nothing || copyto!(f.state,steady_state)
             end
         else
@@ -1064,12 +1093,23 @@ end
 
 Solve a native premixed flame using damped Newton iterations and implicit
 pseudo-time stepping. Failure raises an error and leaves `converged=false`.
+Cantera's time-step controls: `time_step_growth_factor`, `time_step_growth_strategy`
+(`:fixed_growth`, `:steady_norm`, `:transient_residual`, `:residual_ratio`,
+`:newton_iterations`), `time_step_callback(dt)`, `time_step_regrid` and
+`jacobian_mode` (`:auto` or `:finite_difference`).
 """
 function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,curve=.12,
         max_points=1000,max_time_steps=500,loglevel=0,
-        initial_time_step=1e-5,domain_check=f isa FreeFlame)
+        initial_time_step=1e-5,domain_check=f isa FreeFlame,
+        time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
+        time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto)
     isfinite(ratio) && ratio > 1 && 0 < slope <= 1 && 0 < curve <= 1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step) && initial_time_step > 0 || throw(ArgumentError("initial time step must be finite and positive"))
+    _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
+    analytic = jacobian_mode === :auto
+    controls = (;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
+        step_callback=time_step_callback,analytic)
+    regrids = 0
     f.converged = false
     timestep = Ref(Float64(initial_time_step))
     # Grids that refinement may still change only guide refinement; they use a
@@ -1080,13 +1120,21 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     for pass in 1:40
         loglevel > 0 && println("Solving on ",length(f.grid)," points")
         tolerance = strict ? 1e-8 : 1e-6
-        if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance)
+        if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,controls...)
             # Retry the grid with clipped species; at a nonnegative converged
             # state both forms share the same solution.
             loglevel > 0 && println("Retrying ",length(f.grid)," points with clipped species")
             timestep[] = initial_time_step
-            _flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,clip_species=true) ||
-                error("flame solve failed on $(length(f.grid)) points")
+            if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,clip_species=true,controls...)
+                # Cantera's time_step_regrid: refine the failed state and retry.
+                refine_grid && regrids < time_step_regrid && _refine_flame!(f;ratio,slope,curve,max_points) ||
+                    error("flame solve failed on $(length(f.grid)) points")
+                regrids += 1
+                loglevel > 0 && println("Time stepping failed; regridding to ",length(f.grid)," points")
+                timestep[] = initial_time_step
+                strict = !_flame_step_sequencing(f)
+                continue
+            end
         end
         if domain_check && expansions < 12 && _flame_domain_too_narrow(f)
             # Cantera's FreeFlame.solve(auto=True): double a domain whose edge
@@ -1121,7 +1169,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
                     f.state[dominant,j] -= correction
                 end
                 _flame_newton!(f,FlameWorkspace(f);require_positive=true,
-                    minimum_iterations=1,loglevel) ||
+                    minimum_iterations=1,loglevel,analytic) ||
                     error("flame final species polishing failed on $(length(f.grid)) points")
                 refine_grid && _refine_flame!(f;ratio,slope,curve,max_points) && continue
             end

@@ -495,7 +495,8 @@ function _counterflow_constraints_converged(f,r,tol)
     isnothing(f.control_points) || maximum(abs,@view(r[f.gas.n_species+2,:]))<=tol
 end
 
-function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=1e-8,loglevel=0)
+function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=1e-8,loglevel=0,
+        analytic=true,iterations=Ref(0))
     u=f.state; r=similar(u); trial=similar(u); rt=similar(u)
     n=f.gas.n_species; bandwidth=2*size(u,1)-1
     pivots=LinearAlgebra.BlasInt[]; age=5; contraction=Inf
@@ -508,6 +509,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
     residual_scales=correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     residual_valid = false
     for iteration in 1:maxiters
+        iterations[]=iteration
         if !residual_valid
             counterflow_residual!(r,f,u,w;previous,dt)
         end
@@ -518,7 +520,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         refresh=correction_enabled ? age>20 : (age>=5 || contraction>.7)
         step=try
             if refresh
-                J=_counterflow_jacobian!(f,u,w,r;previous,dt)
+                J=_counterflow_jacobian!(f,u,w,r;previous,dt,analytic)
                 correction_enabled && _counterflow_residual_scales!(residual_scales,J,u,bandwidth)
                 _,pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
                 age=0
@@ -602,17 +604,21 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
     return false
 end
 
-function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0)
+function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0,
+        growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
     w=CounterflowWorkspace(f)
-    _counterflow_newton!(f,w;loglevel) && return true
-    dt=timestep[]
+    _counterflow_newton!(f,w;loglevel,analytic) && return true
+    dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
+    residual_at!(r,x,previous,dt)=counterflow_residual!(r,f,x,w;previous,dt)
     for step in 1:max_time_steps
         previous=copy(f.state)
-        if _counterflow_newton!(f,w;previous,dt,maxiters=25)
-            dt=min(dt*1.5,.01); timestep[]=dt
+        if _counterflow_newton!(f,w;previous,dt,maxiters=25,analytic,iterations)
+            dt=min(dt*_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
+                previous,f.state,dt,iterations[]),.01); timestep[]=dt
+            step_callback===nothing || step_callback(dt)
             if step%10==0
                 loglevel>0 && println("Counterflow transient ",step," dt=",dt)
-                _counterflow_newton!(f,w;loglevel) && return true
+                _counterflow_newton!(f,w;loglevel,analytic) && return true
             end
         else
             f.state .= previous; dt*=.25; timestep[]=dt
@@ -643,12 +649,19 @@ find a burning solution raises an error and leaves `converged=false`.
 With `auto=false`, a converged extinguished state is returned for extinction
 continuation. Two-point control always retains the current branch and disables
 automatic reinitialization; call `set_two_point_control!` to choose new targets.
+Time-step controls (`time_step_growth_factor`, `time_step_growth_strategy`,
+`time_step_callback`, `time_step_regrid`, `jacobian_mode`) are as for premixed flames.
 """
 function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,curve=.3,prune=0.,
-        max_points=1200,max_time_steps=800,loglevel=0,initial_time_step=1e-6,auto=true)
+        max_points=1200,max_time_steps=800,loglevel=0,initial_time_step=1e-6,auto=true,
+        time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
+        time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto)
     isfinite(ratio) && ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(prune) && prune<=min(slope,curve) || throw(ArgumentError("invalid pruning criterion"))
     isfinite(initial_time_step) && initial_time_step>0 || throw(ArgumentError("positive finite initial time step required"))
+    _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
+    controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
+        step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     if !isnothing(f.control_points)
         isempty(f.fixed_temperature) || throw(ArgumentError("two-point control conflicts with fixed_temperature"))
         zL,_,zR,_=f.control_points
@@ -668,15 +681,15 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
             timestep[]=initial_time_step
         end
         loglevel>0 && println("Counterflow solve on ",length(f.grid)," points")
-        success=_counterflow_steady!(f;max_time_steps,timestep,loglevel)
+        success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
         if auto && (!success || extinct(f))
             loglevel>0 && println("Recovering with the native initial temperature profile")
             _counterflow_reset!(f,copy(f.grid))
             f.fixed_temperature=temperature(f)
-            success=_counterflow_steady!(f;max_time_steps,timestep,loglevel)
+            success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
             empty!(f.fixed_temperature)
             if success
-                success=_counterflow_steady!(f;max_time_steps,timestep,loglevel)
+                success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
             end
         end
         burning=success && (!auto || !extinct(f))
@@ -684,6 +697,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
     end
     burning || error(auto ? "native counterflow solver did not find a burning solution" :
         "native counterflow continuation solver did not converge")
+    regrids=0
     for pass in 1:40
         if !refine_grid || !_refine_flame!(f;ratio,slope,curve,prune,max_points)
             if !isnothing(f.control_points)
@@ -694,8 +708,13 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
             return f
         end
         loglevel>0 && println("Counterflow solve on ",length(f.grid)," points")
-        _counterflow_steady!(f;max_time_steps,timestep,loglevel) ||
-            error("native counterflow solver failed on $(length(f.grid)) points")
+        while !_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+            # Cantera's time_step_regrid: refine the failed state and retry.
+            regrids<time_step_regrid && _refine_flame!(f;ratio,slope,curve,prune,max_points) ||
+                error("native counterflow solver failed on $(length(f.grid)) points")
+            regrids+=1; timestep[]=initial_time_step
+            loglevel>0 && println("Counterflow regrid retry on ",length(f.grid)," points")
+        end
         auto && extinct(f) && error("counterflow flame extinguished during refinement")
     end
     error("counterflow refinement did not finish")
