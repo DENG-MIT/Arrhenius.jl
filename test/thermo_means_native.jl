@@ -31,7 +31,7 @@ const tm_mixed_gas = tm_wrap_solution(IdealGasThermo(tm_fixture([
 ])), [2.016, 18.015, 28.014, 44.010])
 
 # Normalized and nonnormalized compositions, each with an exact zero and a
-# trace fraction above the 1e-30 entropy cutoff.
+# trace fraction above the 1e-300 entropy cutoff.
 function tm_compositions(n)
     base = collect(range(0.05, 0.30, n))
     base[1] = 0.0
@@ -77,7 +77,7 @@ end
         @test cal_a_mean(gas, T, P, X) ≈ u_mean - T * s_mean
         @test cal_a_mean(gas, T, P, X) ≈ g_mean - R * T * sumX
         @test cal_s0_mean(gas, T, P, X) - s_mean ≈
-            R * (dot(X, log.(max.(X, 1.0e-30))) + sumX * log(P / one_atm))
+            R * (dot(X, log.(max.(X, 1.0e-300))) + sumX * log(P / one_atm))
     end
 end
 
@@ -99,7 +99,7 @@ end
         s_species = cal_s(gas, T, P, X)
         # Above the cutoff the mixing term contributes an extra -R; at and
         # below it the log is pinned and the gradient is the species value.
-        expected = [x > 1.0e-30 ? s - R : s for (x, s) in zip(X, s_species)]
+        expected = [x > 1.0e-300 ? s - R : s for (x, s) in zip(X, s_species)]
         @test grad_s ≈ expected
     end
 end

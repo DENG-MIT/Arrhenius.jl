@@ -32,7 +32,7 @@ function _nasa7_mean_dimless(::Val{phi}, thermo::IdealGasThermo,
     T3 = T2 * T
     T4 = T3 * T
     logT = need_s ? log(T) : zero(T)
-    tiny = oftype(T, 1.0e-30)
+    tiny = oftype(T, 1.0e-300)
     logp = phi in (:s,:g,:a) ? log(p / oftype(T, one_atm)) : zero(T)
     z = zero(promote_type(typeof(T), eltype(thermo.nasa_low)))
     acc = zero(promote_type(typeof(T), eltype(thermo.nasa_low), eltype(X), typeof(logp)))
@@ -57,7 +57,7 @@ end
 function _extended_mean_dimless(::Val{phi}, thermo::IdealGasThermo,
                                 T::Real, p::Real, X::AbstractArray) where {phi}
     need_cp, need_h, need_s = _mean_needs(Val(phi))
-    tiny = oftype(T, 1.0e-30)
+    tiny = oftype(T, 1.0e-300)
     logp = phi in (:s,:g,:a) ? log(p / oftype(T, one_atm)) : zero(T)
     z = zero(promote_type(typeof(T), eltype(thermo.nasa_low)))
     acc = zero(promote_type(typeof(T), eltype(thermo.nasa_low), eltype(X), typeof(logp)))
