@@ -146,4 +146,156 @@ function _restore_flame_snapshot!(f::AbstractPremixedFlame,path::AbstractString)
     return f
 end
 
-export density, heat_release_rate, save_flame, restore_flame!
+# Recognized column spellings for flame CSV tables: the native `save_flame`
+# output and Cantera's `SolutionArray.write_csv`/`Sim1D.save` CSV format.
+const _flame_csv_columns = (
+    grid = ("z_m", "grid"),
+    velocity = ("velocity_m_s", "velocity"),
+    temperature = ("temperature_K", "T"),
+    density = ("density_kg_m3", "D"),
+)
+
+"""
+    read_flame_csv(path) -> (; columns, data)
+
+Read a flame CSV into tabulated data. Both layouts are recognized: the native
+`save_flame` table (`z_m,velocity_m_s,temperature_K,density_kg_m3,...`) and the
+equivalent Cantera table (`grid,velocity,T,D,X_<species>...`). `columns` holds
+the header entries and `data` is a `Matrix{Float64}` with one row per saved
+grid point, in file order. Rows or columns may be pruned before the table is
+passed to `set_initial_guess!`.
+"""
+function read_flame_csv(path::AbstractString)
+    isfile(path) || throw(ArgumentError("no such flame CSV: $path"))
+    lines = collect(eachline(path))
+    length(lines) >= 2 || throw(ArgumentError("flame CSV needs a header and at least one data row"))
+    columns = String[strip(field) for field in split(lines[1], ",")]
+    all(!isempty, columns) || throw(ArgumentError("flame CSV contains an empty header entry"))
+    data = zeros(length(lines) - 1, length(columns))
+    for (i, line) in enumerate(@view lines[2:end])
+        fields = split(line, ",")
+        length(fields) == length(columns) ||
+            throw(ArgumentError("flame CSV row $i has $(length(fields)) fields for $(length(columns)) columns"))
+        for j in eachindex(fields)
+            value = tryparse(Float64, strip(fields[j]))
+            value === nothing &&
+                throw(ArgumentError("flame CSV row $i column $(columns[j]) is not a number: $(fields[j])"))
+            data[i, j] = value
+        end
+    end
+    return (; columns, data)
+end
+
+"""
+    set_initial_guess!(flame, data)
+
+Load a restart initial guess from tabulated flame data, following Cantera's
+`FlameBase.set_initial_guess(data=...)`. `data` is a CSV path (see
+`read_flame_csv`) or a `(; columns, data)` table, for example a pruned subset
+of a previous `save_flame` export. The flame adopts the data grid and takes its
+temperature, velocity and species fractions from the table; the temperature
+profile is shifted so its inlet matches the flame inlet, species absent from
+the table start at zero (renormalizing the supplied fractions per grid point,
+as Cantera's `SolutionArray` restore does; a table without any species columns
+keeps the inlet composition), and boundary conditions are not overwritten. For
+a `FreeFlame` the saved velocity becomes the mass-flux profile, and the
+fixed-temperature point is reselected on the loaded profile; for a `BurnerFlame`
+the prescribed mass flux is retained. The flame is marked unconverged; call
+`solve!` to continue from the guess.
+"""
+function set_initial_guess!(f::AbstractPremixedFlame, data::AbstractString)
+    return set_initial_guess!(f, read_flame_csv(data))
+end
+
+function set_initial_guess!(f::AbstractPremixedFlame, table::NamedTuple)
+    f isa Union{FreeFlame,BurnerFlame} ||
+        throw(ArgumentError("set_initial_guess! supports FreeFlame and BurnerFlame"))
+    hasproperty(table, :columns) && hasproperty(table, :data) ||
+        throw(ArgumentError("restart data must provide columns and data; see read_flame_csv"))
+    columns = String[string(column) for column in table.columns]
+    raw = table.data
+    raw isa AbstractMatrix ||
+        throw(ArgumentError("restart data must be a matrix with grid points along rows"))
+    size(raw, 2) == length(columns) ||
+        throw(DimensionMismatch("restart data has $(size(raw,2)) columns for $(length(columns)) headers"))
+    gas, n = f.gas, f.gas.n_species
+    select(names) = findfirst(column -> column in names, columns)
+    iz, iT = select(_flame_csv_columns.grid), select(_flame_csv_columns.temperature)
+    iu = select(_flame_csv_columns.velocity)
+    iz === nothing && throw(ArgumentError("restart data lacks a grid column (z_m or grid)"))
+    iT === nothing && throw(ArgumentError("restart data lacks a temperature column (temperature_K or T)"))
+    f isa FreeFlame && iu === nothing &&
+        throw(ArgumentError("restart data lacks a velocity column (velocity_m_s or velocity)"))
+    z = Float64.(vec(raw[:, iz]))
+    N = length(z)
+    N >= 5 && all(isfinite, z) && all(>(0), diff(z)) ||
+        throw(ArgumentError("restart grid needs at least five strictly increasing coordinates"))
+    T = Float64.(vec(raw[:, iT]))
+    u = iu === nothing ? zeros(N) : Float64.(vec(raw[:, iu]))
+    all(isfinite, T) && all(isfinite, u) ||
+        throw(ArgumentError("restart data contains non-finite values"))
+    species_index = Dict(name => k for (k, name) in enumerate(gas.species_names))
+    mole_cols = Tuple{Int,Int}[]
+    mass_cols = Tuple{Int,Int}[]
+    for colidx in eachindex(columns)
+        column = columns[colidx]
+        if startswith(column, "X_") || startswith(column, "Y_")
+            haskey(species_index, column[3:end]) ||
+                throw(ArgumentError("restart data contains species $(column[3:end]) not present in the mechanism"))
+            push!(startswith(column, "X_") ? mole_cols : mass_cols,
+                (colidx, species_index[column[3:end]]))
+        end
+    end
+    # Cantera's restore prefers mole fractions when both spellings appear.
+    cols = !isempty(mole_cols) ? mole_cols : mass_cols
+    fractions = zeros(n, N)
+    for (colidx, k) in cols
+        fractions[k, :] = Float64.(vec(raw[:, colidx]))
+    end
+    # Cantera's SolutionArray restore renormalizes the supplied fractions per
+    # grid point; species absent from the table stay zero. Without any species
+    # columns the inlet composition represents the gas, as a fresh Cantera
+    # flame keeps its phase composition.
+    for j in 1:N
+        total = sum(@view fractions[:, j])
+        total > 0 && (fractions[:, j] ./= total)
+    end
+    Y = fractions
+    if !isempty(mole_cols)
+        mean_MW = vec(transpose(gas.MW) * fractions)
+        Y = fractions .* gas.MW ./ mean_MW'
+    end
+    if isempty(cols)
+        Y = repeat(f.inlet_Y, 1, N)
+    end
+    # The inlet boundary shifts the whole profile; the flame state derives the
+    # density from the shifted temperature, data composition and pressure, as
+    # Cantera's flow domain does on restore.
+    T = T .+ (f.inlet_temperature - T[1])
+    all(t -> isfinite(t) && 200 <= t <= 6000, T) ||
+        throw(ArgumentError("restart temperature profile must remain within 200–6000 K after the inlet shift"))
+    mdot = if f isa FreeFlame
+        inverseMW = vec(transpose(Y) * (1 ./ gas.MW))
+        mean_MW = 1 ./ inverseMW
+        u .* f.pressure .* mean_MW ./ (R .* T)
+    else
+        fill(f.mass_flux, N)
+    end
+    state = zeros(n + 2, N)
+    state[1, :] = T ./ 1000
+    state[2:n+1, :] = Y
+    state[end, :] = mdot
+    f.grid, f.state = z, state
+    if f isa FreeFlame
+        Tmid = .75 * T[1] + .25 * T[end]
+        below = findall(<(Tmid), T)
+        anchor = clamp(isempty(below) ? 2 : last(below), 2, N - 1)
+        f.anchor, f.fixed_temperature = anchor, T[anchor]
+    else
+        f.anchor = clamp(f.anchor, 2, N - 1)
+    end
+    f.converged = false
+    return f
+end
+
+export density, heat_release_rate, save_flame, restore_flame!, read_flame_csv, set_initial_guess!
