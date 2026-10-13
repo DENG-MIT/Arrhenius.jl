@@ -299,6 +299,7 @@ mutable struct CounterflowWorkspace{F}
     jac_age::Int
     jac_dt::Float64
     jac_valid::Bool
+    jac_evals::Int
 end
 function CounterflowWorkspace(f::CounterflowDiffusionFlame)
     adapter=_CounterflowPropertyAdapter(f.gas,f.grid,f.transport_model,
@@ -308,7 +309,7 @@ function CounterflowWorkspace(f::CounterflowDiffusionFlame)
     return CounterflowWorkspace(FlameWorkspace(adapter),zeros(N-1),zeros(6B-2,B*N),
         zeros(B,N),zeros(B,N),zeros(N),zeros(N),zeros(N),
         _ConservativeFlameDerivatives(f.gas,N),zeros(n,n+1),
-        zeros(6B-2,B*N),LinearAlgebra.BlasInt[],0,Inf,false)
+        zeros(6B-2,B*N),LinearAlgebra.BlasInt[],0,Inf,false,0)
 end
 
 "Evaluate continuity, radial momentum, pressure curvature, species and energy."
@@ -559,6 +560,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         step=try
             if refresh
                 J=_counterflow_jacobian!(f,u,w,r;previous,dt,analytic)
+                w.jac_evals+=1
                 copyto!(w.jacobian,w.band)
                 correction_enabled && _counterflow_residual_scales!(residual_scales,J,u,bandwidth)
                 _,w.pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
@@ -673,11 +675,19 @@ function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0
     copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
     residual_at!(r,x,previous,dt)=counterflow_residual!(r,f,x,w;previous,dt)
+    failures=0
     for step in 1:max_time_steps
         previous=copy(f.state)
-        if _counterflow_newton!(f,w;previous,dt,maxiters=25,analytic,iterations)
-            dt=min(dt*_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
-                previous,f.state,dt,iterations[]),.01); timestep[]=dt
+        j0=w.jac_evals
+        if _counterflow_newton!(f,w;previous,dt,maxiters=100,analytic,iterations)
+            iterations[]>=100 && loglevel>0 &&
+                println("Counterflow transient ",step," Newton hit maxiters=100")
+            failures=0
+            # Cantera grows dt only when the step evaluated no Jacobian
+            # (SteadyStateSystem::timeStep: m_jac->nEvals()==j0).
+            w.jac_evals==j0 && (dt*=_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
+                previous,f.state,dt,iterations[]))
+            dt=min(dt,1e8); timestep[]=dt
             step_callback===nothing || step_callback(dt)
             if step%10==0
                 loglevel>0 && println("Counterflow transient ",step," dt=",dt)
@@ -686,11 +696,36 @@ function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0
                 copyto!(f.state,checkpoint)
             end
         else
-            f.state .= previous; dt*=.25; timestep[]=dt
-            dt>1e-12 || return false
+            f.state .= previous
+            failures+=1
+            if failures>2
+                # SteadyStateSystem::timeStep: the third successive failure
+                # resetBadValues clips negative species instead of cutting dt.
+                loglevel>0 && println("Resetting negative species concentrations")
+                _counterflow_reset_species!(f.state,size(w.source_gradient,1))
+                failures=0
+            else
+                dt*=.5; timestep[]=dt
+                dt>=1e-16 || return false
+            end
         end
     end
     return false
+end
+
+# Flow1D::resetBadValues: clip negative mass fractions and renormalize each
+# node. Counterflow species rows are 2:n+1; V, Lambda and flux rows keep
+# their signed values, so _flame_reset_species! does not apply here.
+function _counterflow_reset_species!(u,n)
+    @inbounds for j in axes(u,2)
+        total=0.0
+        for k in 2:n+1
+            u[k,j]<0 && (u[k,j]=0.0)
+            total+=u[k,j]
+        end
+        total>0 && (@views u[2:n+1,j]./=total)
+    end
+    return u
 end
 
 function _counterflow_reset!(f,grid)
