@@ -243,11 +243,12 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
     fill!(d.density_gradient,0);fill!(d.enthalpy_gradient,0);fill!(d.cp_gradient,0)
     @inbounds for j in 1:N
         T=1000u[1,j];Td=_flame_dual(T,1000.0)
+        pRT=f.pressure/(R*T)
         sumY=0.0;inverseMW=0.0
         for k in 1:n
             positive=_flame_node_species(w,u[k+1,j])
             sumY+=positive;inverseMW+=positive/MW[k]
-            d.concentration[k]=f.pressure/(R*T)*w.X[k,j]
+            d.concentration[k]=pRT*w.X[k,j]
             d.dual_C[k]=_flame_dual(d.concentration[k],-1000d.concentration[k]/T)
         end
         cal_cp_R!(d.dual_cp,gas,Td,f.pressure,@view(w.X[:,j]))
@@ -282,9 +283,11 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
         end
         for l in 1:B
             density_ratio=d.density_gradient[l,j]/w.rho[j]
+            wl=_flame_node_weight(w,u[l,j])
+            denominator_l=R*T*MW[max(1,min(l-1,n))]*inverseMW
             for k in 1:n
                 chemistry=l==1 ? _flame_partial(d.dual_source[k]) :
-                    l==B ? 0.0 : _flame_node_weight(w,u[l,j])*f.pressure/(R*T*MW[l-1]*inverseMW)*
+                    l==B ? 0.0 : wl*f.pressure/denominator_l*
                         (d.concentration_jacobian[k,l-1]-d.source_direction[k])
                 balance=r[k+1,j]
                 if previous!==nothing
@@ -339,13 +342,17 @@ function _flame_face_derivatives!(d,f,u,w,j)
             fluxsum+=d.uncorrected_flux[k]
         end
         @inbounds for l in 1:n
+            wl=_flame_node_weight(w,u[l+1,j])
+            wr=_flame_node_weight(w,u[l+1,j+1])
+            denominator_l=dz*MW[l]*inverse_left
+            denominator_r=dz*MW[l]*inverse_right
             sl=0.0;sr=0.0
             for k in 1:n
                 if f.flux_gradient_basis==:mass
                     dl=k==l ? w.diffusion_prefactor[k,j]/dz : 0.0;dr=-dl
                 else
-                    dl=_flame_node_weight(w,u[l+1,j])*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/(dz*MW[l]*inverse_left)
-                    dr=-_flame_node_weight(w,u[l+1,j+1])*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/(dz*MW[l]*inverse_right)
+                    dl=wl*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j])/denominator_l
+                    dr=-wr*w.diffusion_prefactor[k,j]*((k==l)-w.X[k,j+1])/denominator_r
                 end
                 L[k+1,l+1]=dl;Rj[k+1,l+1]=dr;sl+=dl;sr+=dr
             end
@@ -373,6 +380,12 @@ function _flame_face_derivatives!(d,f,u,w,j)
     end
     thermal=w.conductivity[j]/cpface<density_diffusion
     thermal && (density_diffusion=w.conductivity[j]/cpface)
+    # Reuse spent scratch vectors for per-face values constant across l:
+    # uncorrected_flux holds the mean molar enthalpy, ymid the Y difference.
+    @inbounds for k in 1:n
+        d.uncorrected_flux[k]=.5*(w.h[k,j]+w.h[k,j+1])/MW[k]
+        d.ymid[k]=u[k+1,j+1]-u[k+1,j]
+    end
     mdot=.5*(u[B,j]+u[B,j+1]);Pe=abs(mdot)*dz/density_diffusion
     rw=.5*_flame_face_centering(Pe);mdot<0 && (rw=1-rw)
     sign_m=mdot<0 ? -1.0 : 1.0
@@ -395,13 +408,13 @@ function _flame_face_derivatives!(d,f,u,w,j)
             hl+=1000w.conductivity[j]/dz;hr-=1000w.conductivity[j]/dz
         end
         for k in 1:n
-            hmean=.5*(w.h[k,j]+w.h[k,j+1])/MW[k]
+            hmean=d.uncorrected_flux[k]
             hl+=hmean*L[k+1,l];hr+=hmean*Rj[k+1,l]
             if l==1
                 hl+=500w.cp[k,j]*w.flux[k,j]/MW[k]
                 hr+=500w.cp[k,j+1]*w.flux[k,j]/MW[k]
             end
-            difference=u[k+1,j+1]-u[k+1,j]
+            difference=d.ymid[k]
             L[k+1,l]+=mdot*(drl*difference+(l==k+1 ? 1-rw : 0.0))
             Rj[k+1,l]+=mdot*(drr*difference+(l==k+1 ? rw : 0.0))
             if l==B

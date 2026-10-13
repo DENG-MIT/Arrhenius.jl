@@ -360,21 +360,18 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
         end
         meanMW = sumY/inverseMW
         w.rho[j] = f.pressure*meanMW/(R*T)
+        pRT = f.pressure/(R*T)
         for k in 1:n
             w.X[k,j] = (clip ? max(u[k+1,j],0.0) : u[k+1,j])/gas.MW[k]/inverseMW
-            w.C[k] = f.pressure/(R*T)*w.X[k,j]
+            w.C[k] = pRT*w.X[k,j]
         end
         x = @view w.X[:,j]
-        h = @view w.h[:,j]
-        cp = @view w.cp[:,j]
-        cal_h_RT!(h,gas,T,f.pressure,x)
-        cal_cp_R!(cp,gas,T,f.pressure,x)
-        cal_s0_R!(w.entropy,gas,T,f.pressure,x)
-        h .*= R*T
-        cp .*= R
+        cal_h_cp_s0!(@view(w.h[:,j]), @view(w.cp[:,j]), w.entropy, gas, T, f.pressure, x)
+        @view(w.h[:,j]) .*= R*T
+        @view(w.cp[:,j]) .*= R
         w.entropy .*= R
         # A frozen source keeps the base chemistry for hybrid Jacobian columns.
-        freeze_source || wdot!(@view(w.source[:,j]),gas.reaction,T,w.C,w.entropy,h,w.kinetics;
+        freeze_source || wdot!(@view(w.source[:,j]),gas.reaction,T,w.C,w.entropy,@view(w.h[:,j]),w.kinetics;
             temperature_cache=w.rate_caches[j],pressure=f.pressure)
     end
     @inbounds for j in 1:N-1
@@ -412,22 +409,24 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
                     # These positive scalar mixture diffusivities determine only
                     # the advective interpolation. Physical diffusion remains
                     # the full multicomponent matrix below.
-                    mixture_transport!(w.transport,gas,f.pressure,Tmid,w.xmid)
+                    _mixture_transport!(w.transport,gas,f.pressure,Tmid,w.xmid,:mole)
                     for k in 1:n
                         w.conservative.density_diffusion[k,j] =
                             f.pressure*meanMW/(R*Tmid)*w.transport.diffusion[k]
                     end
                 end
             else
-                mu, w.conductivity[j] = mixture_transport!(w.transport,gas,f.pressure,Tmid,w.xmid;
-                    basis=f.flux_gradient_basis)
+                mu, w.conductivity[j] = _mixture_transport!(w.transport,gas,f.pressure,Tmid,w.xmid,
+                    f.flux_gradient_basis)
                 viscosity === nothing || (viscosity[j] = mu)
+                pRTm = f.pressure/(R*Tmid)
+                pmRTm = f.pressure*meanMW/(R*Tmid)
                 for k in 1:n
                     weight = f.flux_gradient_basis == :mass ? meanMW : gas.MW[k]
-                    w.diffusion_prefactor[k,j] = f.pressure/(R*Tmid)*weight*w.transport.diffusion[k]
+                    w.diffusion_prefactor[k,j] = pRTm*weight*w.transport.diffusion[k]
                     if conservative
                         w.conservative.density_diffusion[k,j] =
-                            f.pressure*meanMW/(R*Tmid)*w.transport.diffusion[k]
+                            pmRTm*w.transport.diffusion[k]
                     end
                 end
                 if f.soret_enabled

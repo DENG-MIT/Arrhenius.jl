@@ -166,6 +166,27 @@ end
 cal_cp_R!(output, gas::Solution, T, p, X) =
     cal_cp_R!(output, gas, gas.thermo, T, p, X)
 export cal_cp_R!
+
+"Species h_RT, cp_R, and s0_R in one pass; element values match the
+individual `cal_*_R!` functions term for term."
+function cal_h_cp_s0!(h, cp, s0, gas::Solution, thermo::IdealGasThermo, T::Real, p::Real, X::AbstractArray)
+    isnothing(thermo.extra) || throw(ArgumentError("extended thermo has no fused evaluation"))
+    logT = log(T)
+    T2 = T * T
+    T3 = T2 * T
+    T4 = T3 * T
+    @inbounds for i in eachindex(h)
+        nasa = _nasa7_coefficients(thermo, i, T)
+        a1, a2, a3, a4, a5 = nasa[i, 1], nasa[i, 2], nasa[i, 3], nasa[i, 4], nasa[i, 5]
+        cp[i] = a1 + a2 * T + a3 * T2 + a4 * T3 + a5 * T4
+        h[i] = a1 + a2 * T / 2 + a3 * T2 / 3 + a4 * T3 / 4 + a5 * T4 / 5 + nasa[i, 6] / T
+        s0[i] = a1 * logT + a2 * T + a3 * T2 / 2 + a4 * T3 / 3 + a5 * T4 / 4 + nasa[i, 7]
+    end
+    return h, cp, s0
+end
+cal_h_cp_s0!(h, cp, s0, gas::Solution, T::Real, p::Real, X::AbstractArray) =
+    cal_h_cp_s0!(h, cp, s0, gas, gas.thermo, T, p, X)
+export cal_h_cp_s0!
 """
 Constructor for the idealGasThermo:
 

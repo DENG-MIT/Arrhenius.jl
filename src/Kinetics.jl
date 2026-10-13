@@ -328,6 +328,18 @@ end
     nothing
 end
 
+# y = vk' * x accumulated column-wise; matches the term order of the generic
+# transpose sparse matvec without its dispatch overhead.
+@inline function _vk_transpose_mul!(y::Vector{T}, vk, x) where {T}
+    y .= zero(T)
+    rows = rowvals(vk)
+    vals = nonzeros(vk)
+    @inbounds for j in 1:size(vk, 2), slot in nzrange(vk, j)
+        y[j] += vals[slot] * x[rows[slot]]
+    end
+    return y
+end
+
 # Internal factor-only entry point. A prepared plan selects reverse columns only
 # for uncached ordinary rates. All cached, mixed-rate and BM calls stay full.
 function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
@@ -523,8 +535,8 @@ function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
                 workspace.delta_h[i]=dh+zero_h
             end
         else
-            mul!(workspace.delta_s, transpose(reaction.vk), S0)
-            mul!(workspace.delta_h, transpose(reaction.vk), h_mole)
+            _vk_transpose_mul!(workspace.delta_s, reaction.vk, S0)
+            _vk_transpose_mul!(workspace.delta_h, reaction.vk, h_mole)
         end
         equilibrium_indices = reversible_only ? reverse_plan.reversible : eachindex(kf)
         log_reference_concentration = log(one_atmosphere / gas_constant / T)
