@@ -281,7 +281,7 @@ struct _CounterflowPropertyAdapter{G} <: AbstractPremixedFlame
     soret_enabled::Bool
     flux_gradient_basis::Symbol
 end
-struct CounterflowWorkspace{F}
+mutable struct CounterflowWorkspace{F}
     properties::F
     viscosity::Vector{Float64}
     band::Matrix{Float64}
@@ -292,6 +292,13 @@ struct CounterflowWorkspace{F}
     planck_absorption::Vector{Float64}
     derivatives::_ConservativeFlameDerivatives
     source_gradient::Matrix{Float64}
+    # Raw band Jacobian cache reused across a grid's Newton solves, as Cantera
+    # keeps one SystemJacobian per grid (SteadyStateSystem::resize).
+    jacobian::Matrix{Float64}
+    pivots::Vector{LinearAlgebra.BlasInt}
+    jac_age::Int
+    jac_dt::Float64
+    jac_valid::Bool
 end
 function CounterflowWorkspace(f::CounterflowDiffusionFlame)
     adapter=_CounterflowPropertyAdapter(f.gas,f.grid,f.transport_model,
@@ -300,7 +307,8 @@ function CounterflowWorkspace(f::CounterflowDiffusionFlame)
     n=f.gas.n_species
     return CounterflowWorkspace(FlameWorkspace(adapter),zeros(N-1),zeros(6B-2,B*N),
         zeros(B,N),zeros(B,N),zeros(N),zeros(N),zeros(N),
-        _ConservativeFlameDerivatives(f.gas,N),zeros(n,n+1))
+        _ConservativeFlameDerivatives(f.gas,N),zeros(n,n+1),
+        zeros(6B-2,B*N),LinearAlgebra.BlasInt[],0,Inf,false)
 end
 
 "Evaluate continuity, radial momentum, pressure curvature, species and energy."
@@ -502,13 +510,30 @@ function _counterflow_constraints_converged(f,r,tol)
     isnothing(f.control_points) || maximum(abs,@view(r[f.gas.n_species+2,:]))<=tol
 end
 
+# Retune a cached raw band Jacobian for a new pseudo-time step without a fresh
+# evaluation: only interior T/species(/spread-rate) diagonal entries carry
+# -_flame_timescale/dt, so a dt change is a constant diagonal shift plus a
+# refactorization (SteadyStateSystem::initTimeInteg / updateTransient).
+function _counterflow_transient_update!(J,f,dt_old,dt_new)
+    dt_old==dt_new && return J
+    B,N=size(f.state); n=f.gas.n_species
+    kmax=isnothing(f.control_points) ? n+2 : n+1
+    k0=isempty(f.fixed_temperature) ? 1 : 2
+    delta=_flame_timescale*(1/dt_old-1/dt_new)
+    diag=4B-1
+    for j in 2:N-1, k in k0:kmax
+        J[diag,(j-1)*B+k]+=delta
+    end
+    return J
+end
+
 function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=1e-8,loglevel=0,
         analytic=true,iterations=Ref(0))
     u=f.state; r=similar(u); trial=similar(u); rt=similar(u)
     n=f.gas.n_species; bandwidth=2*size(u,1)-1
-    pivots=LinearAlgebra.BlasInt[]; age=5; contraction=Inf
     correction_enabled=!isnothing(f.control_points)
-    correction_enabled && (age=21)
+    # Two-point-control solves certify convergence on a fresh Jacobian.
+    correction_enabled && (w.jac_age=21)
     # Pseudo-time steps end on Cantera's weighted-correction criterion.
     step_converged=previous!==nothing
     weights=_flame_correction_weights(u,previous!==nothing)
@@ -516,6 +541,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
     residual_scales=correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     residual_valid = false
     weighted_converged=false
+    reevals=0
     for iteration in 1:maxiters
         iterations[]=iteration
         if !residual_valid
@@ -524,23 +550,35 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         residual_valid = false
         residualnorm=norm(r,Inf)
         residualnorm<tolerance && return true
-        # Healthy correction-merit steps reuse the Jacobian; age-based refresh only.
-        refresh=correction_enabled ? age>20 : (age>=5 || contraction>.7)
+        # Cantera reuses one Jacobian across a grid's Newton solves: re-evaluate
+        # only when the cache is missing or older than 20 steps, and merely
+        # refactorize when dt changes (MultiNewton.cpp:223-255,
+        # SteadyStateSystem.cpp:117-121,426-428).
+        refresh=!w.jac_valid || w.jac_age>20
+        refreshed=false
         step=try
             if refresh
                 J=_counterflow_jacobian!(f,u,w,r;previous,dt,analytic)
+                copyto!(w.jacobian,w.band)
                 correction_enabled && _counterflow_residual_scales!(residual_scales,J,u,bandwidth)
-                _,pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
-                age=0
+                _,w.pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
+                w.jac_age=0; w.jac_dt=dt; w.jac_valid=true
+                refreshed=true
+            elseif w.jac_dt!=dt
+                _counterflow_transient_update!(w.jacobian,f,w.jac_dt,dt)
+                copyto!(w.band,w.jacobian)
+                _,w.pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),w.band)
+                w.jac_dt=dt
             end
             correction=-vec(copy(r))
-            LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,correction)
+            LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,w.pivots,correction)
             reshape(correction,size(u))
         catch e
             e isa SingularException || rethrow()
             return false
         end
         all(isfinite,step) || return false
+        w.jac_age+=1
         alpha=1.
         within_bounds=true
         for j in axes(u,2),k in axes(u,1)
@@ -571,7 +609,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         step_merit=_flame_correction_norm(step,weights)
         # A fresh small correction and componentwise backward error can certify
         # a root when the absolute residual is limited by state resolution.
-        if correction_enabled && refresh && within_bounds && step_merit<1 &&
+        if correction_enabled && refreshed && within_bounds && step_merit<1 &&
                 _counterflow_constraints_converged(f,r,tolerance) &&
                 all(i->abs(r[i])<=tolerance*residual_scales[i],eachindex(r))
             return true
@@ -586,7 +624,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
                 # Cantera's dampStep accepts a damping when the next weighted
                 # correction s1 satisfies s1<1 or s1<s0 (MultiNewton.cpp).
                 copyto!(trial_correction,vec(rt))
-                LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,trial_correction)
+                LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,w.pivots,trial_correction)
                 trial_merit=_flame_correction_norm(reshape(trial_correction,size(u)),weights)
                 contracts=trial_merit<1 || trial_merit<step_merit
             end
@@ -598,8 +636,16 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         loglevel>1 && println("Counterflow Newton ",iteration," residual=",residualnorm," damping=",alpha)
         if !accepted || alpha<=1e-10
             weighted_converged && return true
-            refresh && return false
-            age=correction_enabled ? 21 : 5; continue
+            # Cantera retries a failed damped step with a fresh Jacobian when
+            # the current one is stale (age>1), at most four times per solve; a
+            # failure with a fresh Jacobian fails the solve (MultiNewton.cpp:271-283).
+            if correction_enabled
+                refreshed && return false
+            else
+                (w.jac_age<=1 || reevals>3) && return false
+                reevals+=1
+            end
+            w.jac_age=21; continue
         end
         # Cantera's convergence is s1<1 after the damped step. Pseudo-time steps
         # stop there; steady solves keep polishing toward the residual tolerance
@@ -608,12 +654,11 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
             previous===nothing || return true
             weighted_converged=true
         end
-        contraction=norm(rt)/norm(r)
-        # Keep the old residual through the contraction test, then reuse the
-        # accepted trial's residual and full properties at the identical state.
+        # Reuse the accepted trial's residual and full properties at the
+        # identical state.
         copyto!(r, rt)
         residual_valid = true
-        age=correction_enabled && trial_merit<1 ? 21 : age+1
+        correction_enabled && trial_merit<1 && (w.jac_age=21)
     end
     return weighted_converged
 end
