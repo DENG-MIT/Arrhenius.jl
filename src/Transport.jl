@@ -125,6 +125,12 @@ function mixture_transport!(w::TransportWorkspace, gas::Solution, P, T, X; basis
         throw(DimensionMismatch("invalid transport polynomial dimensions"))
     all(isfinite,X) && isapprox(sum(X),1;atol=1e-10,rtol=1e-10) ||
         throw(ArgumentError("normalized mole fractions required"))
+    return _mixture_transport!(w, gas, P, T, X, basis)
+end
+
+# Unchecked kernel for hot-loop callers that guarantee the public contract.
+function _mixture_transport!(w::TransportWorkspace, gas::Solution, P, T, X, basis::Symbol)
+    n = gas.n_species
     if w.molecular_weights != gas.MW
         for j in 1:n,k in 1:n
             w.weight_quarter_ratio[j,k] = sqrt(sqrt(gas.MW[j]/gas.MW[k]))
