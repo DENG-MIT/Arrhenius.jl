@@ -287,10 +287,20 @@ function set_initial_guess!(f::AbstractPremixedFlame, table::NamedTuple)
     state[end, :] = mdot
     f.grid, f.state = z, state
     if f isa FreeFlame
-        Tmid = .75 * T[1] + .25 * T[end]
+        # Mirror Cantera set_initial_guess: prefer a fixed-temperature point
+        # close to Tmid (0.75 T0 + 0.25 Teq) without pinning the boundary
+        # knot at the inlet as the anchor.
+        T0, Teq, Tmid = T[1], T[end], .75 * T[1] + .25 * T[end]
         below = findall(<(Tmid), T)
-        anchor = clamp(isempty(below) ? 2 : last(below), 2, N - 1)
-        f.anchor, f.fixed_temperature = anchor, T[anchor]
+        i = isempty(below) ? 1 : last(below)
+        if Tmid - T[i] < 0.2 * (Tmid - T0)
+            anchor, fT = i, T[i]
+        elseif T[i+1] - Tmid < 0.2 * (Teq - Tmid)
+            anchor, fT = i + 1, T[i+1]
+        else
+            anchor, fT = i, Tmid
+        end
+        f.anchor, f.fixed_temperature = clamp(anchor, 2, N - 1), fT
     else
         f.anchor = clamp(f.anchor, 2, N - 1)
     end
