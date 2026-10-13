@@ -347,7 +347,7 @@ export cal_s0_R
 calculates the dimensionless mole based entropy (s) for each species
 """
 function cal_s_R(gas::Solution,thermo::IdealGasThermo, T::Real, p::Real, X::AbstractArray)
-   tiny = oftype(T, 1.0e-30)
+   tiny = oftype(T, 1.0e-300)
    return cal_s0_R(gas,thermo, T,p,X) - log.(max.(X, tiny)) .-
        log(p / oftype(T, one_atm))
 end

@@ -46,22 +46,22 @@ function mix_trans(gas::A, P, T, X, mean_MW) where {A <: Arrhenius.Solution}
     Φ = @. 1.0 / sqrt(8.0) / sqrt(1.0 + Wk_over_Wj) * 
         (1.0 + sqrt(ηk_over_ηj) * (Wj_over_Wk)^(0.25))^2
 
-    η_mix = sum((X .* η') ./ (Φ * X))
+    X_floor = max.(X, 1.0e-20)
+    η_mix = sum((X_floor .* η') ./ (Φ * X_floor))
 
     ## thermal_conductivity_func
     λ = trans_T' * gas.trans.thermal_conductivity_poly
 
-    λ_mix = (sum(X .* λ') + 1.0 / sum(X ./ λ')) / 2.0
+    λ_mix = (sum(X_floor .* λ') + 1.0 / sum(X_floor ./ λ')) / 2.0
 
     ## binary_diff_coeffs_func
 
-    X_eps = clamp.(X, 1.e-12, Inf)
     D = reshape(trans_T' * gas.trans.binary_diff_coeffs_poly, 
                 gas.n_species, gas.n_species)
 
-    XjWj = X_eps' * gas.MW .- X_eps .* gas.MW
+    XjWj = X_floor' * gas.MW .- X_floor .* gas.MW
 
-    XjDjk = sum(X_eps .* (1.0 ./ D'), dims=1) .- (X_eps ./ diag(D))'
+    XjDjk = sum(X_floor .* (1.0 ./ D'), dims=1) .- (X_floor ./ diag(D))'
 
     Dkm = XjWj ./ XjDjk' ./ mean_MW / P * one_atm
 
@@ -84,6 +84,7 @@ struct TransportWorkspace
     root_viscosity::Vector{Float64}
     inverse_root_viscosity::Vector{Float64}
     weighted_mole_fraction::Vector{Float64}
+    floored_mole_fraction::Vector{Float64}
 end
 TransportWorkspace(gas::Solution) = TransportWorkspace(
     zeros(gas.n_species), zeros(gas.n_species), zeros(gas.n_species),
@@ -92,7 +93,7 @@ TransportWorkspace(gas::Solution) = TransportWorkspace(
     [inv(sqrt(8*(1+gas.MW[k]/gas.MW[j]))) for j in 1:gas.n_species,k in 1:gas.n_species],
     copy(gas.MW), zeros(gas.n_species, gas.n_species),
     zeros(gas.n_species), zeros(gas.n_species), zeros(gas.n_species),
-)
+    zeros(gas.n_species))
 
 @inline function _transport_polynomial(coefficients, k, logT)
     return evalpoly(logT, (coefficients[1,k], coefficients[2,k],
@@ -104,7 +105,7 @@ end
 
 Return viscosity [Pa s] and conductivity [W/(m K)], and fill
 `workspace.diffusion` with mole-gradient mixture diffusion coefficients [m²/s].
-`X` must contain normalized, nonnegative mole fractions. Requires transport
+`X` must contain normalized mole fractions. Requires transport
 polynomials from `mechanism/export_sidecar.py`.
 """
 function mixture_transport!(w::TransportWorkspace, gas::Solution, P, T, X; basis=:mole)
@@ -122,8 +123,8 @@ function mixture_transport!(w::TransportWorkspace, gas::Solution, P, T, X; basis
     size(gas.trans.species_viscosities_poly) == size(gas.trans.thermal_conductivity_poly) == (5,n) &&
         size(gas.trans.binary_diff_coeffs_poly) == (5,n*n) ||
         throw(DimensionMismatch("invalid transport polynomial dimensions"))
-    all(isfinite,X) && all(>=(0),X) && isapprox(sum(X),1;atol=1e-10,rtol=1e-10) ||
-        throw(ArgumentError("normalized nonnegative mole fractions required"))
+    all(isfinite,X) && isapprox(sum(X),1;atol=1e-10,rtol=1e-10) ||
+        throw(ArgumentError("normalized mole fractions required"))
     if w.molecular_weights != gas.MW
         for j in 1:n,k in 1:n
             w.weight_quarter_ratio[j,k] = sqrt(sqrt(gas.MW[j]/gas.MW[k]))
@@ -133,12 +134,14 @@ function mixture_transport!(w::TransportWorkspace, gas::Solution, P, T, X; basis
     end
     logT = log(T)
     sqrtT = sqrt(T)
-    root,inverse_root,mass_fraction_weight = w.root_viscosity,w.inverse_root_viscosity,w.weighted_mole_fraction
+    root,inverse_root,mass_fraction_weight,X_floor =
+        w.root_viscosity,w.inverse_root_viscosity,w.weighted_mole_fraction,w.floored_mole_fraction
     @inbounds for k in 1:n
         w.viscosity[k] = sqrtT * _transport_polynomial(gas.trans.species_viscosities_poly, k, logT)^2
         w.conductivity[k] = sqrtT * _transport_polynomial(gas.trans.thermal_conductivity_poly, k, logT)
         root[k] = sqrt(w.viscosity[k]); inverse_root[k] = inv(root[k])
-        mass_fraction_weight[k] = X[k]*gas.MW[k]
+        X_floor[k] = max(X[k], 1.0e-20)
+        mass_fraction_weight[k] = X_floor[k]*gas.MW[k]
     end
     # Binary diffusion fits are symmetric: evaluate each pair once and keep the
     # reciprocal coefficient, read column-wise below.
@@ -161,21 +164,21 @@ function mixture_transport!(w::TransportWorkspace, gas::Solution, P, T, X; basis
         rk = root[k]
         for j in 1:n
             phi = muladd(rk*inverse_root[j], w.weight_quarter_ratio[j,k], 1)^2 * w.inverse_phi_denominator[j,k]
-            denominator = muladd(X[j], phi, denominator)
-            invdiff = muladd(X[j], w.inverse_binary[j,k], invdiff)
+            denominator = muladd(X_floor[j], phi, denominator)
+            invdiff = muladd(X_floor[j], w.inverse_binary[j,k], invdiff)
             mass_invdiff = muladd(mass_fraction_weight[j], w.inverse_binary[j,k], mass_invdiff)
         end
         # Remove the diagonal pair term accumulated above.
-        invdiff -= X[k]*w.inverse_binary[k,k]
+        invdiff -= X_floor[k]*w.inverse_binary[k,k]
         mass_invdiff -= mass_fraction_weight[k]*w.inverse_binary[k,k]
         othermass = total_mass - mass_fraction_weight[k]
-        viscosity += X[k] * w.viscosity[k] / denominator
-        arithmetic += X[k] * w.conductivity[k]
-        harmonic += X[k] / w.conductivity[k]
+        viscosity += X_floor[k] * w.viscosity[k] / denominator
+        arithmetic += X_floor[k] * w.conductivity[k]
+        harmonic += X_floor[k] / w.conductivity[k]
         w.diffusion[k] = if n == 1
             w.binary[k,k]
         elseif basis == :mass
-            othermass > 0 ? inv(invdiff+X[k]*mass_invdiff/othermass) : 0.0
+            othermass > 0 ? inv(invdiff+X_floor[k]*mass_invdiff/othermass) : 0.0
         else
             invdiff > 0 ? othermass / (mean_MW * invdiff) : 0.0
         end
