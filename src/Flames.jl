@@ -759,7 +759,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     r,trial,rt = similar(u),similar(u),similar(u)
     bandwidth = 2*size(u,1)-1
     pivots = LinearAlgebra.BlasInt[]
-    age = 5
+    age = 20
     last_contraction = Inf
     # `previous` is immutable throughout this Newton solve. Cache its enthalpy
     # once per solve, never across successive pseudo-time states.
@@ -790,7 +790,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             _flame_active_region!(current_region,u)
             region_changed = region_valid && current_region != factored_region
         end
-        refresh = age >= 5 || last_contraction > .7 || region_changed
+        refresh = age >= 20 || region_changed
         step = try
             if refresh
                 J = _flame_jacobian(f,u,w,r; previous,dt,previous_enthalpy,analytic)
@@ -824,11 +824,21 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             # Small negative species values are permitted in Newton iterates;
             # thermodynamic and kinetic evaluations use the nonnegative state.
             low,high = _flame_bounds(f,k,size(u,1))
+            a = Inf
             if step[k,j] < 0
-                alpha = min(alpha,.99*(u[k,j]-low)/(-step[k,j]))
+                a = (u[k,j]-low)/(-step[k,j])
             elseif step[k,j] > 0
-                alpha = min(alpha,.99*(high-u[k,j])/step[k,j])
+                a = (high-u[k,j])/step[k,j]
             end
+            alpha = min(alpha,a)
+        end
+        # Cantera MultiNewton::boundStep lands exactly on its bounds, and
+        # dampStep rejects a bound factor no greater than 1e-10.
+        if alpha <= 1e-10
+            at_floor && return true
+            refresh && return false
+            age = 20
+            continue
         end
         # Trial correction merit uses the already factored (lagged) Newton J.
         step_merit = correction_enabled ? _flame_correction_norm(step,correction_weights) : 0.0
@@ -859,7 +869,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         if !accepted || alpha <= 1e-10
             at_floor && return true
             refresh && return false
-            age = 5
+            age = 20
             continue
         end
         at_floor && alpha < 1e-3 && return true
