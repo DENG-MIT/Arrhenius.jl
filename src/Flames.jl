@@ -573,7 +573,11 @@ function _conservative_flame_residual!(residual,f,u,w;previous=nothing,dt=Inf,
         if f isa BurnerFlame && !isempty(f.imposed_temperature)
             residual[1,j] = u[1,j]-f.imposed_temperature[j]/1000
         end
-        residual[f.dependent_species+1,j] = sum(@view(u[2:n+1,j]))-1
+        total = 0.0
+        for k in 2:n+1
+            total += u[k,j]
+        end
+        residual[f.dependent_species+1,j] = total - 1
     end
     return residual
 end
@@ -637,7 +641,11 @@ function flame_residual!(residual, f::AbstractPremixedFlame, u=f.state, w=FlameW
         if f isa BurnerFlame && !isempty(f.imposed_temperature)
             residual[1,j] = u[1,j]-f.imposed_temperature[j]/1000
         end
-        residual[f.dependent_species+1,j] = sum(@view(u[2:n+1,j]))-1
+        total = 0.0
+        for k in 2:n+1
+            total += u[k,j]
+        end
+        residual[f.dependent_species+1,j] = total - 1
     end
     return residual
 end
