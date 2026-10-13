@@ -79,6 +79,17 @@ save_flame("flame.csv", flame; basis=:mole)
 save_flame("flame.npz", flame)
 ```
 
+Restart a flame from saved data, following Cantera's `flame_initial_guess`
+example: the tabulated CSV (or a pruned subset) seeds a fresh initial guess,
+while the binary snapshot restores the full solution.
+
+```julia
+restart = FreeFlame(gas; T=300., P=one_atm, X="H2:1.1,O2:1,AR:5", width=.03)
+set_initial_guess!(restart, "flame.csv")
+# or: restore_flame!(restart, "flame.npz")
+solve!(restart)
+```
+
 For multicomponent or Soret diffusion, also export collision-integral data:
 
 ```bash
@@ -104,6 +115,7 @@ See [complete premixed-flame validation](validation/premixed_flames.md) for
 accuracy checks and measured runtimes.
 
 See [premixed flames](example/flames/adiabatic_flame.jl),
+[restarting flames](example/flames/flame_initial_guess.jl),
 [burner flames](example/flames/burner_flame.jl),
 [counterflow diffusion flames](example/flames/counterflow_diffusion.jl),
 [opposed premixed flames](example/flames/counterflow_premixed.jl),
