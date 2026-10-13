@@ -281,7 +281,7 @@ struct _CounterflowPropertyAdapter{G} <: AbstractPremixedFlame
     soret_enabled::Bool
     flux_gradient_basis::Symbol
 end
-struct CounterflowWorkspace{F}
+mutable struct CounterflowWorkspace{F}
     properties::F
     viscosity::Vector{Float64}
     band::Matrix{Float64}
@@ -292,6 +292,14 @@ struct CounterflowWorkspace{F}
     planck_absorption::Vector{Float64}
     derivatives::_ConservativeFlameDerivatives
     source_gradient::Matrix{Float64}
+    # Raw band Jacobian cache reused across a grid's Newton solves, as Cantera
+    # keeps one SystemJacobian per grid (SteadyStateSystem::resize).
+    jacobian::Matrix{Float64}
+    pivots::Vector{LinearAlgebra.BlasInt}
+    jac_age::Int
+    jac_dt::Float64
+    jac_valid::Bool
+    jac_evals::Int
 end
 function CounterflowWorkspace(f::CounterflowDiffusionFlame)
     adapter=_CounterflowPropertyAdapter(f.gas,f.grid,f.transport_model,
@@ -300,7 +308,8 @@ function CounterflowWorkspace(f::CounterflowDiffusionFlame)
     n=f.gas.n_species
     return CounterflowWorkspace(FlameWorkspace(adapter),zeros(N-1),zeros(6B-2,B*N),
         zeros(B,N),zeros(B,N),zeros(N),zeros(N),zeros(N),
-        _ConservativeFlameDerivatives(f.gas,N),zeros(n,n+1))
+        _ConservativeFlameDerivatives(f.gas,N),zeros(n,n+1),
+        zeros(6B-2,B*N),LinearAlgebra.BlasInt[],0,Inf,false,0)
 end
 
 "Evaluate continuity, radial momentum, pressure curvature, species and energy."
@@ -502,19 +511,38 @@ function _counterflow_constraints_converged(f,r,tol)
     isnothing(f.control_points) || maximum(abs,@view(r[f.gas.n_species+2,:]))<=tol
 end
 
+# Retune a cached raw band Jacobian for a new pseudo-time step without a fresh
+# evaluation: only interior T/species(/spread-rate) diagonal entries carry
+# -_flame_timescale/dt, so a dt change is a constant diagonal shift plus a
+# refactorization (SteadyStateSystem::initTimeInteg / updateTransient).
+function _counterflow_transient_update!(J,f,dt_old,dt_new)
+    dt_old==dt_new && return J
+    B,N=size(f.state); n=f.gas.n_species
+    kmax=isnothing(f.control_points) ? n+2 : n+1
+    k0=isempty(f.fixed_temperature) ? 1 : 2
+    delta=_flame_timescale*(1/dt_old-1/dt_new)
+    diag=4B-1
+    for j in 2:N-1, k in k0:kmax
+        J[diag,(j-1)*B+k]+=delta
+    end
+    return J
+end
+
 function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=1e-8,loglevel=0,
         analytic=true,iterations=Ref(0))
     u=f.state; r=similar(u); trial=similar(u); rt=similar(u)
     n=f.gas.n_species; bandwidth=2*size(u,1)-1
-    pivots=LinearAlgebra.BlasInt[]; age=5; contraction=Inf
     correction_enabled=!isnothing(f.control_points)
-    correction_enabled && (age=21)
+    # Two-point-control solves certify convergence on a fresh Jacobian.
+    correction_enabled && (w.jac_age=21)
     # Pseudo-time steps end on Cantera's weighted-correction criterion.
     step_converged=previous!==nothing
-    weights=correction_enabled || step_converged ? _flame_correction_weights(u,previous!==nothing) : Float64[]
-    trial_correction=correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
+    weights=_flame_correction_weights(u,previous!==nothing)
+    trial_correction=Vector{Float64}(undef,length(u))
     residual_scales=correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     residual_valid = false
+    weighted_converged=false
+    reevals=0
     for iteration in 1:maxiters
         iterations[]=iteration
         if !residual_valid
@@ -523,23 +551,36 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         residual_valid = false
         residualnorm=norm(r,Inf)
         residualnorm<tolerance && return true
-        # Healthy correction-merit steps reuse the Jacobian; age-based refresh only.
-        refresh=correction_enabled ? age>20 : (age>=5 || contraction>.7)
+        # Cantera reuses one Jacobian across a grid's Newton solves: re-evaluate
+        # only when the cache is missing or older than 20 steps, and merely
+        # refactorize when dt changes (MultiNewton.cpp:223-255,
+        # SteadyStateSystem.cpp:117-121,426-428).
+        refresh=!w.jac_valid || w.jac_age>20
+        refreshed=false
         step=try
             if refresh
                 J=_counterflow_jacobian!(f,u,w,r;previous,dt,analytic)
+                w.jac_evals+=1
+                copyto!(w.jacobian,w.band)
                 correction_enabled && _counterflow_residual_scales!(residual_scales,J,u,bandwidth)
-                _,pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
-                age=0
+                _,w.pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
+                w.jac_age=0; w.jac_dt=dt; w.jac_valid=true
+                refreshed=true
+            elseif w.jac_dt!=dt
+                _counterflow_transient_update!(w.jacobian,f,w.jac_dt,dt)
+                copyto!(w.band,w.jacobian)
+                _,w.pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),w.band)
+                w.jac_dt=dt
             end
             correction=-vec(copy(r))
-            LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,correction)
+            LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,w.pivots,correction)
             reshape(correction,size(u))
         catch e
             e isa SingularException || rethrow()
             return false
         end
         all(isfinite,step) || return false
+        w.jac_age+=1
         alpha=1.
         within_bounds=true
         for j in axes(u,2),k in axes(u,1)
@@ -567,10 +608,10 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
             u .+= step
             return true
         end
-        step_merit=correction_enabled ? _flame_correction_norm(step,weights) : 0.
+        step_merit=_flame_correction_norm(step,weights)
         # A fresh small correction and componentwise backward error can certify
         # a root when the absolute residual is limited by state resolution.
-        if correction_enabled && refresh && within_bounds && step_merit<1 &&
+        if correction_enabled && refreshed && within_bounds && step_merit<1 &&
                 _counterflow_constraints_converged(f,r,tolerance) &&
                 all(i->abs(r[i])<=tolerance*residual_scales[i],eachindex(r))
             return true
@@ -582,14 +623,12 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
             counterflow_residual!(rt,f,trial,w;previous,dt)
             contracts=false
             if all(isfinite,rt)
-                if correction_enabled
-                    copyto!(trial_correction,vec(rt))
-                    LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,trial_correction)
-                    trial_merit=_flame_correction_norm(reshape(trial_correction,size(u)),weights)
-                    contracts=trial_merit<1 || trial_merit<step_merit
-                else
-                    contracts=norm(rt)<norm(r)*(1-1e-4*alpha)
-                end
+                # Cantera's dampStep accepts a damping when the next weighted
+                # correction s1 satisfies s1<1 or s1<s0 (MultiNewton.cpp).
+                copyto!(trial_correction,vec(rt))
+                LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,w.pivots,trial_correction)
+                trial_merit=_flame_correction_norm(reshape(trial_correction,size(u)),weights)
+                contracts=trial_merit<1 || trial_merit<step_merit
             end
             if contracts
                 u .= trial; accepted=true; break
@@ -598,41 +637,95 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         end
         loglevel>1 && println("Counterflow Newton ",iteration," residual=",residualnorm," damping=",alpha)
         if !accepted || alpha<=1e-10
-            refresh && return false
-            age=correction_enabled ? 21 : 5; continue
+            weighted_converged && return true
+            # Cantera retries a failed damped step with a fresh Jacobian when
+            # the current one is stale (age>1), at most four times per solve; a
+            # failure with a fresh Jacobian fails the solve (MultiNewton.cpp:271-283).
+            if correction_enabled
+                refreshed && return false
+            else
+                (w.jac_age<=1 || reevals>3) && return false
+                reevals+=1
+            end
+            w.jac_age=21; continue
         end
-        contraction=norm(rt)/norm(r)
-        # Keep the old residual through the contraction test, then reuse the
-        # accepted trial's residual and full properties at the identical state.
+        # Cantera's convergence is s1<1 after the damped step. Pseudo-time steps
+        # stop there; steady solves keep polishing toward the residual tolerance
+        # and fall back to it only when Newton cannot go further.
+        if !correction_enabled && trial_merit<1
+            previous===nothing || return true
+            weighted_converged=true
+        end
+        # Reuse the accepted trial's residual and full properties at the
+        # identical state.
         copyto!(r, rt)
         residual_valid = true
-        age=correction_enabled && trial_merit<1 ? 21 : age+1
+        correction_enabled && trial_merit<1 && (w.jac_age=21)
     end
-    return false
+    return weighted_converged
 end
 
 function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
     w=CounterflowWorkspace(f)
+    # A failed steady trial must not replace the pseudo-time state; Cantera
+    # writes trials to a separate vector (SteadyStateSystem::solve).
+    checkpoint=copy(f.state)
     _counterflow_newton!(f,w;loglevel,analytic) && return true
+    copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
     residual_at!(r,x,previous,dt)=counterflow_residual!(r,f,x,w;previous,dt)
+    failures=0
     for step in 1:max_time_steps
         previous=copy(f.state)
-        if _counterflow_newton!(f,w;previous,dt,maxiters=25,analytic,iterations)
-            dt=min(dt*_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
-                previous,f.state,dt,iterations[]),.01); timestep[]=dt
+        j0=w.jac_evals
+        if _counterflow_newton!(f,w;previous,dt,maxiters=100,analytic,iterations)
+            iterations[]>=100 && loglevel>0 &&
+                println("Counterflow transient ",step," Newton hit maxiters=100")
+            failures=0
+            # Cantera grows dt only when the step evaluated no Jacobian
+            # (SteadyStateSystem::timeStep: m_jac->nEvals()==j0).
+            w.jac_evals==j0 && (dt*=_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
+                previous,f.state,dt,iterations[]))
+            dt=min(dt,1e8); timestep[]=dt
             step_callback===nothing || step_callback(dt)
             if step%10==0
                 loglevel>0 && println("Counterflow transient ",step," dt=",dt)
+                copyto!(checkpoint,f.state)
                 _counterflow_newton!(f,w;loglevel,analytic) && return true
+                copyto!(f.state,checkpoint)
             end
         else
-            f.state .= previous; dt*=.25; timestep[]=dt
-            dt>1e-12 || return false
+            f.state .= previous
+            failures+=1
+            if failures>2
+                # SteadyStateSystem::timeStep: the third successive failure
+                # resetBadValues clips negative species instead of cutting dt.
+                loglevel>0 && println("Resetting negative species concentrations")
+                _counterflow_reset_species!(f.state,size(w.source_gradient,1))
+                failures=0
+            else
+                dt*=.5; timestep[]=dt
+                dt>=1e-16 || return false
+            end
         end
     end
     return false
+end
+
+# Flow1D::resetBadValues: clip negative mass fractions and renormalize each
+# node. Counterflow species rows are 2:n+1; V, Lambda and flux rows keep
+# their signed values, so _flame_reset_species! does not apply here.
+function _counterflow_reset_species!(u,n)
+    @inbounds for j in axes(u,2)
+        total=0.0
+        for k in 2:n+1
+            u[k,j]<0 && (u[k,j]=0.0)
+            total+=u[k,j]
+        end
+        total>0 && (@views u[2:n+1,j]./=total)
+    end
+    return u
 end
 
 function _counterflow_reset!(f,grid)
