@@ -241,6 +241,26 @@ function counterflow_residual!(residual,f::AbstractPremixedCounterflow,u=f.state
     return residual
 end
 
+# Cantera's premixed counterflow kinds share the diffusion storage layout, and
+# their inlets/flow rows are exactly the reconstructed diffusion rows: an
+# unburnt-products pair are two Inlet1D boundaries, and an impinging jet's wall
+# rows (Surf1D::eval writes T-T_surface; Flow1D right boundary V(jmax)=0,
+# species m_flux(k,jmax-1)+rho_u*Y with rho_u(jmax)=0) coincide with the
+# storage inlet's rows at zero product flux.
+_counterflow_growth_residual!(r,f::AbstractPremixedCounterflow,x,w;previous=nothing,dt=Inf) =
+    _counterflow_growth_residual!(r,f.flow,x,w;previous,dt)
+
+function _counterflow_growth_residual!(r,f::CounterflowTwinPremixedFlame,x,w;previous=nothing,dt=Inf)
+    _counterflow_growth_residual!(r,f.flow,x,w;previous,dt)
+    # Symm1D::eval replaces the storage inlet's Dirichlet rows at the symmetry
+    # plane with zero-gradient rows (physical V and T differences).
+    iv=size(x,1)-2
+    r[iv,end]=_counterflow_Vscale*(x[iv,end]-x[iv,end-1])
+    isempty(f.fixed_temperature) &&
+        (r[1,end]=1000*(x[1,end]-x[1,end-1]))
+    return r
+end
+
 function _premixed_reinitialize(f::CounterflowPremixedFlame,grid)
     config=merge(f.configuration,(mdot_reactants=f.fuel_mass_flux,mdot_products=f.oxidizer_mass_flux))
     return CounterflowPremixedFlame(f.gas;config...,grid)
