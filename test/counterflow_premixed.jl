@@ -37,7 +37,13 @@ end
     rt=similar(twin.state); Arrhenius.counterflow_residual!(rt,twin)
     @test rt[1,end]==0
     @test rt[end-2,end] ≈ twin.state[end-2,end]-twin.state[end-2,end-1]
-    rw=similar(wall.state); Arrhenius.counterflow_residual!(rw,wall)
+    hydrogen=findfirst(==("H2"),gas.species_names)
+    wall.state[hydrogen+1,end]+=1e-4
+    wall_workspace=Arrhenius.CounterflowWorkspace(wall)
+    rw=similar(wall.state); Arrhenius.counterflow_residual!(rw,wall,wall.state,wall_workspace)
+    @test rw[hydrogen+1,end] ≈ -6.969555716579648e-7 rtol=1e-10
+    @test rw[hydrogen+1,end] ≈ wall_workspace.properties.flux[hydrogen,end]+
+        wall.state[end,end]*wall.state[hydrogen+1,end] atol=1e-14
     @test rw[1,end] ≈ 0 atol=1e-14
     @test rw[end-2,end]==0
     @test_throws ArgumentError solve!(wall;prune=.5)

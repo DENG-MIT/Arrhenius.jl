@@ -223,8 +223,8 @@ end
 function counterflow_residual!(residual,f::AbstractPremixedCounterflow,u=f.state,
         w=CounterflowWorkspace(f);kwargs...)
     counterflow_residual!(residual,f.flow,u,w;kwargs...)
-    if (f isa CounterflowTwinPremixedFlame || f isa ImpingingJet) && !f.soret_enabled
-        # At an impermeable boundary, the independent zero-diffusion-flux
+    if f isa CounterflowTwinPremixedFlame && !f.soret_enabled
+        # The twin boundary is a symmetry plane. The independent zero-gradient
         # equations and normalization are equivalent to equal adjacent Y.
         # This form stays differentiable for negative Newton trial traces.
         for k in 1:f.gas.n_species
