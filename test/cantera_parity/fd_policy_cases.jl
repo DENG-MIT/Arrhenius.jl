@@ -5,13 +5,17 @@
 # steps, failures) plus the converged profiles for the accuracy gate.
 #
 # Usage (from the nh3-parity directory so mechanism sidecars resolve):
-#   julia --project=<worktree> fd_policy_cases.jl manifest.csv outdir finite_difference|conservative [case_id ...]
+#   julia --project=<worktree> fd_policy_cases.jl manifest.csv outdir finite_difference|conservative [batches] [case_id ...]
+# batches > 0 (default 0) re-solves each case that many times after the counted
+# solve and records per-solve seconds as batch_means (diagnostic timing for
+# nh3_gate.py; authoritative timing uses the dedicated timing harness).
 using Arrhenius, YAML, NPZ, LinearAlgebra
 BLAS.set_num_threads(1)
 
 manifest, outdir = ARGS[1], ARGS[2]
 scheme = Symbol(ARGS[3])
-only = Set(ARGS[4:end])
+batches = length(ARGS) > 3 && !occursin("__", ARGS[4]) ? parse(Int, ARGS[4]) : 0
+only = Set(ARGS[batches > 0 ? 5 : 4:end])
 mkpath(outdir)
 
 const TRACE_COUNTS = Dict(:jacobians => 0, :newton_calls => 0,
@@ -71,9 +75,18 @@ for line in eachline(manifest)
         err = first(sprint(showerror, e), 200)
     end
     sl = f.converged ? (spec["kind"] == "free" ? flame_speed(f) : velocity(f)[1]) : NaN
+    means = Float64[]
+    for _ in 1:batches
+        fb = build(spec)
+        t0 = time_ns()
+        kw = haskey(spec, "prune") ? (; prune=min(spec["prune"], spec["slope"], spec["curve"])) : (;)
+        solve!(fb; ratio=spec["ratio"], slope=spec["slope"], curve=spec["curve"], kw...)
+        push!(means, (time_ns() - t0) / 1e9)
+    end
     npzwrite(joinpath(outdir, id * ".npz"), Dict(
         "grid" => f.grid, "T" => temperature(f), "Y" => mass_fractions(f),
         "velocity" => velocity(f), "inlet_Y" => copy(f.inlet_Y), "SL" => [sl],
+        "batch_means" => means, "per_batch" => [1],
         "species_names_utf8" => collect(codeunits(join(f.gas.species_names, "\n")))))
     counts = Dict(String(k) => v for (k, v) in TRACE_COUNTS)
     open(joinpath(outdir, id * ".json"), "w") do io
