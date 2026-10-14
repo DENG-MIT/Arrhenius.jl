@@ -320,7 +320,9 @@ E = electric_field(flame)  # V/m at each grid point
 The planar model solves species, energy, continuity, and Gauss's law with
 signed charged-species states and ionized-gas transport. Select
 `discretization=:conservative` for conservative species and total-enthalpy
-balances, or use the default `:finite_difference` formulation. Conservative
+balances. `:finite_difference` is the default for neutral free and burner flames,
+including prescribed-temperature burner flames, and matches Cantera’s original
+discretization and solver policy. Conservative
 calculations initialize through a native frozen finite-difference solve.
 Soret diffusion, prescribed temperature profiles, and restart
 snapshots are not supported for this flame type.

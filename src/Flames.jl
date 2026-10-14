@@ -50,13 +50,14 @@ Construct a native Julia premixed flame with mixture-averaged diffusion using
 mole-fraction gradients. The inlet mass flux (and flame speed) is an eigenvalue.
 Initialization uses native constant-enthalpy chemical equilibrium. Call `solve!`
 to solve the species and energy equations with adaptive grid refinement.
-`discretization=:conservative` uses shared finite-volume species and total
-enthalpy fluxes; `:finite_difference` retains the original discretization.
+`discretization=:finite_difference` is the default and matches Cantera's
+original discretization. `:conservative` uses shared finite-volume species and
+total enthalpy fluxes.
 """
 function FreeFlame(gas::Solution; T=300.0, P=one_atm, X, width=0.03, grid=nothing,
         transport_model=gas.trans.model==:ionized_gas ? :ionized_gas : :mixture_averaged,
         multicomponent_data=nothing, soret=false,flux_gradient_basis=:mole,
-        discretization=gas.trans.model==:ionized_gas ? :finite_difference : :conservative)
+        discretization=:finite_difference)
     discretization = Symbol(discretization)
     discretization in (:finite_difference,:conservative) ||
         throw(ArgumentError("discretization must be :finite_difference or :conservative"))
@@ -96,13 +97,14 @@ end
 Construct a burner-stabilized premixed flame. `mdot` is the inlet mass flux in
 kg/(m² s). The energy equation is enabled unless `set_temperature_profile!`
 specifies a measured temperature profile.
-Use `discretization=:conservative` for finite-volume species and total enthalpy
-balances, or `:finite_difference` for the original discretization.
+The default `discretization=:finite_difference` matches Cantera's original
+discretization. Use `:conservative` for finite-volume species and total enthalpy
+balances.
 """
 function BurnerFlame(gas::Solution; mdot,T=300.0,P=one_atm,X,width=.03,grid=nothing,
         transport_model=gas.trans.model==:ionized_gas ? :ionized_gas : :mixture_averaged,
         multicomponent_data=nothing,soret=false,flux_gradient_basis=:mole,
-        discretization=gas.trans.model==:ionized_gas ? :finite_difference : :conservative)
+        discretization=:finite_difference)
     isfinite(mdot) && mdot > 0 || throw(ArgumentError("mass flux must be finite and positive"))
     if gas.trans.model == :ionized_gas
         Symbol(transport_model)==:ionized_gas && !soret && multicomponent_data===nothing && flux_gradient_basis==:mole ||

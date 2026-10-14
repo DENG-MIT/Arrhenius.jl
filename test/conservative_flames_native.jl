@@ -6,8 +6,10 @@ using Arrhenius,LinearAlgebra,Test
     data=MultiTransportData(mechanism*".multicomponent.npz",gas)
     X="H2:1.1,O2:1,AR:5"
     @test_throws ArgumentError FreeFlame(gas;X,discretization=:invalid)
-    @test FreeFlame(gas;X).discretization == :conservative
-    @test BurnerFlame(gas;X,mdot=.03).discretization == :conservative
+    @test FreeFlame(gas;X).discretization == :finite_difference
+    @test FreeFlame(gas;X,discretization=:conservative).discretization == :conservative
+    @test BurnerFlame(gas;X,mdot=.03).discretization == :finite_difference
+    @test BurnerFlame(gas;X,mdot=.03,discretization=:conservative).discretization == :conservative
     @test Arrhenius._flame_face_centering(0.) == 1
     @test 0 < Arrhenius._flame_face_centering(10.) < Arrhenius._flame_face_centering(.1) < 1
     @test Arrhenius._flame_face_centering(1e8) ≈ 2e-8 atol=1e-15
