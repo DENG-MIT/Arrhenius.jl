@@ -171,3 +171,34 @@ end
         @test_skip false
     end
 end
+
+@testset "nakamura counterflow damping regression" begin
+    # Solver-decision regression for the nakamura_2017 slowdown: the counterflow
+    # damped Newton must follow Cantera MultiNewton::dampStep (<=7 trials, sqrt(2)
+    # decay, then Jacobian refresh). With the original 24-halving search the
+    # steady Newton stalled on stiff trace species (quadratic reverse rates such
+    # as N2H2 + M <=> 2 NH + M) and this case needed 550 Jacobians and 560
+    # pseudo-time steps; Cantera needs 77 and 70 (nakcf task counts).
+    mechanism=joinpath(@__DIR__,"data","nakamura_2017.yaml")  # TODO: pinned CollectionOfMechanisms artifact
+    if isfile(mechanism*".npz")
+        gas=CreateSolution(mechanism)
+        f=CounterflowDiffusionFlame(gas;fuel="NH3:0.7,H2:0.3",oxidizer="O2:0.21,N2:0.79",
+            mdot_fuel=.2,mdot_oxidizer=.6,T_fuel=300.,T_oxidizer=300.,P=one_atm,width=.02)
+        Arrhenius.reset!(Arrhenius.COUNTERFLOW_STATS)
+        solve!(f;ratio=3.,slope=.03,curve=.06,prune=.02)
+        @test f.converged
+        @test maximum(temperature(f)) ≈ 2121.46 rtol=1e-3
+        stats=Arrhenius.COUNTERFLOW_STATS
+        @test stats.jacobians < 250
+        @test stats.time_steps < 250
+        @test stats.recoveries == 0
+        r=similar(f.state); Arrhenius.counterflow_residual!(r,f)
+        # Steady convergence may end on Cantera weighted-correction criterion rather
+        # than the 1e-8 residual floor; 1e-5 separates converged from stalled.
+        @test norm(r,Inf)<1e-5
+        @test minimum(mass_fractions(f))>-1e-7
+        @test maximum(abs.(sum(mass_fractions(f);dims=1).-1))<1e-10
+    else
+        @test_skip false
+    end
+end

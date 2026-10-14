@@ -312,10 +312,40 @@ function CounterflowWorkspace(f::CounterflowDiffusionFlame)
         zeros(6B-2,B*N),LinearAlgebra.BlasInt[],0,Inf,false,0)
 end
 
+# Solve diagnostics: resettable counters comparing solver work against
+# Cantera's Sim1D solve stats (jacobian/eval/time-step counts per grid).
+mutable struct CounterflowStats
+    newton_calls::Int
+    newton_iterations::Int
+    jacobians::Int
+    fd_jacobians::Int
+    chem_jac_failures::Int
+    residual_evals::Int
+    time_steps::Int
+    time_step_failures::Int
+    steady_failures::Int
+    regrids::Int
+    recoveries::Int
+    grids::Vector{Int}
+    # Per _counterflow_steady! call: (grid, dt_in, newton_iterations, jacobians,
+    # time_steps, time_step_failures, wall_seconds, converged).
+    calls::Vector{NTuple{8,Float64}}
+end
+CounterflowStats()=CounterflowStats(0,0,0,0,0,0,0,0,0,0,0,Int[],NTuple{8,Float64}[])
+const COUNTERFLOW_STATS=CounterflowStats()
+function reset!(s::CounterflowStats)
+    for name in fieldnames(CounterflowStats)
+        v=getfield(s,name)
+        v isa Vector ? empty!(v) : setfield!(s,name,0)
+    end
+    return s
+end
+
 "Evaluate continuity, radial momentum, pressure curvature, species and energy."
 function counterflow_residual!(residual,f::CounterflowDiffusionFlame,u=f.state,
         w=CounterflowWorkspace(f);previous=nothing,dt=Inf,update_transport=true,
         nodes=eachindex(f.grid),freeze_source=false)
+    COUNTERFLOW_STATS.residual_evals+=1
     p=w.properties
     # Mixture-averaged face viscosities come from the same transport evaluation.
     shared_viscosity=f.transport_model==:mixture_averaged
@@ -451,7 +481,8 @@ function _counterflow_jacobian!(f,u,w,r;previous=nothing,dt=Inf,analytic=true)
         end
         p.X .= saved[1]; p.rho .= saved[2]; p.cp .= saved[3]; p.h .= saved[4]; p.source .= saved[5]
     end
-    hybrid && (_counterflow_chemistry_jacobian!(f,u,w) || return _counterflow_jacobian!(f,u,w,r;previous,dt,analytic=false))
+    hybrid && (_counterflow_chemistry_jacobian!(f,u,w) ||
+        (COUNTERFLOW_STATS.fd_jacobians+=1; return _counterflow_jacobian!(f,u,w,r;previous,dt,analytic=false)))
     return w.band
 end
 
@@ -465,7 +496,7 @@ function _counterflow_chemistry_jacobian!(f,u,w)
             # of falling back to a finite-difference Jacobian for every node.
             _flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
                 max.(@view(u[2:n+1,j]),1e-30),max.(@view(p.X[:,j]),1e-30),
-                @view(p.h[:,j]),p.rate_caches[j]) || return false
+                @view(p.h[:,j]),p.rate_caches[j]) || (COUNTERFLOW_STATS.chem_jac_failures+=1; return false)
         end
         species=_flame_timescale/p.rho[j]
         cpmean=0.0
@@ -543,8 +574,10 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
     residual_valid = false
     weighted_converged=false
     reevals=0
+    COUNTERFLOW_STATS.newton_calls+=1
     for iteration in 1:maxiters
         iterations[]=iteration
+        COUNTERFLOW_STATS.newton_iterations+=1
         if !residual_valid
             counterflow_residual!(r,f,u,w;previous,dt)
         end
@@ -561,6 +594,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
             if refresh
                 J=_counterflow_jacobian!(f,u,w,r;previous,dt,analytic)
                 w.jac_evals+=1
+                COUNTERFLOW_STATS.jacobians+=1
                 copyto!(w.jacobian,w.band)
                 correction_enabled && _counterflow_residual_scales!(residual_scales,J,u,bandwidth)
                 _,w.pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
@@ -618,7 +652,10 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         end
         accepted=false
         trial_merit=Inf
-        for backtrack in 1:24
+        # Cantera's MultiNewton::dampStep: at most seven trials, each sqrt(2)
+        # shorter, then the step fails and the Jacobian is refreshed. A deeper
+        # search only accepts round-off-level steps on stiff trace species.
+        for backtrack in 1:7
             @. trial=u+alpha*step
             counterflow_residual!(rt,f,trial,w;previous,dt)
             contracts=false
@@ -630,13 +667,26 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
                 trial_merit=_flame_correction_norm(reshape(trial_correction,size(u)),weights)
                 contracts=trial_merit<1 || trial_merit<step_merit
             end
+            loglevel>2 && println("    backtrack ",backtrack," alpha=",alpha,
+                " trial_merit=",isfinite(trial_merit) ? trial_merit : -1.0)
             if contracts
                 u .= trial; accepted=true; break
             end
-            alpha*=.5
+            alpha/=sqrt(2)
         end
         loglevel>1 && println("Counterflow Newton ",iteration," residual=",residualnorm," damping=",alpha)
         if !accepted || alpha<=1e-10
+            if loglevel>2
+                contrib=[(abs(step[i])/weights[(i-1)%size(u,1)+1],i) for i in eachindex(step)]
+                sort!(contrib,rev=true)
+                println("    stall: step_merit=",step_merit," top weighted step components:")
+                B=size(u,1); names=vcat(["T"],f.gas.species_names,["V","L","M"])
+                for (ci,i) in contrib[1:min(6,length(contrib))]
+                    k=(i-1)%B+1; j=(i-1)÷B+1
+                    println("      ",names[k]," at node ",j,": |step|=",abs(step[i]),
+                        " weight=",weights[k]," u=",u[k,j]," ratio=",ci)
+                end
+            end
             weighted_converged && return true
             # Cantera retries a failed damped step with a fresh Jacobian when
             # the current one is stale (age>1), at most four times per solve; a
@@ -667,16 +717,32 @@ end
 
 function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
+    s=COUNTERFLOW_STATS
+    push!(s.grids,length(f.grid))
+    snap=(s.newton_iterations,s.jacobians,s.time_steps,s.time_step_failures)
+    t0=time()
+    converged=_counterflow_steady_impl!(f;max_time_steps,timestep,loglevel,
+        growth_factor,growth_strategy,step_callback,analytic)
+    push!(s.calls,(length(f.grid),timestep[],s.newton_iterations-snap[1],
+        s.jacobians-snap[2],s.time_steps-snap[3],s.time_step_failures-snap[4],
+        time()-t0,converged))
+    return converged
+end
+
+function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0,
+        growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
     w=CounterflowWorkspace(f)
     # A failed steady trial must not replace the pseudo-time state; Cantera
     # writes trials to a separate vector (SteadyStateSystem::solve).
     checkpoint=copy(f.state)
     _counterflow_newton!(f,w;loglevel,analytic) && return true
+    COUNTERFLOW_STATS.steady_failures+=1
     copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
     residual_at!(r,x,previous,dt)=counterflow_residual!(r,f,x,w;previous,dt)
     failures=0
     for step in 1:max_time_steps
+        COUNTERFLOW_STATS.time_steps+=1
         previous=copy(f.state)
         j0=w.jac_evals
         if _counterflow_newton!(f,w;previous,dt,maxiters=100,analytic,iterations)
@@ -698,6 +764,7 @@ function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0
         else
             f.state .= previous
             failures+=1
+            COUNTERFLOW_STATS.time_step_failures+=1
             if failures>2
                 # SteadyStateSystem::timeStep: the third successive failure
                 # resetBadValues clips negative species instead of cutting dt.
@@ -784,6 +851,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
         loglevel>0 && println("Counterflow solve on ",length(f.grid)," points")
         success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
         if auto && (!success || extinct(f))
+            COUNTERFLOW_STATS.recoveries+=1
             loglevel>0 && println("Recovering with the native initial temperature profile")
             _counterflow_reset!(f,copy(f.grid))
             f.fixed_temperature=temperature(f)
@@ -798,7 +866,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
         # failed state and retry while refinement changes the grid.
         while !success && refine_grid && regrids<time_step_regrid &&
                 _refine_flame!(f;ratio,slope,curve,prune,max_points)
-            regrids+=1; timestep[]=initial_time_step
+            regrids+=1; COUNTERFLOW_STATS.regrids+=1; timestep[]=initial_time_step
             loglevel>0 && println("Counterflow regrid retry on ",length(f.grid)," points")
             success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
             burning=success && (!auto || !extinct(f))
@@ -821,7 +889,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
             # Cantera's time_step_regrid: refine the failed state and retry.
             regrids<time_step_regrid && _refine_flame!(f;ratio,slope,curve,prune,max_points) ||
                 error("native counterflow solver failed on $(length(f.grid)) points")
-            regrids+=1; timestep[]=initial_time_step
+            regrids+=1; COUNTERFLOW_STATS.regrids+=1; timestep[]=initial_time_step
             loglevel>0 && println("Counterflow regrid retry on ",length(f.grid)," points")
         end
         auto && extinct(f) && error("counterflow flame extinguished during refinement")
@@ -829,7 +897,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
     error("counterflow refinement did not finish")
 end
 
-export CounterflowDiffusionFlame, CounterflowWorkspace, counterflow_residual!, spread_rate, pressure_curvature, extinct
+export CounterflowDiffusionFlame, CounterflowWorkspace, CounterflowStats, COUNTERFLOW_STATS, counterflow_residual!, spread_rate, pressure_curvature, extinct
 export set_radiation!, radiation_source, radiative_heat_loss
 
 export set_two_point_control!, disable_two_point_control!
