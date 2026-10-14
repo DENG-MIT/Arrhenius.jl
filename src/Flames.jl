@@ -114,20 +114,6 @@ function BurnerFlame(gas::Solution; mdot,T=300.0,P=one_atm,X,width=.03,grid=noth
     Teq = base.state[1,end]
     Yeq = copy(base.state[2:end-1,end])
     transition_length = (base.grid[end]-base.grid[1])/5
-    if isnothing(grid)
-        # The burner preheat length is set by conduction versus convection,
-        # lambda/(mdot*cp), rather than by an arbitrary fraction of the domain.
-        # Resolve this layer even when most of the domain contains products.
-        Xeq = Yeq ./ gas.MW
-        Xeq ./= sum(Xeq)
-        cp = dot(Yeq,cal_cp_R(gas,1000Teq,P,Xeq).*R./gas.MW)
-        _,lambda = mixture_transport!(TransportWorkspace(gas),gas,P,1000Teq,Xeq)
-        ell = min(4lambda/(mdot*cp),width/16)
-        base.grid = unique(vcat(ell .* [0,.5,1,2,4,8,16],Float64(width)))
-        base.state = zeros(gas.n_species+2,length(base.grid))
-        base.anchor = 2
-        transition_length = 2ell
-    end
     for j in eachindex(base.grid)
         fraction = clamp((base.grid[j]-base.grid[1])/transition_length,0,1)
         base.state[1,j] = T/1000+fraction*(Teq-T/1000)
