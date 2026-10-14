@@ -36,7 +36,6 @@ const _COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY = 10
 const _COUNTERFLOW_FD_INITIAL_TIME_STEP = 1.0e-6
 const _COUNTERFLOW_FD_NEWTON_MAXITERS = 45
 const _COUNTERFLOW_FD_TRANSIENT_NEWTON_MAXITERS = 100
-const _COUNTERFLOW_FD_RETRY_ESCALATION_ATTEMPTS = 100
 _flame_refine_threshold(f::CounterflowDiffusionFlame,k) =
     k == 1 ? sqrt(eps(Float64))/1000 :
     k == size(f.state,1)-2 ? sqrt(eps(Float64))/_counterflow_Vscale : sqrt(eps(Float64))
@@ -739,15 +738,14 @@ end
 function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
         newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
-        retry_escalation_attempts=0,skip_dependent_transient=true)
+        skip_dependent_transient=true)
     s=COUNTERFLOW_STATS
     push!(s.grids,length(f.grid))
     snap=(s.newton_iterations,s.jacobians,s.time_steps,s.time_step_failures)
     t0=time()
     converged=_counterflow_steady_impl!(f;max_time_steps,timestep,loglevel,
         growth_factor,growth_strategy,step_callback,analytic,newton_maxiters,
-        transient_newton_maxiters,retry_on_successes,retry_escalation_attempts,
-        skip_dependent_transient)
+        transient_newton_maxiters,retry_on_successes,skip_dependent_transient)
     push!(s.calls,(length(f.grid),timestep[],s.newton_iterations-snap[1],
         s.jacobians-snap[2],s.time_steps-snap[3],s.time_step_failures-snap[4],
         time()-t0,converged))
@@ -802,7 +800,7 @@ end
 function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
         newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
-        retry_escalation_attempts=0,skip_dependent_transient=true)
+        skip_dependent_transient=true)
     w=CounterflowWorkspace(f)
     # A failed steady trial must not replace the pseudo-time state; Cantera
     # writes trials to a separate vector (SteadyStateSystem::solve).
@@ -817,11 +815,6 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
     failures=0
     for step in 1:max_time_steps
         COUNTERFLOW_STATS.time_steps+=1
-        if !retry_on_successes && retry_escalation_attempts>0 &&
-                step>=retry_escalation_attempts
-            retry_on_successes=true
-            successful_steps=0
-        end
         previous=copy(f.state)
         j0=w.jac_evals
         if _counterflow_newton!(f,w;previous,dt,analytic,iterations,
