@@ -51,8 +51,8 @@ end
             (:free,:multicomponent,:mole,true,:positive,true),
             (:free,:multicomponent,:mole,true,:mixed,true))
         grid=collect(range(0.,.03;length=5))
-        f=kind==:free ? FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid) :
-            BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.07)
+        f=kind==:free ? FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid,discretization=:conservative) :
+            BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.07,discretization=:conservative)
         set_transport!(f,model;data,soret,flux_gradient_basis=basis)
         n,N=gas.n_species,length(grid);B=n+2
         for j in 1:N
