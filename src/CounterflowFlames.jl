@@ -31,6 +31,12 @@ end
 # Scales only condition the algebraic system; physical values are returned below.
 const _counterflow_Vscale = 100.0
 const _counterflow_Lscale = 10000.0
+const _COUNTERFLOW_INITIAL_TIME_STEP = 1.0e-5
+const _COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY = 10
+const _COUNTERFLOW_FD_INITIAL_TIME_STEP = 1.0e-6
+const _COUNTERFLOW_FD_NEWTON_MAXITERS = 45
+const _COUNTERFLOW_FD_TRANSIENT_NEWTON_MAXITERS = 100
+const _COUNTERFLOW_FD_RETRY_ESCALATION_ATTEMPTS = 100
 _flame_refine_threshold(f::CounterflowDiffusionFlame,k) =
     k == 1 ? sqrt(eps(Float64))/1000 :
     k == size(f.state,1)-2 ? sqrt(eps(Float64))/_counterflow_Vscale : sqrt(eps(Float64))
@@ -565,7 +571,12 @@ function _counterflow_transient_update!(J,f,dt_old,dt_new)
     return J
 end
 
-function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=1e-8,loglevel=0,
+_counterflow_newton_continues(maxiters, iteration) =
+    maxiters <= 0 || iteration < maxiters
+_counterflow_retry_steady(successful_steps) =
+    successful_steps >= _COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY
+
+function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1e-8,loglevel=0,
         analytic=true,iterations=Ref(0))
     u=f.state; r=similar(u); trial=similar(u); rt=similar(u)
     n=f.gas.n_species; bandwidth=2*size(u,1)-1
@@ -581,7 +592,9 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
     weighted_converged=false
     reevals=0
     COUNTERFLOW_STATS.newton_calls+=1
-    for iteration in 1:maxiters
+    iteration = 0
+    while _counterflow_newton_continues(maxiters, iteration)
+        iteration += 1
         iterations[]=iteration
         COUNTERFLOW_STATS.newton_iterations+=1
         if !residual_valid
@@ -722,14 +735,17 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
     return weighted_converged && _counterflow_constraints_converged(f,r,tolerance)
 end
 
-function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0,
-        growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
+function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
+        growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
+        newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
+        retry_escalation_attempts=0)
     s=COUNTERFLOW_STATS
     push!(s.grids,length(f.grid))
     snap=(s.newton_iterations,s.jacobians,s.time_steps,s.time_step_failures)
     t0=time()
     converged=_counterflow_steady_impl!(f;max_time_steps,timestep,loglevel,
-        growth_factor,growth_strategy,step_callback,analytic)
+        growth_factor,growth_strategy,step_callback,analytic,newton_maxiters,
+        transient_newton_maxiters,retry_on_successes,retry_escalation_attempts)
     push!(s.calls,(length(f.grid),timestep[],s.newton_iterations-snap[1],
         s.jacobians-snap[2],s.time_steps-snap[3],s.time_step_failures-snap[4],
         time()-t0,converged))
@@ -781,27 +797,32 @@ function _counterflow_growth_residual!(r,f::CounterflowDiffusionFlame,x,w;previo
     return r
 end
 
-function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0,
-        growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
+function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
+        growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
+        newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
+        retry_escalation_attempts=0)
     w=CounterflowWorkspace(f)
     # A failed steady trial must not replace the pseudo-time state; Cantera
     # writes trials to a separate vector (SteadyStateSystem::solve).
     checkpoint=copy(f.state)
-    _counterflow_newton!(f,w;loglevel,analytic) && return true
+    _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters) && return true
     COUNTERFLOW_STATS.steady_failures+=1
     copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
+    successful_steps=0
     residual_at!(r,x,previous,dt)=_counterflow_growth_residual!(r,f,x,w;previous,dt)
     failures=0
-    step=0
-    while step<max_time_steps
+    for step in 1:max_time_steps
+        COUNTERFLOW_STATS.time_steps+=1
+        if !retry_on_successes && retry_escalation_attempts>0 &&
+                step>=retry_escalation_attempts
+            retry_on_successes=true
+            successful_steps=0
+        end
         previous=copy(f.state)
         j0=w.jac_evals
-        if _counterflow_newton!(f,w;previous,dt,maxiters=100,analytic,iterations)
-            step+=1
-            COUNTERFLOW_STATS.time_steps+=1
-            iterations[]>=100 && loglevel>0 &&
-                println("Counterflow transient ",step," Newton hit maxiters=100")
+        if _counterflow_newton!(f,w;previous,dt,analytic,iterations,
+                maxiters=transient_newton_maxiters)
             failures=0
             # Cantera grows dt only when the step evaluated no Jacobian
             # (SteadyStateSystem::timeStep: m_jac->nEvals()==j0).
@@ -809,14 +830,18 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(1e-6),logle
                 previous,f.state,dt,iterations[]))
             dt=min(dt,1e8); timestep[]=dt
             step_callback===nothing || step_callback(dt)
+            successful_steps+=1
             # Cantera throws on the accepted step exhausting the budget,
             # before it can start another steady Newton solve.
             step>=max_time_steps && return false
-            if step%10==0
+            if retry_on_successes ? _counterflow_retry_steady(successful_steps) :
+                    step%_COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY==0
                 loglevel>0 && println("Counterflow transient ",step," dt=",dt)
                 copyto!(checkpoint,f.state)
-                _counterflow_newton!(f,w;loglevel,analytic) && return true
+                _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters) && return true
                 copyto!(f.state,checkpoint)
+                successful_steps=0
+                failures=0
             end
         else
             f.state .= previous
@@ -877,7 +902,8 @@ Time-step controls (`time_step_growth_factor`, `time_step_growth_strategy`,
 `time_step_callback`, `time_step_regrid`, `jacobian_mode`) are as for premixed flames.
 """
 function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,curve=.3,prune=0.,
-        max_points=1200,max_time_steps=800,loglevel=0,initial_time_step=1e-6,auto=true,
+        max_points=1200,max_time_steps=800,loglevel=0,
+        initial_time_step=_COUNTERFLOW_FD_INITIAL_TIME_STEP,auto=true,
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto)
     isfinite(ratio) && ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
@@ -886,6 +912,11 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
+    timestep=Ref(Float64(initial_time_step))
+    steady!(flow)=_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...,
+        newton_maxiters=_COUNTERFLOW_FD_NEWTON_MAXITERS,
+        transient_newton_maxiters=_COUNTERFLOW_FD_TRANSIENT_NEWTON_MAXITERS,
+        retry_on_successes=false)
     if !isnothing(f.control_points)
         isempty(f.fixed_temperature) || throw(ArgumentError("two-point control conflicts with fixed_temperature"))
         zL,_,zR,_=f.control_points
@@ -894,7 +925,6 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
         auto=false
     end
     f.converged=false
-    timestep=Ref(Float64(initial_time_step))
     initial_N=length(f.grid)
     attempts=auto && refine_grid ? unique(vcat(initial_N,[N for N in (12,24,48) if N>initial_N])) : [initial_N]
     burning=false
@@ -906,16 +936,16 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
             timestep[]=initial_time_step
         end
         loglevel>0 && println("Counterflow solve on ",length(f.grid)," points")
-        success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+        success=steady!(f)
         if auto && (!success || extinct(f))
             COUNTERFLOW_STATS.recoveries+=1
             loglevel>0 && println("Recovering with the native initial temperature profile")
             _counterflow_reset!(f,copy(f.grid))
             f.fixed_temperature=temperature(f)
-            success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+            success=steady!(f)
             empty!(f.fixed_temperature)
             if success
-                success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+                success=steady!(f)
             end
         end
         burning=success && (!auto || !extinct(f))
@@ -925,7 +955,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
                 _refine_flame!(f;ratio,slope,curve,prune,max_points)
             regrids+=1; COUNTERFLOW_STATS.regrids+=1; timestep[]=initial_time_step
             loglevel>0 && println("Counterflow regrid retry on ",length(f.grid)," points")
-            success=_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+            success=steady!(f)
             burning=success && (!auto || !extinct(f))
         end
         burning && break
@@ -942,7 +972,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
             return f
         end
         loglevel>0 && println("Counterflow solve on ",length(f.grid)," points")
-        while !_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+        while !steady!(f)
             # Cantera's time_step_regrid: refine the failed state and retry.
             regrids<time_step_regrid && _refine_flame!(f;ratio,slope,curve,prune,max_points) ||
                 error("native counterflow solver failed on $(length(f.grid)) points")

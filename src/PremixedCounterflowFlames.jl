@@ -359,7 +359,8 @@ Time-step controls are as for premixed flames.
 """
 function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.1,curve=.2,
         prune=0.,grid_min=1e-10,max_points=1200,max_time_steps=800,loglevel=0,
-        initial_time_step=1e-6,auto=true,time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
+        initial_time_step=Arrhenius._COUNTERFLOW_FD_INITIAL_TIME_STEP,auto=true,
+        time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto)
     isfinite(ratio)&&ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step)&&initial_time_step>0 || throw(ArgumentError("positive initial time step required"))
@@ -368,8 +369,13 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
+    steady!(flow)=_premixed_counterflow_steady!(flow;max_time_steps,timestep,loglevel,
+        controls...,retry_on_successes,retry_escalation_attempts)
     f.converged=false
     timestep=Ref(Float64(initial_time_step))
+    retry_on_successes=f isa CounterflowTwinPremixedFlame
+    retry_escalation_attempts=retry_on_successes ? 0 :
+        Arrhenius._COUNTERFLOW_FD_RETRY_ESCALATION_ATTEMPTS
     initial_N=length(f.grid)
     attempts=auto&&refine_grid ? unique(vcat(initial_N,[N for N in (12,24,48) if N>initial_N])) : [initial_N]
     require_burning=!(f isa ImpingingJet && f.configuration.initial_products==:inlet)
@@ -383,20 +389,20 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
             timestep[]=initial_time_step
         end
         loglevel>0 && println("Premixed counterflow solve on ",length(f.grid)," points")
-        success=_premixed_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+        success=steady!(f)
         if auto && (!success || !acceptable())
             loglevel>0 && println("Recovering with native initial temperature profile")
             _counterflow_reset!(f,copy(f.grid))
             f.fixed_temperature=temperature(f)
-            success=_premixed_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+            success=steady!(f)
             empty!(f.fixed_temperature)
-            success && (success=_premixed_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...))
+            success && (success=steady!(f))
         end
         while !success && refine_grid && regrids<time_step_regrid &&
                 _refine_axisymmetric!(f;ratio,slope,curve,prune,grid_min,max_points)
             regrids+=1; timestep[]=initial_time_step
             loglevel>0 && println("Premixed counterflow regrid retry on ",length(f.grid)," points")
-            success=_premixed_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+            success=steady!(f)
         end
         success && acceptable() && break
     end
@@ -407,7 +413,7 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
             return f
         end
         loglevel>0 && println("Premixed counterflow solve on ",length(f.grid)," points")
-        while !_premixed_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
+        while !steady!(f)
             # Cantera's time_step_regrid: refine the failed state and retry.
             regrids<time_step_regrid && _refine_axisymmetric!(f;ratio,slope,curve,prune,grid_min,max_points) ||
                 error("native premixed counterflow failed on $(length(f.grid)) points")

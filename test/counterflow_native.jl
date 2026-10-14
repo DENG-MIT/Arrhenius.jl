@@ -175,7 +175,17 @@ end
     end
 end
 
-@testset "nakamura counterflow damping regression" begin
+@testset "counterflow Cantera policy constants" begin
+    @test Arrhenius._COUNTERFLOW_INITIAL_TIME_STEP == 1.0e-5
+    @test Arrhenius._COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY == 10
+    @test Arrhenius._counterflow_newton_continues(0, typemax(Int))
+    @test Arrhenius._counterflow_newton_continues(45, 44)
+    @test !Arrhenius._counterflow_newton_continues(45, 45)
+    @test !Arrhenius._counterflow_retry_steady(9)
+    @test Arrhenius._counterflow_retry_steady(10)
+end
+
+@testset "nakamura counterflow post-failure policy regression" begin
     # Solver-decision regression for the nakamura_2017 slowdown: the counterflow
     # damped Newton must follow Cantera MultiNewton::dampStep (<=7 trials, sqrt(2)
     # decay, then Jacobian refresh). With the original 24-halving search the
@@ -188,8 +198,11 @@ end
         f=CounterflowDiffusionFlame(gas;fuel="NH3:0.7,H2:0.3",oxidizer="O2:0.21,N2:0.79",
             mdot_fuel=.2,mdot_oxidizer=.6,T_fuel=300.,T_oxidizer=300.,P=one_atm,width=.02)
         Arrhenius.reset!(Arrhenius.COUNTERFLOW_STATS)
-        solve!(f;ratio=3.,slope=.03,curve=.06,prune=.02)
+        transient_dt=Float64[]
+        solve!(f;ratio=3.,slope=.03,curve=.06,prune=.02,
+            time_step_callback=dt -> push!(transient_dt,dt))
         @test f.converged
+        @test !isempty(transient_dt) && all(>(0.),transient_dt)
         @test maximum(temperature(f)) ≈ 2121.46 rtol=1e-3
         stats=Arrhenius.COUNTERFLOW_STATS
         @test stats.jacobians < 250
