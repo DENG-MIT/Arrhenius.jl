@@ -36,6 +36,58 @@ using Test, Arrhenius, NPZ, LinearAlgebra
     @test Arrhenius._timestep_growth(physical!,r,:residual_ratio,1.5,after,before,1e-5,1)==1
 end
 
+@testset "counterflow dt trajectory decisions" begin
+    # Cantera's own accepted-step trajectory on the 15 MPa h2o2 diffusion
+    # flame under residual-ratio growth: for every step whose attempt
+    # evaluated no Jacobian, the native growth function evaluated on
+    # Cantera's recorded before/after states and attempt size must return
+    # the factor Cantera applied (Cantera gates growth on the Jacobian
+    # evaluation count, so gated steps keep dt unchanged by construction).
+    ref=npzread(joinpath(@__DIR__,"data","cantera_counterflow_dt_trajectory.npz"))
+    gas=CreateSolution(joinpath(@__DIR__,"..","mechanism","h2o2.yaml"))
+    f=CounterflowDiffusionFlame(gas;fuel="H2:1",oxidizer="O2:1",
+        T_fuel=800.,T_oxidizer=711.,P=ref["pressure"][1],
+        mdot_fuel=ref["mdot_fuel"][1],mdot_oxidizer=ref["mdot_oxidizer"][1],grid=ref["grid"])
+    n=gas.n_species
+    function native_state(values)
+        T=values[1,:]; Y=values[2:n+1,:]
+        rho=f.pressure ./ (Arrhenius.R .* T .* vec(sum(Y./gas.MW;dims=1)))
+        u=copy(values)
+        u[1,:]./=1000
+        u[end-2,:]./=Arrhenius._counterflow_Vscale
+        u[end-1,:]./=Arrhenius._counterflow_Lscale
+        u[end,:].*=rho
+        return u
+    end
+    values=ref["values"]; attempt_dt=ref["attempt_dt"]
+    factor=ref["factor"]; jac_evals=ref["jac_evals"]
+    w=CounterflowWorkspace(f); r=similar(f.state)
+    physical!(r,x,p,dt)=Arrhenius._counterflow_growth_residual!(r,f,x,w;previous=p,dt)
+    # The first attempt size is only known to the printed precision. Even
+    # with full-precision sizes the reconstructed physical norms differ from
+    # Cantera's by transport-property rounding at the trajectory's extreme
+    # states (measured worst 1.2e-7 relative on the applied factor).
+    rtol=ref["reconstruction_ok"][1] ? 1e-6 : 2e-3
+    grown=gated=flat=0
+    for k in eachindex(attempt_dt)
+        g=Arrhenius._timestep_growth(physical!,r,:residual_ratio,1.5,
+            native_state(values[k,:,:]),native_state(values[k+1,:,:]),attempt_dt[k],0)
+        if jac_evals[k]>0
+            gated+=1
+            @test factor[k]≈1 atol=1e-9
+            @test g>=1.0
+        elseif factor[k]>1+1e-6
+            grown+=1
+            @test g≈factor[k] rtol=(k==1 ? 2e-3 : rtol)
+        else
+            flat+=1
+            @test g≈factor[k] rtol=(k==1 ? 2e-3 : rtol)
+        end
+    end
+    # the trajectory must exercise grown, gated and flat decisions alike
+    @test grown>50 && gated>50 && flat>50
+end
+
 @testset "counterflow transient Jacobian algebraic mask" begin
     gas=CreateSolution(joinpath(@__DIR__,"..","mechanism","h2o2.yaml"))
     f=CounterflowDiffusionFlame(gas;fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",
