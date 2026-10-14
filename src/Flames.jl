@@ -495,15 +495,15 @@ function _flame_factorize!(f::Union{FreeFlame,BurnerFlame},w::FlameWorkspace,rdt
         diagonal = 4B-1
         # Both Cantera (EigenSparseJacobian::updateTransient) and the native
         # residual subtract the transient term: J_transient = J_steady - M/dt.
-        # The dep-species row of the steady residual is the sum-Y constraint
-        # (no transient), so its diagonal must not pick up the time-step term.
+        # Cantera applies the sum-Y constraint only at boundary nodes; every
+        # species row is transient at interior nodes in the FD formulation.
         # Prescribed-T burner overrides the temperature row at interior points.
         coefficient = _flame_timescale*rdt
         fixed_temperature = f isa BurnerFlame && !isempty(f.imposed_temperature)
         dep_row = f.dependent_species+1
         @inbounds for j in 2:N-1, k in 1:B-1
             fixed_temperature && k == 1 && continue
-            k == dep_row && continue
+            k == dep_row && _conservative_flame(f) && continue
             band[diagonal,(j-1)*B+k] -= coefficient
         end
     end
@@ -692,7 +692,11 @@ function flame_residual!(residual, f::AbstractPremixedFlame, u=f.state, w=FlameW
         for k in 2:n+1
             total += u[k,j]
         end
-        residual[f.dependent_species+1,j] = total - 1
+        # Cantera replaces the dependent-species equation with sum(Y)-1 at
+        # boundaries only. Interior FD rows retain every species balance.
+        if j == 1 || j == N
+            residual[f.dependent_species+1,j] = total - 1
+        end
     end
     return residual
 end
