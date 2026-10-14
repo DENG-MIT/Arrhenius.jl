@@ -115,7 +115,11 @@ function CounterflowDiffusionFlame(gas::Solution; fuel,oxidizer,mdot_fuel,mdot_o
         state[end,j]=rho*((1-fraction)*uf-fraction*uo)
     end
     state[1,1]=T_fuel/1000; state[1,end]=T_oxidizer/1000
-    state[end,1]=mdot_fuel; state[end,end]=-mdot_oxidizer
+    # Cantera's guess endpoints hold the inlet velocities (linear velocity
+    # profile); in the stored mass-flux unknown that is rho*u with the local
+    # blended-state density, not the exact inlet mass flux.
+    state[end,1]=uf*P/(R*T_fuel*sum(state[2:n+1,1]./gas.MW))
+    state[end,end]=-uo*P/(R*T_oxidizer*sum(state[2:n+1,end]./gas.MW))
     flame=CounterflowDiffusionFlame(gas,z,Float64(P),Float64(T_fuel),Float64(T_oxidizer),
         yf,yo,Float64(mdot_fuel),Float64(mdot_oxidizer),state,1,argmax(yst),false,
         :mixture_averaged,false,nothing,:mole,Float64[],false,(0.,0.),nothing)

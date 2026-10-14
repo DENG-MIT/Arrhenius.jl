@@ -49,6 +49,9 @@ end
                 mdot_oxidizer=3.,T_fuel=300.,T_oxidizer=500.,P=1e5,
                 grid=collect(range(0.,.018;length=7)))
             cf.state[1,:]=[.3,1.,1.8,2.6,2.,1.2,.5]
+            # The Cantera-parity initial guess stores rho*u of the blended
+            # boundary state; pin exact inlet fluxes for the control checks.
+            cf.state[end,1]=.5; cf.state[end,end]=-3.
             state0=copy(cf.state); grid0=copy(cf.grid); n=cgas.n_species
             @test_throws ArgumentError set_two_point_control!(cf;temperature=Inf)
             @test_throws ArgumentError set_two_point_control!(cf;temperature=150.)
