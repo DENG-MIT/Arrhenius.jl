@@ -558,6 +558,8 @@ function _counterflow_transient_update!(J,f,dt_old,dt_new)
     delta=_flame_timescale*(1/dt_old-1/dt_new)
     diag=4B-1
     for j in 2:N-1, k in k0:kmax
+        # The eliminated species is sum(Y)=1, an algebraic row at every node.
+        k==f.dependent_species+1 && continue
         J[diag,(j-1)*B+k]+=delta
     end
     return J
@@ -691,7 +693,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
                         " weight=",weights[k]," u=",u[k,j]," ratio=",ci)
                 end
             end
-            weighted_converged && return true
+            weighted_converged && _counterflow_constraints_converged(f,r,tolerance) && return true
             # Cantera retries a failed damped step with a fresh Jacobian when
             # the current one is stale (age>1), at most four times per solve; a
             # failure with a fresh Jacobian fails the solve (MultiNewton.cpp:271-283).
@@ -716,7 +718,8 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=45,tolerance=
         residual_valid = true
         correction_enabled && trial_merit<1 && (w.jac_age=21)
     end
-    return weighted_converged
+    counterflow_residual!(r,f,u,w;previous,dt)
+    return weighted_converged && _counterflow_constraints_converged(f,r,tolerance)
 end
 
 function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0,
@@ -733,6 +736,51 @@ function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0
     return converged
 end
 
+# Growth strategies compare Cantera's physical residuals, not the differently
+# scaled rows used by the native Newton system (Flow1D::eval*).
+_counterflow_growth_residual!(r,f,x,w;previous=nothing,dt=Inf) =
+    counterflow_residual!(r,f,x,w;previous,dt)
+
+function _counterflow_growth_residual!(r,f::CounterflowDiffusionFlame,x,w;previous=nothing,dt=Inf)
+    counterflow_residual!(r,f,x,w;previous,dt)
+    # Two-point control has different auxiliary/boundary equations.
+    isnothing(f.control_points) || return r
+    n,N=f.gas.n_species,length(f.grid)
+    iv,il,im=n+2,n+3,n+4
+    p=w.properties; z=f.grid
+    for j in 1:N
+        boundary=j==1 || j==N
+        r[1,j]*=boundary || !isempty(f.fixed_temperature) ? 1000 : 1000/_flame_timescale
+        r[iv,j]*=boundary ? _counterflow_Vscale : _counterflow_Vscale/_flame_timescale
+        r[il,j]*=j==1 ? -1 : _counterflow_Lscale
+        j<N && (r[im,j]/=-(z[j+1]-z[j]))
+        if boundary
+            # Cantera eliminates the largest species independently at each
+            # inlet; native eliminates one species throughout the grid.
+            flux=j==1 ? f.fuel_mass_flux : f.oxidizer_mass_flux
+            yin=j==1 ? f.fuel_Y : f.oxidizer_Y
+            for k in 1:n
+                r[k+1,j]=j==1 ? flux*yin[k]-x[im,j]*x[k+1,j]-p.flux[k,1] :
+                    p.flux[k,N-1]+x[im,j]*x[k+1,j]+flux*yin[k]
+            end
+            excess=argmax(@view x[2:n+1,j])
+            r[excess+1,j]=1-sum(@view x[2:n+1,j])
+        else
+            for k in 1:n
+                r[k+1,j]/=_flame_timescale
+            end
+            # Restore the interior species PDE replaced by native sum(Y)=1.
+            k=f.dependent_species
+            jm,jp=x[im,j]>0 ? (j-1,j) : (j,j+1)
+            cell=.5*(z[j+1]-z[j-1]); dz=z[jp]-z[jm]
+            r[k+1,j]=(f.gas.MW[k]*p.source[k,j]-(p.flux[k,j]-p.flux[k,j-1])/cell-
+                x[im,j]*(x[k+1,jp]-x[k+1,jm])/dz)/p.rho[j]
+            previous===nothing || (r[k+1,j]-=(x[k+1,j]-previous[k+1,j])/dt)
+        end
+    end
+    return r
+end
+
 function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
     w=CounterflowWorkspace(f)
@@ -743,13 +791,15 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(1e-6),logle
     COUNTERFLOW_STATS.steady_failures+=1
     copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
-    residual_at!(r,x,previous,dt)=counterflow_residual!(r,f,x,w;previous,dt)
+    residual_at!(r,x,previous,dt)=_counterflow_growth_residual!(r,f,x,w;previous,dt)
     failures=0
-    for step in 1:max_time_steps
-        COUNTERFLOW_STATS.time_steps+=1
+    step=0
+    while step<max_time_steps
         previous=copy(f.state)
         j0=w.jac_evals
         if _counterflow_newton!(f,w;previous,dt,maxiters=100,analytic,iterations)
+            step+=1
+            COUNTERFLOW_STATS.time_steps+=1
             iterations[]>=100 && loglevel>0 &&
                 println("Counterflow transient ",step," Newton hit maxiters=100")
             failures=0
@@ -759,6 +809,9 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(1e-6),logle
                 previous,f.state,dt,iterations[]))
             dt=min(dt,1e8); timestep[]=dt
             step_callback===nothing || step_callback(dt)
+            # Cantera throws on the accepted step exhausting the budget,
+            # before it can start another steady Newton solve.
+            step>=max_time_steps && return false
             if step%10==0
                 loglevel>0 && println("Counterflow transient ",step," dt=",dt)
                 copyto!(checkpoint,f.state)
