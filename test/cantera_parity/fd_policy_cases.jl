@@ -74,7 +74,7 @@ for line in eachline(manifest)
     npzwrite(joinpath(outdir, id * ".npz"), Dict(
         "grid" => f.grid, "T" => temperature(f), "Y" => mass_fractions(f),
         "velocity" => velocity(f), "inlet_Y" => copy(f.inlet_Y), "SL" => [sl],
-        "species_names_utf8" => join(f.gas.species_names, "\n")))
+        "species_names_utf8" => collect(codeunits(join(f.gas.species_names, "\n")))))
     counts = Dict(String(k) => v for (k, v) in TRACE_COUNTS)
     open(joinpath(outdir, id * ".json"), "w") do io
         print(io, "{\"id\": \"$id\", \"scheme\": \"$scheme\", \"converged\": $(f.converged), ",
