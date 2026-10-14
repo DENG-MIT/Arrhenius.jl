@@ -556,7 +556,7 @@ end
 # evaluation: only interior T/species(/spread-rate) diagonal entries carry
 # -_flame_timescale/dt, so a dt change is a constant diagonal shift plus a
 # refactorization (SteadyStateSystem::initTimeInteg / updateTransient).
-function _counterflow_transient_update!(J,f,dt_old,dt_new)
+function _counterflow_transient_update!(J,f,dt_old,dt_new,skip_dependent=true)
     dt_old==dt_new && return J
     B,N=size(f.state); n=f.gas.n_species
     kmax=isnothing(f.control_points) ? n+2 : n+1
@@ -565,7 +565,7 @@ function _counterflow_transient_update!(J,f,dt_old,dt_new)
     diag=4B-1
     for j in 2:N-1, k in k0:kmax
         # The eliminated species is sum(Y)=1, an algebraic row at every node.
-        k==f.dependent_species+1 && continue
+        skip_dependent && k==f.dependent_species+1 && continue
         J[diag,(j-1)*B+k]+=delta
     end
     return J
@@ -577,7 +577,7 @@ _counterflow_retry_steady(successful_steps) =
     successful_steps >= _COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY
 
 function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1e-8,loglevel=0,
-        analytic=true,iterations=Ref(0))
+        analytic=true,iterations=Ref(0),skip_dependent_transient=true)
     u=f.state; r=similar(u); trial=similar(u); rt=similar(u)
     n=f.gas.n_species; bandwidth=2*size(u,1)-1
     correction_enabled=!isnothing(f.control_points)
@@ -620,7 +620,8 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
                 w.jac_age=0; w.jac_dt=dt; w.jac_valid=true
                 refreshed=true
             elseif w.jac_dt!=dt
-                _counterflow_transient_update!(w.jacobian,f,w.jac_dt,dt)
+                _counterflow_transient_update!(w.jacobian,f,w.jac_dt,dt,
+                    skip_dependent_transient)
                 copyto!(w.band,w.jacobian)
                 _,w.pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),w.band)
                 w.jac_dt=dt
@@ -738,14 +739,15 @@ end
 function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
         newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
-        retry_escalation_attempts=0)
+        retry_escalation_attempts=0,skip_dependent_transient=true)
     s=COUNTERFLOW_STATS
     push!(s.grids,length(f.grid))
     snap=(s.newton_iterations,s.jacobians,s.time_steps,s.time_step_failures)
     t0=time()
     converged=_counterflow_steady_impl!(f;max_time_steps,timestep,loglevel,
         growth_factor,growth_strategy,step_callback,analytic,newton_maxiters,
-        transient_newton_maxiters,retry_on_successes,retry_escalation_attempts)
+        transient_newton_maxiters,retry_on_successes,retry_escalation_attempts,
+        skip_dependent_transient)
     push!(s.calls,(length(f.grid),timestep[],s.newton_iterations-snap[1],
         s.jacobians-snap[2],s.time_steps-snap[3],s.time_step_failures-snap[4],
         time()-t0,converged))
@@ -800,12 +802,13 @@ end
 function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
         newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
-        retry_escalation_attempts=0)
+        retry_escalation_attempts=0,skip_dependent_transient=true)
     w=CounterflowWorkspace(f)
     # A failed steady trial must not replace the pseudo-time state; Cantera
     # writes trials to a separate vector (SteadyStateSystem::solve).
     checkpoint=copy(f.state)
-    _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters) && return true
+    _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters,
+        skip_dependent_transient) && return true
     COUNTERFLOW_STATS.steady_failures+=1
     copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
@@ -822,7 +825,7 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
         previous=copy(f.state)
         j0=w.jac_evals
         if _counterflow_newton!(f,w;previous,dt,analytic,iterations,
-                maxiters=transient_newton_maxiters)
+                maxiters=transient_newton_maxiters,skip_dependent_transient)
             failures=0
             # Cantera grows dt only when the step evaluated no Jacobian
             # (SteadyStateSystem::timeStep: m_jac->nEvals()==j0).
@@ -838,7 +841,8 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
                     step%_COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY==0
                 loglevel>0 && println("Counterflow transient ",step," dt=",dt)
                 copyto!(checkpoint,f.state)
-                _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters) && return true
+                _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters,
+                    skip_dependent_transient) && return true
                 copyto!(f.state,checkpoint)
                 successful_steps=0
                 failures=0
@@ -913,10 +917,16 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     timestep=Ref(Float64(initial_time_step))
+    # Measured finite-difference compatibility fallback: Cantera never shifts
+    # an algebraic row, but retaining the pre-fallback retune that also shifts
+    # the normalization row holds Nakamura diffusion at 142 Jacobians / 160
+    # steps; the Cantera-faithful skip measurably regresses it (146/170, and a
+    # platform-sensitive 850/1090 blowup), while every reference-policy path
+    # below still uses the skip.
     steady!(flow)=_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...,
         newton_maxiters=_COUNTERFLOW_FD_NEWTON_MAXITERS,
         transient_newton_maxiters=_COUNTERFLOW_FD_TRANSIENT_NEWTON_MAXITERS,
-        retry_on_successes=false)
+        retry_on_successes=false,skip_dependent_transient=false)
     if !isnothing(f.control_points)
         isempty(f.fixed_temperature) || throw(ArgumentError("two-point control conflicts with fixed_temperature"))
         zL,_,zR,_=f.control_points
