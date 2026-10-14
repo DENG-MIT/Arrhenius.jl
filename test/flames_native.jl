@@ -16,6 +16,7 @@ using Arrhenius, LinearAlgebra, Test
     @test_throws ArgumentError set_transport!(f,:mixture_averaged;soret=true)
     @test_throws ArgumentError solve!(f;initial_time_step=0.)
     @test_throws ArgumentError solve!(f;slope=0.)
+    @test_throws ArgumentError solve!(f;prune=.1)
     solve!(f)
     @test f.converged
     # Cantera 4.0.0a2, commit 726522be4e2a13454d8415b7ef799d621f665cf3,
@@ -26,6 +27,14 @@ using Arrhenius, LinearAlgebra, Test
     @test minimum(mass_fractions(f)) > -1e-12
     @test maximum(f.state[end,:])-minimum(f.state[end,:]) < 1e-10
     @test norm(flame_residual!(similar(f.state),f),Inf) < 1e-8
+
+    # Cantera's fourth refine criterion: prune=0 must reproduce the default.
+    explicit = solve!(FreeFlame(gas;X,discretization=:finite_difference);prune=0.)
+    @test explicit.grid==f.grid && explicit.state==f.state
+    pruned = solve!(FreeFlame(gas;X,discretization=:finite_difference);prune=.02)
+    @test pruned.converged
+    @test length(pruned.grid) < length(f.grid)
+    @test flame_speed(pruned) ≈ .7055995685698858 rtol=.01
 
     @test maximum(abs.(density(f).*velocity(f) .- f.state[end,:])) < 1e-12
     @test maximum(heat_release_rate(f)) > 0
