@@ -10,8 +10,7 @@ function run_diffusion_flame_continuation(gas; capture=true)
     (gas.n_species, gas.n_reactions) == (10, 29) ||
         error("expected stock Cantera h2o2.yaml (10 species, 29 reactions)")
     result = CounterflowContinuation.calculate(gas;
-        slope=.0125, curve=.025, prune=.0125,
-        initial_slope=.00625, initial_curve=.0125, initial_prune=.00625,
+        slope=.1, curve=.2, prune=.05,
         max_points=5000, capture)
     result.source_success ||
         error("continuation failed: $(result.termination_reason)")

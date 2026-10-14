@@ -773,7 +773,12 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     previous_enthalpy = previous !== nothing ? _flame_previous_enthalpy(f,w,previous) : nothing
     residual_valid = false
     region_enabled = _conservative_flame(f)
-    correction_enabled = _flame_correction_enabled(f)
+    # Cantera applies its weighted-step merit in every transient Newton solve
+    # (MultiNewton::dampStep), independent of the spatial discretization;
+    # prescribed-temperature systems retain residual merit.
+    cantera_transient = previous !== nothing && !_flame_correction_enabled(f) &&
+        !(f isa BurnerFlame && !isempty(f.imposed_temperature))
+    correction_enabled = _flame_correction_enabled(f) || cantera_transient
     correction_weights = correction_enabled ? _flame_correction_weights(f,u,previous !== nothing) : Float64[]
     trial_correction = correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     current_region = falses(size(u,1)-2,2size(u,2)-1)
@@ -856,11 +861,16 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             @. trial = u + alpha*step
             flame_residual!(rt,f,trial,w; previous,dt,previous_enthalpy)
             trial_contracts = false
+            trial_merit = Inf
             if all(isfinite,rt)
                 if correction_enabled
                     copyto!(trial_correction,vec(rt))
                     LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,trial_correction)
-                    trial_contracts = _flame_correction_norm(reshape(trial_correction,size(u)),correction_weights) < step_merit
+                    trial_merit = _flame_correction_norm(reshape(trial_correction,size(u)),correction_weights)
+                    # Cantera dampStep accepts s1 < 1 or s1 < s0 and treats
+                    # s1 < 1 as convergence of the time step.
+                    trial_contracts = cantera_transient ? trial_merit < 1 || trial_merit < step_merit :
+                        trial_merit < step_merit
                 else
                     trial_contracts = norm(rt) < norm(r)*(1-1e-4*alpha)
                 end
@@ -868,6 +878,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             if trial_contracts
                 u .= trial
                 accepted = true
+                cantera_transient && trial_merit < 1 && return true
                 break
             end
             alpha /= sqrt(2)
