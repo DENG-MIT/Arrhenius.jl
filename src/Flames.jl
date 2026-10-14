@@ -1116,7 +1116,7 @@ function _refine_flame!(f; ratio=3.,slope=.06,curve=.12,prune=0.,max_points=1000
 end
 
 """
-    solve!(flame; refine_grid=true, ratio=3, slope=0.06, curve=0.12,
+    solve!(flame; refine_grid=true, ratio=3, slope=0.06, curve=0.12, prune=0,
            max_points=1000, max_time_steps=500, loglevel=0)
 
 Solve a native premixed flame using damped Newton iterations and implicit
@@ -1124,14 +1124,18 @@ pseudo-time stepping. Failure raises an error and leaves `converged=false`.
 Cantera's time-step controls: `time_step_growth_factor`, `time_step_growth_strategy`
 (`:fixed_growth`, `:steady_norm`, `:transient_residual`, `:residual_ratio`,
 `:newton_iterations`), `time_step_callback(dt)`, `time_step_regrid` and
-`jacobian_mode` (`:auto` or `:finite_difference`).
+`jacobian_mode` (`:auto` or `:finite_difference`). `prune` is Cantera's fourth
+refine criterion: grid points whose slope/curve indicators fall below it are
+removed on each refinement pass (0 disables pruning; it must not exceed `slope`
+or `curve`).
 """
-function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,curve=.12,
+function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,curve=.12,prune=0.,
         max_points=1000,max_time_steps=500,loglevel=0,
         initial_time_step=1e-5,domain_check=f isa FreeFlame,
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=3,jacobian_mode=:auto)
     isfinite(ratio) && ratio > 1 && 0 < slope <= 1 && 0 < curve <= 1 || throw(ArgumentError("invalid refinement criteria"))
+    isfinite(prune) && prune <= min(slope,curve) || throw(ArgumentError("prune must be finite and no greater than slope or curve"))
     isfinite(initial_time_step) && initial_time_step > 0 || throw(ArgumentError("initial time step must be finite and positive"))
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
     analytic = jacobian_mode === :auto
@@ -1155,7 +1159,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
             timestep[] = initial_time_step
             if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,clip_species=true,controls...)
                 # Cantera's time_step_regrid: refine the failed state and retry.
-                refine_grid && regrids < time_step_regrid && _refine_flame!(f;ratio,slope,curve,max_points) ||
+                refine_grid && regrids < time_step_regrid && _refine_flame!(f;ratio,slope,curve,prune,max_points) ||
                     error("flame solve failed on $(length(f.grid)) points")
                 regrids += 1
                 loglevel > 0 && println("Time stepping failed; regridding to ",length(f.grid)," points")
@@ -1170,11 +1174,11 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
             f.grid .*= 2
             expansions += 1
             loglevel > 0 && println("Expanding domain to ",f.grid[end]-f.grid[1]," m")
-            refine_grid && _refine_flame!(f;ratio,slope,curve,max_points)
+            refine_grid && _refine_flame!(f;ratio,slope,curve,prune,max_points)
             strict = !refine_grid || !_flame_step_sequencing(f)
             continue
         end
-        refined = refine_grid && _refine_flame!(f;ratio,slope,curve,max_points)
+        refined = refine_grid && _refine_flame!(f;ratio,slope,curve,prune,max_points)
         if !refined && !strict
             strict = true
             continue
@@ -1199,7 +1203,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
                 _flame_newton!(f,FlameWorkspace(f);require_positive=true,
                     minimum_iterations=1,loglevel,analytic) ||
                     error("flame final species polishing failed on $(length(f.grid)) points")
-                refine_grid && _refine_flame!(f;ratio,slope,curve,max_points) && continue
+                refine_grid && _refine_flame!(f;ratio,slope,curve,prune,max_points) && continue
             end
             f.converged = true
             return f
