@@ -5,7 +5,7 @@ using Arrhenius,Test
     gas=CreateSolution(mechanism)
     X="H2:1.1,O2:1,AR:5"
     defaults=(;time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
-        time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto)
+        time_step_callback=nothing,time_step_regrid=3,jacobian_mode=:auto)
     reference=solve!(FreeFlame(gas;X))
     explicit=solve!(FreeFlame(gas;X);defaults...)
     @test explicit.grid==reference.grid && explicit.state==reference.state
