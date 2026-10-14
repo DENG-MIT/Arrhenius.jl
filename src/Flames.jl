@@ -1101,25 +1101,216 @@ function _refine_flame!(f; ratio=3.,slope=.06,curve=.12,prune=0.,max_points=1000
     return true
 end
 
+# Cantera's FreeFlame.solve(auto=True) width check (onedim.py check_width):
+# thrown after a steady solve whose edge temperature gradients exceed 2% of
+# the mean gradient; solve! doubles the domain and restarts the staged ladder.
+struct FlameDomainTooNarrow <: Exception end
+
+# Cantera's FreeFlame analytic initial guess (onedim.py set_initial_guess): a
+# linear ramp from the inlet state to the constant-enthalpy equilibrium state
+# between 30% and 50% of the domain, equilibrium at the outlet. As in
+# Cantera's Sim1D.solve(auto=True) ladder, each staged grid restarts from this
+# guess instead of continuing from the previous solution; the state is rebuilt
+# for the target grid (Cantera's grid setter reallocates the solution arrays).
+function _fresh_analytic_guess!(f::FreeFlame, z = f.grid)
+    x = f.inlet_Y ./ f.gas.MW
+    x ./= sum(x)
+    eq = equilibrate(f.gas; T=f.inlet_temperature, P=f.pressure, X=x, mode=:HP)
+    T0, y = f.inlet_temperature, f.inlet_Y
+    L = z[end] - z[1]
+    rho = f.pressure * dot(x, f.gas.MW) / (R * T0)
+    state = Matrix{Float64}(undef, size(f.state, 1), length(z))
+    for j in eachindex(z)
+        fraction = clamp(((z[j] - z[1]) / L - .3) / .2, 0, 1)
+        state[1, j] = (T0 + fraction * (eq.T - T0)) / 1000
+        state[2:size(state, 1) - 1, j] .= y .+ fraction .* (eq.Y .- y)
+        state[end, j] = rho
+    end
+    f.grid = collect(Float64, z)
+    f.state = state
+    f.anchor = clamp(argmin(abs.(state[1, :] .- (.75 * T0 + .25 * eq.T) / 1000)),
+        2, length(z) - 1)
+    f.fixed_temperature = 1000 * state[1, f.anchor]
+    f.converged = false
+    return f
+end
+
+# Sim1D.cpp's solve(refine_grid=true) loop: steady solve, width check, one
+# refinement pass, repeat while refinement changes the grid (`while
+# new_points > 0`, entered with `new_points = 1`, so the entry state is always
+# solved — the staged final stage relies on this to apply the restored Soret
+# term). Grids that still guide refinement solve to the loose tolerance; the
+# accepted grid re-solves to the full tolerance (solve!'s sequencing). A
+# failed steady solve retries with clipped species, then Cantera's time-step
+# regrid: refine the failed state and retry while the grid changes, at most
+# `m_ts_regrid_max` times.
+function _auto_refine_loop!(f; refine_grid,ratio,slope,curve,prune,max_points,
+        max_time_steps,loglevel,domain_check,timestep,controls,initial_time_step,
+        ts_regrid=3)
+    strict = !refine_grid || !_flame_step_sequencing(f)
+    regrids = 0
+    for pass in 1:40
+        loglevel > 0 && println("Solving on ", length(f.grid), " points")
+        tolerance = strict ? 1e-8 : 1e-6
+        if !_flame_steady!(f; loglevel, max_time_steps, timestep, tolerance, controls...)
+            # Retry the grid with clipped species; at a nonnegative converged
+            # state both forms share the same solution.
+            loglevel > 0 && println("Retrying ", length(f.grid), " points with clipped species")
+            timestep[] = initial_time_step
+            if !_flame_steady!(f; loglevel, max_time_steps, timestep, tolerance,
+                    clip_species = true, controls...)
+                # Cantera's time_step_regrid: refine the failed state and
+                # retry; when refinement cannot change the grid, rethrow.
+                if !(refine_grid && regrids < ts_regrid &&
+                        _refine_flame!(f; ratio, slope, curve, prune, max_points))
+                    error("flame solve failed on $(length(f.grid)) points")
+                end
+                regrids += 1
+                loglevel > 0 && println("Time stepping failed; regridding to ",
+                    length(f.grid), " points")
+                timestep[] = initial_time_step
+                strict = !_flame_step_sequencing(f)
+                continue
+            end
+        end
+        domain_check && _flame_domain_too_narrow(f) && throw(FlameDomainTooNarrow())
+        if refine_grid && _refine_flame!(f; ratio, slope, curve, prune, max_points)
+            strict = !refine_grid || !_flame_step_sequencing(f)
+        elseif !strict
+            # The grid was accepted by refinement; re-solve to the full
+            # tolerance and check refinement once more.
+            strict = true
+        else
+            return f
+        end
+    end
+    error("flame refinement did not converge after 40 passes")
+end
+
+# Cantera's Sim1D.solve(auto=True) staged ladder (_onedim.py): default
+# tolerances, Soret disabled, uniform grids of len(grid), 12, 24 and 48 points
+# each restarting from a fresh analytic guess, one refinement-enabled solve on
+# the first non-failed stage, then the final stage with Soret restored
+# (Cantera's "final call with expensive options enabled").
+function _auto_staged!(f; refine_grid,ratio,slope,curve,prune,max_points,
+        max_time_steps,loglevel,domain_check,timestep,controls,ts_regrid)
+    initial_step = timestep[]
+    soret0 = f.soret_enabled
+    f.soret_enabled = false
+    try
+        zmin, zmax = f.grid[1], f.grid[end]
+        solved = false
+        for N in (length(f.grid), 12, 24, 48)
+            N > max_points &&
+                error("flame refinement exceeds max_points=$max_points")
+            z = N == length(f.grid) ? f.grid : range(zmin, zmax, length = N)
+            _fresh_analytic_guess!(f, z)
+            timestep[] = initial_step
+            solved = _flame_steady!(f; loglevel, max_time_steps, timestep,
+                tolerance = 1e-6, controls...)
+            solved || continue
+            domain_check && _flame_domain_too_narrow(f) && throw(FlameDomainTooNarrow())
+            try
+                _auto_refine_loop!(f; refine_grid, ratio, slope, curve, prune,
+                    max_points, max_time_steps, loglevel, domain_check,
+                    timestep, controls, initial_time_step = initial_step,
+                    ts_regrid = ts_regrid)
+            catch err
+                # Cantera's ladder discards the result of the refinement-enabled
+                # stage solve: a failure (time stepping or convergence) leaves
+                # the last good state and proceeds to the final stage. The
+                # width check propagates to the domain-expansion loop instead.
+                err isa FlameDomainTooNarrow && rethrow()
+                break
+            end
+            break
+        end
+        solved || error("Could not find a solution for the 1D problem")
+    finally
+        f.soret_enabled = soret0
+    end
+    _auto_refine_loop!(f; refine_grid, ratio, slope, curve, prune, max_points,
+        max_time_steps, loglevel, domain_check, timestep, controls,
+        initial_time_step = initial_step, ts_regrid = ts_regrid)
+    return f
+end
+
+# Cantera's FreeFlame.solve(auto=True): the staged ladder wrapped in the
+# domain-expansion loop (onedim.py), where a too-narrow domain doubles in
+# width, is refined once, and the whole ladder restarts (up to 12 times).
+function _solve_auto!(f; refine_grid,ratio,slope,curve,prune,max_points,
+        max_time_steps,loglevel,domain_check,timestep,controls,ts_regrid)
+    f isa FreeFlame || throw(ArgumentError(
+        "auto staging mirrors Cantera's FreeFlame.solve(auto=True); other flame types use the plain solve!"))
+    initial_step = timestep[]
+    for _ in 1:12
+        try
+            timestep[] = initial_step
+            _auto_staged!(f; refine_grid, ratio, slope, curve, prune,
+                max_points, max_time_steps, loglevel, domain_check, timestep,
+                controls, ts_regrid = ts_regrid)
+        catch err
+            err isa FlameDomainTooNarrow || rethrow()
+            f.grid .*= 2
+            loglevel > 0 && println("Expanding domain to ",
+                f.grid[end] - f.grid[1], " m")
+            refine_grid && _refine_flame!(f; ratio, slope, curve, prune, max_points)
+            continue
+        end
+        while _conservative_flame(f) && minimum(@view(f.state[2:end-1, :])) <= -1e-12
+            # A clipped negative trial can converge on an unphysical branch.
+            # Build a nonnegative starting guess, preserving normalization,
+            # then require an accepted Newton step and a fresh full solve.
+            for j in axes(f.state, 2)
+                correction = 0.0
+                for k in 2:size(f.state, 1) - 1
+                    if f.state[k, j] < 0
+                        correction -= f.state[k, j]
+                        f.state[k, j] = 0.0
+                    end
+                end
+                dominant = argmax(@view(f.state[2:end-1, j])) + 1
+                f.state[dominant, j] -= correction
+            end
+            _flame_newton!(f, FlameWorkspace(f); require_positive = true,
+                minimum_iterations = 1, loglevel,
+                analytic = controls.analytic) ||
+                error("flame final species polishing failed on $(length(f.grid)) points")
+            refine_grid && _refine_flame!(f; ratio, slope, curve, prune, max_points) ||
+                break
+            _auto_refine_loop!(f; refine_grid, ratio, slope, curve, prune,
+                max_points, max_time_steps, loglevel, domain_check, timestep,
+                controls, initial_time_step = initial_step, ts_regrid = ts_regrid)
+        end
+        f.converged = true
+        return f
+    end
+    error("auto solve did not converge after 12 domain expansions")
+end
+
 """
     solve!(flame; refine_grid=true, ratio=3, slope=0.06, curve=0.12, prune=0,
-           max_points=1000, max_time_steps=500, loglevel=0)
+           max_points=1000, max_time_steps=500, loglevel=0, auto=false)
 
 Solve a native premixed flame using damped Newton iterations and implicit
 pseudo-time stepping. Failure raises an error and leaves `converged=false`.
-Cantera's time-step controls: `time_step_growth_factor`, `time_step_growth_strategy`
-(`:fixed_growth`, `:steady_norm`, `:transient_residual`, `:residual_ratio`,
-`:newton_iterations`), `time_step_callback(dt)`, `time_step_regrid` and
-`jacobian_mode` (`:auto` or `:finite_difference`). `prune` is Cantera's fourth
-refine criterion: grid points whose slope/curve indicators fall below it are
-removed on each refinement pass (0 disables pruning; it must not exceed `slope`
-or `curve`).
+`auto=true` mirrors Cantera's `FreeFlame.solve(auto=True)` for `FreeFlame`: a
+staged ladder on uniform 12/24/48-point grids from fresh analytic guesses with
+Soret disabled, one refinement-enabled solve, then a final stage with Soret
+restored — all wrapped in the domain-expansion loop that doubles a too-narrow
+domain and restarts the ladder. Cantera's time-step controls:
+`time_step_growth_factor`, `time_step_growth_strategy` (`:fixed_growth`,
+`:steady_norm`, `:transient_residual`, `:residual_ratio`, `:newton_iterations`),
+`time_step_callback(dt)`, `time_step_regrid` and `jacobian_mode` (`:auto` or
+`:finite_difference`). `prune` is Cantera's fourth refine criterion: grid
+points whose slope/curve indicators fall below it are removed on each
+refinement pass (0 disables pruning; it must not exceed `slope` or `curve`).
 """
 function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,curve=.12,prune=0.,
         max_points=1000,max_time_steps=500,loglevel=0,
         initial_time_step=1e-5,domain_check=f isa FreeFlame,
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
-        time_step_callback=nothing,time_step_regrid=3,jacobian_mode=:auto)
+        time_step_callback=nothing,time_step_regrid=3,jacobian_mode=:auto,auto=false)
     isfinite(ratio) && ratio > 1 && 0 < slope <= 1 && 0 < curve <= 1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(prune) && prune <= min(slope,curve) || throw(ArgumentError("prune must be finite and no greater than slope or curve"))
     isfinite(initial_time_step) && initial_time_step > 0 || throw(ArgumentError("initial time step must be finite and positive"))
@@ -1127,9 +1318,11 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     analytic = jacobian_mode === :auto
     controls = (;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic)
+    timestep = Ref(Float64(initial_time_step))
+    auto && return _solve_auto!(f; refine_grid,ratio,slope,curve,prune,max_points,
+        max_time_steps,loglevel,domain_check,timestep,controls,ts_regrid=time_step_regrid)
     regrids = 0
     f.converged = false
-    timestep = Ref(Float64(initial_time_step))
     # Grids that refinement may still change only guide refinement; they use a
     # looser steady tolerance. A grid accepted by refinement is then solved to
     # the full residual tolerance and checked again.
