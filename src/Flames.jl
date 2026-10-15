@@ -328,24 +328,31 @@ _flame_clipped(w) = w isa FlameWorkspace && w.clip_species[]
 @inline _flame_node_species(w,y) = _flame_clipped(w) ? max(y,0.0) : y
 @inline _flame_node_weight(w,y) = _flame_clipped(w) ? _flame_species_weight(y) : 1.0
 
+# Keep density evaluation in one place: residuals, public flame density and
+# refinement interpolation must use the same equation of state and species
+# treatment for a given state.
+@inline function _flame_density(f,T,Y;clip_species=false)
+    sumY,inverseMW=0.0,0.0
+    @inbounds for k in eachindex(f.gas.MW)
+        y=clip_species ? max(Y[k],0.0) : Y[k]
+        sumY+=y
+        inverseMW+=y/f.gas.MW[k]
+    end
+    return (density=f.pressure*(sumY/inverseMW)/(R*T),inverse_mw=inverseMW)
+end
+
 function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid),freeze_source=false,
         viscosity=nothing)
     gas, n, N = f.gas, f.gas.n_species, length(f.grid)
     conservative = _conservative_flame(f)
     @inbounds for j in nodes
         T = 1000*u[1,j]
-        sumY = 0.0
-        inverseMW = 0.0
         # Node thermochemistry uses signed mass fractions, as Cantera's flow
         # residual does; only transport inputs at faces are clipped below.
         clip = w.clip_species[]
-        for k in 1:n
-            y = clip ? max(u[k+1,j],0.0) : u[k+1,j]
-            sumY += y
-            inverseMW += y/gas.MW[k]
-        end
-        meanMW = sumY/inverseMW
-        w.rho[j] = f.pressure*meanMW/(R*T)
+        density_state=_flame_density(f,T,@view(u[2:n+1,j]);clip_species=clip)
+        w.rho[j]=density_state.density
+        inverseMW=density_state.inverse_mw
         pRT = f.pressure/(R*T)
         for k in 1:n
             w.X[k,j] = (clip ? max(u[k+1,j],0.0) : u[k+1,j])/gas.MW[k]/inverseMW
