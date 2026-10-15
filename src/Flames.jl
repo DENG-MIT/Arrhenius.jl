@@ -1337,8 +1337,10 @@ globals mirror the accumulated family totals. Call
 `reset!(solver_stats(flame))` before `solve!` to attribute the counts to that
 solve.
 """
-solver_stats(f::AbstractPremixedFlame)=get!(() -> PremixedStats(), FLAME_STATS, f)
-_premixed_stats(f)=get!(() -> PremixedStats(), FLAME_STATS, f)
+solver_stats(f::AbstractPremixedFlame)=_premixed_stats(f)
+# WeakKeyDict keys must be mutable; immutable shim objects (property adapters,
+# test fixtures driving the helpers directly) share the family global.
+_premixed_stats(f)=Base.ismutable(f) ? get!(() -> PremixedStats(), FLAME_STATS, f) : PREMIXED_STATS
 
 """
     solve!(flame; refine_grid=true, ratio=3, slope=0.06, curve=0.12, prune=0,

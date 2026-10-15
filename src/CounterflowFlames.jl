@@ -346,6 +346,9 @@ solver_stats(f::CounterflowDiffusionFlame)=_counterflow_stats(f)
 function _counterflow_stats(f)
     key=(isdefined(@__MODULE__,:AbstractPremixedCounterflow) &&
         f isa AbstractPremixedCounterflow) ? f.flow : f
+    # WeakKeyDict keys must be mutable; immutable shim objects driving the
+    # helpers directly (test fixtures, property adapters) share the global.
+    Base.ismutable(key) || return COUNTERFLOW_STATS
     return get!(() -> CounterflowStats(), FLAME_STATS, key)
 end
 function reset!(s::CounterflowStats)
