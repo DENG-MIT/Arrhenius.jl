@@ -541,7 +541,8 @@ function _counterflow_chemistry_jacobian!(f,u,w)
             # of falling back to a finite-difference Jacobian for every node.
             _flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
                 max.(@view(u[2:n+1,j]),1e-30),max.(@view(p.X[:,j]),1e-30),
-                @view(p.h[:,j]),p.rate_caches[j]) || (_counterflow_stats(f).chem_jac_failures+=1;
+                @view(p.h[:,j]),p.rate_caches[j]) ||
+                (_counterflow_stats(f).chem_jac_failures+=1;
                 COUNTERFLOW_STATS.chem_jac_failures+=1; return false)
         end
         species=_flame_timescale/p.rho[j]
