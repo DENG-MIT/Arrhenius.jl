@@ -1097,7 +1097,11 @@ function _refine_flame!(f; ratio=3.,slope=.06,curve=.12,prune=0.,max_points=1000
     added = count(j->insert[j] && keep[j] != -1,1:N-1)
     added+removed == 0 && return false
     N-removed+added <= max_points || error("flame refinement exceeds max_points=$max_points")
-    axial_velocity=velocity(f)
+    # Only free/burner states store mdot in the last row. Ionized and
+    # counterflow states use different last-row components and keep direct
+    # component interpolation here.
+    planar_mdot_state = f isa Union{FreeFlame,BurnerFlame}
+    axial_velocity = planar_mdot_state ? velocity(f) : nothing
     newz = Float64[]
     columns = Vector{Float64}[]
     anchor_z = z[f.anchor]
@@ -1110,9 +1114,11 @@ function _refine_flame!(f; ratio=3.,slope=.06,curve=.12,prune=0.,max_points=1000
             # Sim1D::refine interpolates the physical velocity component U.
             # The native state stores mdot=rho*u, so rebuild it from the
             # interpolated T/Y and midpoint velocity after averaging.
-            rho=_flame_density(f,1000*midpoint[1],
-                @view(midpoint[2:f.gas.n_species+1])).density
-            midpoint[end]=rho*(axial_velocity[j]+axial_velocity[j+1])/2
+            if planar_mdot_state
+                rho=_flame_density(f,1000*midpoint[1],
+                    @view(midpoint[2:f.gas.n_species+1])).density
+                midpoint[end]=rho*(axial_velocity[j]+axial_velocity[j+1])/2
+            end
             push!(columns,midpoint)
         end
     end

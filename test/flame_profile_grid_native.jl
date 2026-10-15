@@ -61,12 +61,16 @@ end
     # Chord error need not decrease each bisection; the independent Lipschitz
     # bound L*h/2 does. This peak is resolved under the unchanged 1% budget.
     @test maximum(split) <= 2000*.2/2
+    # Refinement interpolates the stored state. Start with the imposed profile
+    # sampled on this grid, as after the constrained solve preceding regridding.
+    f.state[1,:] .= f.imposed_temperature ./ 1000
+    sampled_temperature = temperature(f)
     for _ in 1:8
         Arrhenius._refine_flame!(f;slope=1.,curve=1.,ratio=100.) || break
     end
     @test maximum(Arrhenius._profile_chord_defects(f.grid,f.profile_positions,f.profile_temperatures)) <= 5.
     @test f.profile_positions == [0.,.3,.4,1.] && f.profile_temperatures == [300.,500.,300.,300.]
-    @test temperature(f) ≈ [Arrhenius._interpolate_profile(f.profile_positions,f.profile_temperatures,z) for z in f.grid] atol=1e-12
+    @test temperature(f) ≈ [Arrhenius._interpolate_profile(before,sampled_temperature,z) for z in f.grid] atol=1e-12
     @test f.grid[f.anchor] == anchor_z
     profile_grid_test_constant(f.state[end,:],fill(.04,length(f.grid)),"refined mass flux")
     profile_grid_test_constant(mass_fractions(f),repeat(f.inlet_Y,1,length(f.grid)),"refined composition")
