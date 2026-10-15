@@ -279,6 +279,15 @@ _KineticsTemperatureCache(reaction::Reaction) = _KineticsTemperatureCache(NaN,
     zeros(size(reaction.Troe_,1)),zeros(reaction.n_reactions),
     NaN,zeros(length(reaction.plog.reaction_indices)))
 
+@inline _concentration_power(c, order) = c^order
+@inline function _concentration_power(c, order::AbstractFloat)
+    value = convert(promote_type(typeof(c),typeof(order)),c)
+    order == one(order) && return value
+    order == oftype(order,2) && return value*value
+    isinteger(order) && return value^Int(order)
+    return value > 0 ? value^order : zero(value)
+end
+
 function _mass_action!(workspace, reaction::Reaction, C)
     reactants = reaction.reactant_orders
     products = reaction.product_stoich_coeffs
