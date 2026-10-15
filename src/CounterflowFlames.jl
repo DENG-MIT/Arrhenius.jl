@@ -26,10 +26,7 @@ mutable struct CounterflowDiffusionFlame{G<:Solution}
     boundary_emissivities::Tuple{Float64,Float64}
     # (left_z, left_T, right_z, right_T) when two-point control is enabled.
     control_points::Union{Nothing,NTuple{4,Float64}}
-    # Cantera-identical signed mass-action branch is enabled for diffusion flames.
-    cantera_negative_mass_action::Bool
 end
-_flame_cantera_kinetics(f::CounterflowDiffusionFlame)=f.cantera_negative_mass_action
 
 # Scales only condition the algebraic system; physical values are returned below.
 const _counterflow_Vscale = 100.0
@@ -130,7 +127,7 @@ function CounterflowDiffusionFlame(gas::Solution; fuel,oxidizer,mdot_fuel,mdot_o
     state[end,end]=-uo*P/(R*T_oxidizer*sum(state[2:n+1,end]./gas.MW))
     flame=CounterflowDiffusionFlame(gas,z,Float64(P),Float64(T_fuel),Float64(T_oxidizer),
         yf,yo,Float64(mdot_fuel),Float64(mdot_oxidizer),state,1,argmax(yst),false,
-        :mixture_averaged,false,nothing,:mole,Float64[],false,(0.,0.),nothing,true)
+        :mixture_averaged,false,nothing,:mole,Float64[],false,(0.,0.),nothing)
     return set_radiation!(flame,radiation;boundary_emissivities)
 end
 
@@ -538,14 +535,13 @@ function _counterflow_chemistry_jacobian!(f,u,w)
     p=w.properties;n=f.gas.n_species;B,N=size(u);G=w.source_gradient;MW=f.gas.MW
     @inbounds for j in 2:N-1
         if !_flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
-                @view(u[2:n+1,j]),@view(p.X[:,j]),@view(p.h[:,j]),p.rate_caches[j];
-                cantera_negative=f.cantera_negative_mass_action)
+                @view(u[2:n+1,j]),@view(p.X[:,j]),@view(p.h[:,j]),p.rate_caches[j])
             # Signed trace species make fractional-order rate derivatives
             # non-finite; differentiate this node at a positive floor instead
             # of falling back to a finite-difference Jacobian for every node.
             _flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
                 max.(@view(u[2:n+1,j]),1e-30),max.(@view(p.X[:,j]),1e-30),
-                @view(p.h[:,j]),p.rate_caches[j];cantera_negative=f.cantera_negative_mass_action) ||
+                @view(p.h[:,j]),p.rate_caches[j]) ||
                 (_counterflow_stats(f).chem_jac_failures+=1;
                 COUNTERFLOW_STATS.chem_jac_failures+=1; return false)
         end
@@ -937,7 +933,6 @@ function _counterflow_reset!(f,grid)
         oxidizer=mole_fractions(f.gas,f.oxidizer_Y;basis=:mass),
         mdot_fuel=f.fuel_mass_flux,mdot_oxidizer=f.oxidizer_mass_flux,
         T_fuel=f.fuel_temperature,T_oxidizer=f.oxidizer_temperature,P=f.pressure,grid)
-    initialized.cantera_negative_mass_action=f.cantera_negative_mass_action
     f.grid=initialized.grid
     f.state=initialized.state
     f.anchor=1

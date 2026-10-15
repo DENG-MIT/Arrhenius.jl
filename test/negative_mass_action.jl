@@ -6,6 +6,9 @@ using Arrhenius, LinearAlgebra, SparseArrays, Test
     c2 = sparse([1], [1], [2.0], 1, 1)
     o2 = copy(c2)
     inds2, orders2 = rowvals(o2), nonzeros(o2)
+    c1=sparse([1],[1],[1.0],1,1);o1=copy(c1)
+    @test Arrhenius._mass_action_product([-1e-14],rowvals(o1),nonzeros(o1),c1,1,
+        nzrange(o1,1)) == -1e-14
     for y in (0.0, 1e-25, -1e-25, -1e-14, -1e-7)
         C = [y]
         got = Arrhenius._mass_action_product(C, inds2, orders2, c2, 1, nzrange(o2, 1))
@@ -22,13 +25,33 @@ using Arrhenius, LinearAlgebra, SparseArrays, Test
         c2distinct, 1, nzrange(o2distinct, 1)) == -2.0
     @test Arrhenius._mass_action_product([-1.0, -2.0], inds, orders,
         c2distinct, 1, nzrange(o2distinct, 1)) == 0.0
-
     c3 = sparse([1, 2, 3], [1, 1, 1], ones(3), 3, 1)
     o3 = copy(c3)
     @test Arrhenius._mass_action_product([-1.0, 2.0, 3.0], rowvals(o3),
         nonzeros(o3), c3, 1, nzrange(o3, 1)) == -6.0
     @test Arrhenius._mass_action_product([-1.0, -2.0, 3.0], rowvals(o3),
         nonzeros(o3), c3, 1, nzrange(o3, 1)) == 0.0
+    # The analytic mass-action derivative follows the same active product branch.
+    for (stoich, orders_matrix, values) in ((c2distinct,o2distinct,[-1.0,2.0]),
+            (c3,o3,[-1.0,2.0,3.0]))
+        gradient=zeros(length(values))
+        Arrhenius._mass_action_product_gradient!(gradient,values,rowvals(orders_matrix),
+            nonzeros(orders_matrix),stoich,1,nzrange(orders_matrix,1),1.0)
+        h=1e-6
+        for k in eachindex(values)
+            plus=copy(values);minus=copy(values);plus[k]+=h;minus[k]-=h
+            fd=(Arrhenius._mass_action_product(plus,rowvals(orders_matrix),
+                    nonzeros(orders_matrix),stoich,1,nzrange(orders_matrix,1)) -
+                Arrhenius._mass_action_product(minus,rowvals(orders_matrix),
+                    nonzeros(orders_matrix),stoich,1,nzrange(orders_matrix,1)))/(2h)
+            @test gradient[k] ≈ fd rtol=2e-8 atol=2e-8
+        end
+    end
+    suppressed=zeros(3)
+    Arrhenius._mass_action_product_gradient!(suppressed,[-1.0,-2.0,3.0],rowvals(o3),
+        nonzeros(o3),c3,1,nzrange(o3,1),1.0)
+    @test suppressed == zeros(3)
+
 
     # Cantera's general stoichiometry path suppresses any nonpositive
     # participating concentration, including integer custom orders.
@@ -41,6 +64,18 @@ using Arrhenius, LinearAlgebra, SparseArrays, Test
 
     custom_orders = sparse([1], [1], [1.0], 1, 1)
     custom_stoich = spzeros(1, 1)
+    fractional_orders=sparse([1],[1],[0.5],1,1)
+    for y in (0.0,1e-25,-1e-25,-1e-14)
+        value=Arrhenius._mass_action_product([y],rowvals(fractional_orders),
+            nonzeros(fractional_orders),custom_stoich,1,nzrange(fractional_orders,1))
+        @test value == (y>0 ? sqrt(y) : 0.0)
+    end
+    fractional_gradient=zeros(1)
+    Arrhenius._mass_action_product_gradient!(fractional_gradient,[1e-25],
+        rowvals(fractional_orders),nonzeros(fractional_orders),custom_stoich,1,
+        nzrange(fractional_orders,1),1.0)
+    @test fractional_gradient[1] ≈ 0.5/sqrt(1e-25) rtol=1e-15
+
     @test Arrhenius._mass_action_product([-1e-14], rowvals(custom_orders),
         nonzeros(custom_orders), custom_stoich, 1, nzrange(custom_orders, 1)) == 0.0
     # Exercise the requested radical Y edges through ideal-gas Y -> X -> C
@@ -57,10 +92,10 @@ using Arrhenius, LinearAlgebra, SparseArrays, Test
     legacy = KineticsWorkspace(reaction); fill!(legacy.kf,0); fill!(legacy.kr,0)
     legacy.kr[reaction115] = 1
     Arrhenius._mass_action!(legacy,reaction,Cprobe)
-    @test legacy.rates_of_progress[reaction115] == -1.0
+    @test legacy.rates_of_progress[reaction115] == 0.0
     cantera = KineticsWorkspace(reaction); fill!(cantera.kf,0); fill!(cantera.kr,0)
     cantera.kr[reaction115] = 1
-    Arrhenius._mass_action!(cantera,reaction,Cprobe;cantera_negative=true)
+    Arrhenius._mass_action!(cantera,reaction,Cprobe)
     @test cantera.rates_of_progress[reaction115] == 0.0
     P, T = 101325.0, 300.0
     for y in (0.0, 1e-25, -1e-25, -1e-14, -1e-7)
@@ -79,8 +114,8 @@ using Arrhenius, LinearAlgebra, SparseArrays, Test
     probe = (gas=(MW=MW,), pressure=P)
     Yraw = [0.7, -0.1]
     density = Arrhenius._flame_density(probe, T, Yraw).density
-    @test density == P*(sum(Yraw)/dot(Yraw, 1 ./ MW)) / (Arrhenius.R*T)
-    density_nonorm = Arrhenius._flame_density(probe, T, Yraw; cantera_no_norm=true).density
+    @test density ≈ P/(dot(Yraw, 1 ./ MW)*Arrhenius.R*T) rtol=2e-15
+    density_nonorm = Arrhenius._flame_density(probe, T, Yraw).density
     @test density_nonorm ≈ P / (dot(Yraw, 1 ./ MW) * Arrhenius.R*T) rtol=2e-15
     density_clipped = Arrhenius._flame_density(probe, T, Yraw; clip_species=true).density
     Yclipped = max.(Yraw, 0.0)

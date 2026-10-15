@@ -260,9 +260,7 @@ end
     stats=solver_stats.(flames)
     @test all(stats[i]!==stats[j] for i in 1:4 for j in i+1:4)
     @test all(s -> s.jacobians==0 && isempty(s.grids), stats)  # fresh flames start at zero
-    modes=Arrhenius._flame_cantera_kinetics.(flames)
     foreach(f -> Arrhenius._counterflow_reset!(f,f.grid),flames)
-    @test Arrhenius._flame_cantera_kinetics.(flames)==modes
     # One small h2o2 solve per kind: per-flame counters come back nonzero.
     for f in flames
         s=solver_stats(f)

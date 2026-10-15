@@ -117,7 +117,7 @@ function _premixed_counterflow_storage(gas;reactants,mdot_reactants,mdot_product
     state[end,1]=mdot_reactants; state[end,end]=-mdot_products
     return CounterflowDiffusionFlame(gas,z,Float64(P),Float64(T_reactants),Tright,
         Y,Yright,Float64(mdot_reactants),Float64(mdot_products),state,1,argmax(Y),false,
-        :mixture_averaged,false,nothing,:mole,Float64[],false,(0.,0.),nothing,false)
+        :mixture_averaged,false,nothing,:mole,Float64[],false,(0.,0.),nothing)
 end
 
 """

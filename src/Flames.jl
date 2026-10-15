@@ -324,7 +324,6 @@ function FlameWorkspace(f::AbstractPremixedFlame)
         _conservative_flame(f) ? ConservativeFlameWorkspace(n,N,f.gas) : nothing,Ref(false))
 end
 _flame_clipped(w) = w isa FlameWorkspace && w.clip_species[]
-_flame_cantera_kinetics(f) = false
 # Node species value and derivative weight under the active species form.
 @inline _flame_node_species(w,y) = _flame_clipped(w) ? max(y,0.0) : y
 @inline _flame_node_weight(w,y) = _flame_clipped(w) ? _flame_species_weight(y) : 1.0
@@ -332,15 +331,15 @@ _flame_cantera_kinetics(f) = false
 # Keep density evaluation in one place: residuals, public flame density and
 # refinement interpolation must use the same equation of state and species
 # treatment for a given state.
-@inline function _flame_density(f,T,Y;clip_species=false,cantera_no_norm=false)
+@inline function _flame_density(f,T,Y;clip_species=false)
     sumY,inverseMW=0.0,0.0
     @inbounds for k in eachindex(f.gas.MW)
         y=clip_species ? max(Y[k],0.0) : Y[k]
         sumY+=y
         inverseMW+=y/f.gas.MW[k]
     end
-    density=cantera_no_norm && !clip_species ? f.pressure/(inverseMW*R*T) :
-        f.pressure*(sumY/inverseMW)/(R*T)
+    density=clip_species ? f.pressure*(sumY/inverseMW)/(R*T) :
+        f.pressure/(inverseMW*R*T)
     return (density,inverse_mw=inverseMW)
 end
 
@@ -369,14 +368,12 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
         viscosity=nothing)
     gas, n, N = f.gas, f.gas.n_species, length(f.grid)
     conservative = _conservative_flame(f)
-    cantera_negative=_flame_cantera_kinetics(f)
     @inbounds for j in nodes
         T = 1000*u[1,j]
         # Node thermochemistry uses signed mass fractions, as Cantera's flow
         # residual does; only transport inputs at faces are clipped below.
         clip = w.clip_species[]
-        density_state=_flame_density(f,T,@view(u[2:n+1,j]);clip_species=clip,
-            cantera_no_norm=cantera_negative)
+        density_state=_flame_density(f,T,@view(u[2:n+1,j]);clip_species=clip)
         w.rho[j]=density_state.density
         inverseMW=density_state.inverse_mw
         pRT = f.pressure/(R*T)
@@ -391,14 +388,13 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
         w.entropy .*= R
         # A frozen source keeps the base chemistry for hybrid Jacobian columns.
         freeze_source || wdot!(@view(w.source[:,j]),gas.reaction,T,w.C,w.entropy,@view(w.h[:,j]),w.kinetics;
-            temperature_cache=w.rate_caches[j],pressure=f.pressure,
-            cantera_negative)
+            temperature_cache=w.rate_caches[j],pressure=f.pressure)
     end
     @inbounds for j in 1:N-1
         Tmid = 500*(u[1,j]+u[1,j+1])
         meanMW = _flame_midpoint_composition!(w.ymid,w.xmid,
             @view(u[2:n+1,j]),@view(u[2:n+1,j+1]),gas.MW,
-            !cantera_negative || conservative || f.transport_model == :multicomponent || f.soret_enabled)
+            conservative || f.transport_model == :multicomponent || f.soret_enabled)
         if update_transport
             if f.transport_model == :multicomponent
                 w.conductivity[j] = multicomponent_transport!(w.multi_transport,
