@@ -908,13 +908,11 @@ automatic reinitialization; call `set_two_point_control!` to choose new targets.
 Time-step controls (`time_step_growth_factor`, `time_step_growth_strategy`,
 `time_step_callback`, `time_step_regrid`, `jacobian_mode`) are as for premixed flames.
 
-Diffusion solves deliberately retain the measured post-failure fallback policy:
-attempt-counted steady retries and a transient Jacobian shift that includes the
-algebraic normalization row. This differs from Cantera's success-counted retry
-cadence and dependent-row skip. Across the three diffusion validation cases the
-fallback retains the cfpolicy2 counts (109/140, 142/160, 122/140 Jacobians/steps).
-The separate timestep-controls example harness also converged all 8 rows; see
-`audit.md` and `verify.md` for the measured scope and the Nakamura comparison.
+Diffusion solves use the same success-counted steady retries and dependent-row
+transient skip as the other counterflow kinds, matching Cantera's algebraic-row
+handling. The Nakamura diffusion case is substantially more expensive with this
+correct handling; performance work is tracked separately. See `audit.md` and
+`verify.md` for source references and measured validation.
 `:residual_ratio` growth is supported for this diffusion kind only among the
 counterflow kinds; premixed, twin-premixed, and stagnation require Cantera
 boundary-residual parity before using it.
@@ -931,17 +929,9 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     timestep=Ref(Float64(initial_time_step))
-    # Deliberate fallback for ALL CounterflowDiffusionFlame solves. Cantera
-    # skips algebraic transient rows and counts steady retries by successes;
-    # this path instead shifts the normalization row and retries by attempts.
-    # Evidence: three diffusion validation cases retain cfpolicy2 counts
-    # (109/140, 142/160, 122/140 Jacobians/steps), versus Nakamura 699/824 on
-    # main with Cantera's dependent-row skip; all eight timestep-controls
-    # example rows converged. See audit.md for measurements and scope.
     steady!(flow)=_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...,
         newton_maxiters=_COUNTERFLOW_FD_NEWTON_MAXITERS,
-        transient_newton_maxiters=_COUNTERFLOW_FD_TRANSIENT_NEWTON_MAXITERS,
-        retry_on_successes=false,skip_dependent_transient=false)
+        transient_newton_maxiters=_COUNTERFLOW_FD_TRANSIENT_NEWTON_MAXITERS)
     if !isnothing(f.control_points)
         isempty(f.fixed_temperature) || throw(ArgumentError("two-point control conflicts with fixed_temperature"))
         zL,_,zR,_=f.control_points
