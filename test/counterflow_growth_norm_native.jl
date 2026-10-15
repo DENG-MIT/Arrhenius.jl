@@ -36,6 +36,31 @@ using Test, Arrhenius, NPZ, LinearAlgebra
     @test Arrhenius._timestep_growth(physical!,r,:residual_ratio,1.5,after,before,1e-5,1)==1
 end
 
+
+@testset "growth residual dispatch by counterflow kind" begin
+    gas=CreateSolution(joinpath(@__DIR__,"..","mechanism","h2o2.yaml"))
+    grid=collect(range(0.,.02;length=7))
+    kinds=(
+        CounterflowDiffusionFlame(gas;fuel="H2:1",oxidizer="O2:1",mdot_fuel=.24,mdot_oxidizer=.72,grid),
+        CounterflowPremixedFlame(gas;reactants="H2:2,O2:1,AR:7",mdot_reactants=.12,mdot_products=.06,width=.02,grid),
+        CounterflowTwinPremixedFlame(gas;reactants="H2:2,O2:1,AR:7",mdot=.12,width=.02,grid),
+        ImpingingJet(gas;reactants="H2:2,O2:1,AR:7",mdot=.06,width=.02,grid))
+    expected=(CounterflowDiffusionFlame,Arrhenius.AbstractPremixedCounterflow,
+        CounterflowTwinPremixedFlame,ImpingingJet)
+    for (f,T) in zip(kinds,expected)
+        w=CounterflowWorkspace(f); r=similar(f.state); x=copy(f.state)
+        method=which(Arrhenius._counterflow_growth_residual!,
+            (typeof(r),typeof(f),typeof(x),typeof(w)))
+        @test Base.unwrap_unionall(method.sig).parameters[3] === T
+        if f isa ImpingingJet
+            @test_throws ArgumentError Arrhenius._counterflow_growth_residual!(r,f,x,w)
+            @test_throws ArgumentError solve!(f;time_step_growth_strategy=:residual_ratio)
+        else
+            @test Arrhenius._counterflow_growth_residual!(r,f,x,w) === r
+        end
+    end
+end
+
 @testset "counterflow dt trajectory decisions" begin
     # Cantera's own accepted-step trajectory on the 15 MPa h2o2 diffusion
     # flame under residual-ratio growth: for every step whose attempt

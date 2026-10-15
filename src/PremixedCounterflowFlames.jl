@@ -241,14 +241,14 @@ function counterflow_residual!(residual,f::AbstractPremixedCounterflow,u=f.state
     return residual
 end
 
-# Cantera's premixed counterflow kinds share the diffusion storage layout, and
-# their inlets/flow rows are exactly the reconstructed diffusion rows: an
-# unburnt-products pair are two Inlet1D boundaries, and an impinging jet's wall
-# rows (Surf1D::eval writes T-T_surface; Flow1D right boundary V(jmax)=0,
-# species m_flux(k,jmax-1)+rho_u*Y with rho_u(jmax)=0) coincide with the
-# storage inlet's rows at zero product flux.
+# Opposed-inlet premixed flames share the diffusion boundary rows.
+# ImpingingJet has a Surf1D wall and requires its own reconstruction; reject
+# residual-ratio evaluation rather than silently reusing diffusion inlet rows.
 _counterflow_growth_residual!(r,f::AbstractPremixedCounterflow,x,w;previous=nothing,dt=Inf) =
     _counterflow_growth_residual!(r,f.flow,x,w;previous,dt)
+
+_counterflow_growth_residual!(r,f::ImpingingJet,x,w;previous=nothing,dt=Inf) =
+    throw(ArgumentError("residual-ratio growth is not supported for ImpingingJet until its Surf1D wall residual is reconstructed"))
 
 function _counterflow_growth_residual!(r,f::CounterflowTwinPremixedFlame,x,w;previous=nothing,dt=Inf)
     _counterflow_growth_residual!(r,f.flow,x,w;previous,dt)
@@ -387,6 +387,8 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
     isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 ||
         throw(ArgumentError("finite prune <= min(slope,curve) and positive grid_min required"))
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
+    f isa ImpingingJet && time_step_growth_strategy===:residual_ratio &&
+        throw(ArgumentError("residual-ratio growth is not supported for ImpingingJet until its Surf1D wall residual is reconstructed"))
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     # Cantera counts successful steps toward the steady-retry cadence
