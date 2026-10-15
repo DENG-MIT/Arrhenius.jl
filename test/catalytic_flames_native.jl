@@ -63,6 +63,25 @@ end
         @test d.coverage_rates==[0.]
         @test maximum(abs.(temperature(f).-900.))<1e-6
         @test maximum(abs.(sum(mass_fractions(f);dims=1).-1))<1e-12
+        # solver_stats: per-flame counters of THIS flame's last solve! (Cantera
+        # keeps Sim1D.solver_stats on the instance); the family global mirrors
+        # the accumulated total.
+        cs=Arrhenius.solver_stats(f)
+        @test cs isa CounterflowStats && Arrhenius.solver_stats(f)===cs
+        c1=(cs.newton_calls,cs.newton_iterations,cs.jacobians,cs.time_steps,
+            cs.time_step_failures,cs.steady_failures,cs.regrids,copy(cs.grids))
+        @test c1[1]>0 && c1[2]>0 && c1[3]>0           # the cold reactive solve did real work
+        @test c1[2]>=c1[3]                             # every Jacobian serves a Newton iteration
+        @test !isempty(cs.grids) && last(cs.grids)==length(f.grid)
+        @test COUNTERFLOW_STATS.jacobians>=c1[3]       # global mirrors the family total
+        Arrhenius.solve!(f)                            # a warm resolve ...
+        c2=(cs.newton_calls,cs.newton_iterations,cs.jacobians,cs.time_steps,
+            cs.time_step_failures,cs.steady_failures,cs.regrids,copy(cs.grids))
+        @test c2[3]<c1[3]                              # ... REPLACES the counts (cheaper)
+        Arrhenius.solve!(f)
+        c3=(cs.newton_calls,cs.newton_iterations,cs.jacobians,cs.time_steps,
+            cs.time_step_failures,cs.steady_failures,cs.regrids,copy(cs.grids))
+        @test c3==c2                                   # warm resolves are deterministic
         Arrhenius.set_catalytic_inlet!(f,"H2:.8,AR:4")
         @test !isnothing(f.inlet_start) && !f.converged
     end
