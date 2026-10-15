@@ -937,6 +937,7 @@ function _counterflow_reset!(f,grid)
         oxidizer=mole_fractions(f.gas,f.oxidizer_Y;basis=:mass),
         mdot_fuel=f.fuel_mass_flux,mdot_oxidizer=f.oxidizer_mass_flux,
         T_fuel=f.fuel_temperature,T_oxidizer=f.oxidizer_temperature,P=f.pressure,grid)
+    initialized.cantera_negative_mass_action=f.cantera_negative_mass_action
     f.grid=initialized.grid
     f.state=initialized.state
     f.anchor=1
