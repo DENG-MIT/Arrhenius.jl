@@ -775,7 +775,7 @@ end
 
 function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
-        newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
+        newton_maxiters=0,transient_newton_maxiters=0,
         skip_dependent_transient=true,transient_update! = _counterflow_transient_update!)
     # One entry in both the flame's own stats and the family global.
     owned=_counterflow_stats(f)
@@ -787,7 +787,7 @@ function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INI
     t0=time()
     converged=_counterflow_steady_impl!(f;max_time_steps,timestep,loglevel,
         growth_factor,growth_strategy,step_callback,analytic,newton_maxiters,
-        transient_newton_maxiters,retry_on_successes,skip_dependent_transient,transient_update!)
+        transient_newton_maxiters,skip_dependent_transient,transient_update!)
     for (s,snap) in zip(objs,snaps)
         push!(s.calls,(length(f.grid),timestep[],s.newton_iterations-snap[1],
             s.jacobians-snap[2],s.time_steps-snap[3],s.time_step_failures-snap[4],
@@ -843,7 +843,7 @@ end
 
 function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
-        newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
+        newton_maxiters=0,transient_newton_maxiters=0,
         skip_dependent_transient=true,transient_update! = _counterflow_transient_update!)
     w=CounterflowWorkspace(f)
     cs=_counterflow_stats(f)
@@ -860,7 +860,7 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
     attempts=0
     residual_at!(r,x,previous,dt)=_counterflow_growth_residual!(r,f,x,w;previous,dt)
     failures=0
-    retry_step=0
+    retry_attempt=0
     while accepted_steps<max_time_steps
         attempts+=1
         previous=copy(f.state)
@@ -880,12 +880,11 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
             # Cantera's timeStep(nsteps) is checked after each accepted time step,
             # before another steady Newton solve can start.
             accepted_steps>=max_time_steps && return false
-            if retry_on_successes ? _counterflow_retry_steady(successful_steps) :
-                    attempts%_COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY==0
-                retry=(successful_steps,attempts-retry_step)
+            if _counterflow_retry_steady(successful_steps)
+                retry=(successful_steps,attempts-retry_attempt)
                 push!(cs.steady_retries,retry); push!(COUNTERFLOW_STATS.steady_retries,retry)
-                retry_step=attempts
-                loglevel>0 && println("Counterflow transient ",attempts," dt=",dt)
+                retry_attempt=attempts
+                loglevel>0 && println("Counterflow transient ",successful_steps," dt=",dt)
                 copyto!(checkpoint,f.state)
                 _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters,
                     skip_dependent_transient,transient_update!) && return true

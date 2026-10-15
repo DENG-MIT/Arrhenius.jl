@@ -393,13 +393,9 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
     reset!(_counterflow_stats(f))  # per-flame counters report this solve only
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
-    # Cantera counts successful steps toward the steady-retry cadence
-    # (SteadyStateSystem::timeStep increments n only on success), so every
-    # premixed kind retries on successes. The attempt-counted cadence with a
-    # delayed escalation measurably regressed Shrestha premixed on top of
-    # #36's dependent-row skip (905 Jacobians / 1730 attempts versus 92/90).
-    steady!(flow)=_premixed_counterflow_steady!(flow;max_time_steps,timestep,loglevel,
-        controls...,retry_on_successes=true)
+    # The shared counterflow driver counts only successful time steps toward
+    # Cantera's steady-retry cadence (SteadyStateSystem::timeStep).
+    steady!(flow)=_premixed_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...)
     f.converged=false
     timestep=Ref(Float64(initial_time_step))
     initial_N=length(f.grid)
