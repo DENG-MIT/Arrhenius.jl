@@ -91,8 +91,8 @@ end
     # attempts) at every retry decision, counted since the previous retry of
     # the same transient loop. An attempt-counted wiring instead retries at
     # attempt multiples and records fewer than ten successes whenever
-    # failures intervene (measured 9, 7 and 6 on this solve when the
-    # premixed wiring passes retry_on_successes=false).
+    # failures intervene (measured 9, 7 and 6 on this solve in the prior
+    # attempt-cadence intervention).
     gas=CreateSolution(joinpath(dirname(pathof(Arrhenius)),"..","mechanism","h2o2.yaml"))
     f=Arrhenius.CounterflowPremixedFlame(gas;reactants="H2:1.6,O2:1,AR:7",
         mdot_reactants=.12,mdot_products=.06,T_reactants=373.,P=.05*one_atm,width=.2)
@@ -105,6 +105,8 @@ end
     @test all(first.(retries).==10)
     # failures intervene between retries on this solve (windows wider than
     # their ten accepted steps), so the count above discriminates the two
-    # cadences instead of passing vacuously
+    # cadences instead of passing vacuously. The attempt counter is retained
+    # only for this telemetry.
+    @test Arrhenius.COUNTERFLOW_STATS.time_step_failures>0
     @test any(last.(retries).>10)
 end
