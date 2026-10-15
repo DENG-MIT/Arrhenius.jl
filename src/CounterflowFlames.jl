@@ -339,8 +339,14 @@ mutable struct CounterflowStats
     # Per _counterflow_steady! call: (grid, dt_in, newton_iterations, jacobians,
     # time_steps, time_step_failures, wall_seconds, converged).
     calls::Vector{NTuple{8,Float64}}
+    # (successful_steps, attempts) at each steady-retry decision, counted since
+    # the previous retry of the same transient loop: Cantera retries when
+    # m_steps={10} successes accumulate (SteadyStateSystem::timeStep), so the
+    # successes-cadence wiring records (10, >=10) at every retry.
+    steady_retries::Vector{NTuple{2,Int}}
 end
-CounterflowStats()=CounterflowStats(0,0,0,0,0,0,0,0,0,0,0,Int[],NTuple{8,Float64}[])
+CounterflowStats()=CounterflowStats(0,0,0,0,0,0,0,0,0,0,0,Int[],NTuple{8,Float64}[],
+    NTuple{2,Int}[])
 const COUNTERFLOW_STATS=CounterflowStats()
 function reset!(s::CounterflowStats)
     for name in fieldnames(CounterflowStats)
@@ -813,6 +819,7 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
     successful_steps=0
     residual_at!(r,x,previous,dt)=_counterflow_growth_residual!(r,f,x,w;previous,dt)
     failures=0
+    retry_step=0
     for step in 1:max_time_steps
         COUNTERFLOW_STATS.time_steps+=1
         previous=copy(f.state)
@@ -832,6 +839,9 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
             step>=max_time_steps && return false
             if retry_on_successes ? _counterflow_retry_steady(successful_steps) :
                     step%_COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY==0
+                push!(COUNTERFLOW_STATS.steady_retries,
+                    (successful_steps,step-retry_step))
+                retry_step=step
                 loglevel>0 && println("Counterflow transient ",step," dt=",dt)
                 copyto!(checkpoint,f.state)
                 _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters,
