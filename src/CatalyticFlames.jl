@@ -17,6 +17,10 @@ end
     hasfield(typeof(f),k) ? setfield!(f,k,v) : setproperty!(getfield(f,:flow),k,v)
 Base.propertynames(f::CatalyticImpingingJet,private::Bool=false) =
     (propertynames(f.flow,private)...,fieldnames(typeof(f))...)
+# Catalytic counters are keyed on the underlying mutable flow (the inner
+# CounterflowDiffusionFlame inside the ImpingingJet wrapper), the same object
+# solver_stats reaches by unwrapping AbstractPremixedCounterflow recursively.
+_catalytic_stats(f)=_counterflow_stats(getfield(getfield(f,:flow),:flow))
 
 """
     CatalyticImpingingJet(gas, surface; reactants, mdot, T_inlet=300,
@@ -188,7 +192,12 @@ function _catalytic_newton!(f,w;previous=nothing,dt=Inf,maxiters=50,tolerance=1e
     oldtheta=copy(theta)
     border=zeros(length(u),ns); C=zeros(ns,B); D=zeros(ns,ns)
     gas_weights=ones(size(u)); surface_weights=ones(ns)
+    # Solve counters (Cantera Sim1D.solver_stats semantics), mirrored into the
+    # family global exactly like the gas-phase counterflow path.
+    cs=_catalytic_stats(f)
+    cs.newton_calls+=1; COUNTERFLOW_STATS.newton_calls+=1
     for iteration in 1:maxiters
+        cs.newton_iterations+=1; COUNTERFLOW_STATS.newton_iterations+=1
         counterflow_residual!(r,f,u,w;previous,dt)
         rs .= w.coverage_residual
         residualnorm=max(norm(r,Inf),norm(rs,Inf))
@@ -198,6 +207,7 @@ function _catalytic_newton!(f,w;previous=nothing,dt=Inf,maxiters=50,tolerance=1e
         oldtheta .= theta
         step=try
             J=_counterflow_jacobian!(f,u,w,r;previous,dt)
+            cs.jacobians+=1; COUNTERFLOW_STATS.jacobians+=1
             # Gas Jacobian is banded; surface coverages form a small dense border.
             # Re-evaluate the base state after the colored gas perturbations.
             counterflow_residual!(r,f,u,w;previous,dt)
@@ -290,9 +300,16 @@ end
 
 function _catalytic_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0)
     w=CounterflowWorkspace(f)
+    # One entry in both the flame's own stats and the family global. Unlike
+    # _counterflow_steady!, the catalytic path records no per-attempt calls
+    # tuples (grids entry only); see solver_stats for the documented semantics.
+    cs=_catalytic_stats(f)
+    push!(cs.grids,length(f.grid)); push!(COUNTERFLOW_STATS.grids,length(f.grid))
     _catalytic_newton!(f,w;loglevel) && return true
+    cs.steady_failures+=1; COUNTERFLOW_STATS.steady_failures+=1
     dt=timestep[]
     for step in 1:max_time_steps
+        cs.time_steps+=1; COUNTERFLOW_STATS.time_steps+=1
         previous=(gas=copy(f.state),coverages=copy(f.coverages))
         if _catalytic_newton!(f,w;previous,dt,maxiters=30)
             dt=min(dt*1.5,.1); timestep[]=dt
@@ -302,6 +319,7 @@ function _catalytic_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0)
             end
         else
             f.state .= previous.gas; f.coverages .= previous.coverages
+            cs.time_step_failures+=1; COUNTERFLOW_STATS.time_step_failures+=1
             dt*=.25; timestep[]=dt
             dt>1e-14 || return false
         end
@@ -316,6 +334,7 @@ function solve!(f::CatalyticImpingingJet;refine_grid=true,ratio=10.,slope=.8,cur
     isfinite(ratio)&&ratio>1 && 0<slope<=1 && 0<curve<=1 &&
         isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 &&
         isfinite(initial_time_step)&&initial_time_step>0 || throw(ArgumentError("invalid catalytic solver controls"))
+    reset!(_catalytic_stats(f))  # per-flame counters report this solve only
     f.converged=false; timestep=Ref(Float64(initial_time_step))
     f.transport_model==:mixture_averaged && !f.soret_enabled && f.flux_gradient_basis==:mole ||
         throw(ArgumentError("catalytic jet currently requires mixture-averaged mole-gradient transport without Soret"))
@@ -340,6 +359,7 @@ function solve!(f::CatalyticImpingingJet;refine_grid=true,ratio=10.,slope=.8,cur
             f.converged=true
             return f
         end
+        _catalytic_stats(f).regrids+=1; COUNTERFLOW_STATS.regrids+=1
     end
     error("catalytic refinement did not finish")
 end

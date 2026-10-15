@@ -36,6 +36,102 @@ using Test, Arrhenius, NPZ, LinearAlgebra
     @test Arrhenius._timestep_growth(physical!,r,:residual_ratio,1.5,after,before,1e-5,1)==1
 end
 
+
+@testset "growth residual dispatch by counterflow kind" begin
+    gas=CreateSolution(joinpath(@__DIR__,"..","mechanism","h2o2.yaml"))
+    grid=collect(range(0.,.02;length=7))
+    kinds=(
+        CounterflowDiffusionFlame(gas;fuel="H2:1",oxidizer="O2:1",mdot_fuel=.24,mdot_oxidizer=.72,grid),
+        CounterflowPremixedFlame(gas;reactants="H2:2,O2:1,AR:7",mdot_reactants=.12,mdot_products=.06,width=.02,grid),
+        CounterflowTwinPremixedFlame(gas;reactants="H2:2,O2:1,AR:7",mdot=.12,width=.02,grid),
+        ImpingingJet(gas;reactants="H2:2,O2:1,AR:7",mdot=.06,width=.02,grid))
+    expected=(CounterflowDiffusionFlame,Arrhenius.AbstractPremixedCounterflow,
+        CounterflowTwinPremixedFlame,ImpingingJet)
+    for (f,T) in zip(kinds,expected)
+        w=CounterflowWorkspace(f); r=similar(f.state); x=copy(f.state)
+        method=which(Arrhenius._counterflow_growth_residual!,
+            (typeof(r),typeof(f),typeof(x),typeof(w)))
+        @test Base.unwrap_unionall(method.sig).parameters[3] === T
+        if f isa CounterflowDiffusionFlame
+            @test Arrhenius._counterflow_growth_residual!(r,f,x,w) === r
+            @test Arrhenius._check_timestep_controls(1.5,:residual_ratio,0,:auto) === nothing
+        else
+            f isa ImpingingJet && @test_throws ArgumentError Arrhenius._counterflow_growth_residual!(r,f,x,w)
+            err=try
+                solve!(f;time_step_growth_strategy=:residual_ratio)
+                nothing
+            catch e
+                e
+            end
+            @test err isa ArgumentError
+            @test occursin(string(nameof(typeof(f))),sprint(showerror,err))
+        end
+    end
+end
+
+@testset "counterflow dt trajectory decisions" begin
+    # Cantera's own accepted-step trajectory on the 15 MPa h2o2 diffusion
+    # flame under residual-ratio growth: for every step whose attempt
+    # evaluated no Jacobian, the native growth function evaluated on
+    # Cantera's recorded before/after states and attempt size must return
+    # the factor Cantera applied (Cantera gates growth on the Jacobian
+    # evaluation count, so gated steps keep dt unchanged by construction).
+    ref=npzread(joinpath(@__DIR__,"data","cantera_counterflow_dt_trajectory.npz"))
+    gas=CreateSolution(joinpath(@__DIR__,"..","mechanism","h2o2.yaml"))
+    f=CounterflowDiffusionFlame(gas;fuel="H2:1",oxidizer="O2:1",
+        T_fuel=800.,T_oxidizer=711.,P=ref["pressure"][1],
+        mdot_fuel=ref["mdot_fuel"][1],mdot_oxidizer=ref["mdot_oxidizer"][1],grid=ref["grid"])
+    n=gas.n_species
+    function native_state(values)
+        T=values[1,:]; Y=values[2:n+1,:]
+        rho=f.pressure ./ (Arrhenius.R .* T .* vec(sum(Y./gas.MW;dims=1)))
+        u=copy(values)
+        u[1,:]./=1000
+        u[end-2,:]./=Arrhenius._counterflow_Vscale
+        u[end-1,:]./=Arrhenius._counterflow_Lscale
+        u[end,:].*=rho
+        return u
+    end
+    values=ref["values"]; attempt_dt=ref["attempt_dt"]
+    factor=ref["factor"]; jac_evals=ref["jac_evals"]
+    w=CounterflowWorkspace(f); r=similar(f.state)
+    physical!(r,x,p,dt)=Arrhenius._counterflow_growth_residual!(r,f,x,w;previous=p,dt)
+    # The generator reconstructs every accepted attempt size at full
+    # precision, cross-checked against Cantera's printed sizes (4 significant
+    # digits) with zero mismatches at fixture generation. A fixture that had
+    # fallen back to the printed sizes would carry print rounding into every
+    # applied factor; assert that invariant here instead of loosening the
+    # gate for it.
+    @test ref["reconstruction_ok"][1]
+    # Fixed tolerances justified by measured reconstruction error, not chosen
+    # from the fixture: with full-precision sizes the worst deviation of the
+    # reconstructed growth factor from Cantera's applied factor over all
+    # non-gated steps is 1.2e-7 relative (transport-property rounding at the
+    # trajectory's ~3970 K states), so 1e-6 bounds it with an 8x margin. The
+    # first attempt size is the sole print-seeded quantity (its full-precision
+    # value is unknowable from the log), bounded by 5e-4 relative rounding of
+    # the 4-significant-digit print, so its factor gets 2e-3.
+    step_rtol(k)=k==1 ? 2e-3 : 1e-6
+    grown=gated=flat=0
+    for k in eachindex(attempt_dt)
+        g=Arrhenius._timestep_growth(physical!,r,:residual_ratio,1.5,
+            native_state(values[k,:,:]),native_state(values[k+1,:,:]),attempt_dt[k],0)
+        if jac_evals[k]>0
+            gated+=1
+            @test factor[k]≈1 atol=1e-9
+            @test g>=1.0
+        elseif factor[k]>1+1e-6
+            grown+=1
+            @test g≈factor[k] rtol=step_rtol(k)
+        else
+            flat+=1
+            @test g≈factor[k] rtol=step_rtol(k)
+        end
+    end
+    # the trajectory must exercise grown, gated and flat decisions alike
+    @test grown>50 && gated>50 && flat>50
+end
+
 @testset "counterflow transient Jacobian algebraic mask" begin
     gas=CreateSolution(joinpath(@__DIR__,"..","mechanism","h2o2.yaml"))
     f=CounterflowDiffusionFlame(gas;fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",
@@ -84,14 +180,24 @@ function Arrhenius._counterflow_newton!(f::CounterflowBudgetFixture,w;previous=n
     f.state[1,1]+=1
     return true
 end
-@testset "counterflow accepted-step budget and steady cadence" begin
-    for (budget,steadies) in ((10,1),(21,3))
+@testset "counterflow time-step budget and steady cadence" begin
+    # The transient budget caps attempts (the first two fail in this oracle),
+    # and an accepted final attempt returns before any further steady retry:
+    # Cantera throws on the accepted step exhausting the budget before it can
+    # start another steady Newton solve (SteadyStateSystem.cpp:314-319).
+    # Steady retries use the Cantera cadence: every ten successful steps.
+    for (budget,steadies,accepted) in ((10,1,8),(21,2,19))
         f=CounterflowBudgetFixture([0.],zeros(1,1),0,0)
-        dts=Float64[]; count0=Arrhenius.COUNTERFLOW_STATS.time_steps
+        dts=Float64[]
+        steps0=Arrhenius.COUNTERFLOW_STATS.time_steps
+        failures0=Arrhenius.COUNTERFLOW_STATS.time_step_failures
         @test !Arrhenius._counterflow_steady_impl!(f;max_time_steps=budget,step_callback=dt->push!(dts,dt))
-        @test length(dts)==budget
-        @test Arrhenius.COUNTERFLOW_STATS.time_steps-count0==budget
-        @test f.transient_calls==budget+2
+        @test length(dts)==accepted
+        @test Arrhenius.COUNTERFLOW_STATS.time_steps-steps0==accepted
+        @test Arrhenius.COUNTERFLOW_STATS.time_step_failures-failures0==budget-accepted
+        @test Arrhenius.COUNTERFLOW_STATS.time_steps-steps0 +
+            Arrhenius.COUNTERFLOW_STATS.time_step_failures-failures0 == budget
+        @test f.transient_calls==budget
         @test f.steady_calls==steadies
     end
 end
