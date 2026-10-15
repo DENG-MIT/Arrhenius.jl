@@ -342,24 +342,31 @@ _flame_clipped(w) = w isa FlameWorkspace && w.clip_species[]
 @inline _flame_node_species(w,y) = _flame_clipped(w) ? max(y,0.0) : y
 @inline _flame_node_weight(w,y) = _flame_clipped(w) ? _flame_species_weight(y) : 1.0
 
+# Keep density evaluation in one place: residuals, public flame density and
+# refinement interpolation must use the same equation of state and species
+# treatment for a given state.
+@inline function _flame_density(f,T,Y;clip_species=false)
+    sumY,inverseMW=0.0,0.0
+    @inbounds for k in eachindex(f.gas.MW)
+        y=clip_species ? max(Y[k],0.0) : Y[k]
+        sumY+=y
+        inverseMW+=y/f.gas.MW[k]
+    end
+    return (density=f.pressure*(sumY/inverseMW)/(R*T),inverse_mw=inverseMW)
+end
+
 function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid),freeze_source=false,
         viscosity=nothing)
     gas, n, N = f.gas, f.gas.n_species, length(f.grid)
     conservative = _conservative_flame(f)
     @inbounds for j in nodes
         T = 1000*u[1,j]
-        sumY = 0.0
-        inverseMW = 0.0
         # Node thermochemistry uses signed mass fractions, as Cantera's flow
         # residual does; only transport inputs at faces are clipped below.
         clip = w.clip_species[]
-        for k in 1:n
-            y = clip ? max(u[k+1,j],0.0) : u[k+1,j]
-            sumY += y
-            inverseMW += y/gas.MW[k]
-        end
-        meanMW = sumY/inverseMW
-        w.rho[j] = f.pressure*meanMW/(R*T)
+        density_state=_flame_density(f,T,@view(u[2:n+1,j]);clip_species=clip)
+        w.rho[j]=density_state.density
+        inverseMW=density_state.inverse_mw
         pRT = f.pressure/(R*T)
         for k in 1:n
             w.X[k,j] = (clip ? max(u[k+1,j],0.0) : u[k+1,j])/gas.MW[k]/inverseMW
@@ -1308,6 +1315,11 @@ function _refine_flame!(f; ratio=3.,slope=.06,curve=.12,prune=0.,max_points=1000
     added = count(j->insert[j] && keep[j] != -1,1:N-1)
     added+removed == 0 && return false
     N-removed+added <= max_points || error("flame refinement exceeds max_points=$max_points")
+    # Only free/burner states store mdot in the last row. Ionized and
+    # counterflow states use different last-row components and keep direct
+    # component interpolation here.
+    planar_mdot_state = f isa Union{FreeFlame,BurnerFlame}
+    axial_velocity = planar_mdot_state ? velocity(f) : nothing
     newz = Float64[]
     columns = Vector{Float64}[]
     anchor_z = z[f.anchor]
@@ -1316,7 +1328,16 @@ function _refine_flame!(f; ratio=3.,slope=.06,curve=.12,prune=0.,max_points=1000
         push!(newz,z[j]); push!(columns,u[:,j])
         if j < N && insert[j]
             push!(newz,(z[j]+z[j+1])/2)
-            push!(columns,(u[:,j]+u[:,j+1])/2)
+            midpoint=(u[:,j]+u[:,j+1])/2
+            # Sim1D::refine interpolates the physical velocity component U.
+            # The native state stores mdot=rho*u, so rebuild it from the
+            # interpolated T/Y and midpoint velocity after averaging.
+            if planar_mdot_state
+                rho=_flame_density(f,1000*midpoint[1],
+                    @view(midpoint[2:f.gas.n_species+1])).density
+                midpoint[end]=rho*(axial_velocity[j]+axial_velocity[j+1])/2
+            end
+            push!(columns,midpoint)
         end
     end
     f.grid = newz
@@ -1324,7 +1345,6 @@ function _refine_flame!(f; ratio=3.,slope=.06,curve=.12,prune=0.,max_points=1000
     f.anchor = findfirst(==(anchor_z),newz)
     if f isa BurnerFlame && !isempty(f.imposed_temperature)
         f.imposed_temperature = [_interpolate_profile(f.profile_positions,f.profile_temperatures,x) for x in newz]
-        f.state[1,:] .= f.imposed_temperature ./ 1000
     end
     f isa AbstractPremixedFlame && (_premixed_stats(f).regrids+=1; PREMIXED_STATS.regrids+=1)
     return true

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Compare native vs Cantera counterflow residuals (lockstep layer 1).
 
-Usage: compare_cf.py DIR [ct_state|ct_solved]
+Usage: compare_cf.py DIR [ct_state|ct_solved] [--summary]
 
 DIR must hold the ct dump (ct_state.npz or ct_solved.npz + *_meta.json from
 ct_dump.py) and native_cf.npz + native_cf_meta.json from native_dump_cf.jl,
@@ -28,7 +28,8 @@ import sys
 import numpy as np
 
 d = sys.argv[1]
-tag = sys.argv[2] if len(sys.argv) > 2 else "ct_state"
+summary_mode = "--summary" in sys.argv
+tag = next((arg for arg in sys.argv[2:] if arg != "--summary"), "ct_state")
 ct = np.load(os.path.join(d, f"{tag}.npz"))
 meta = json.load(open(os.path.join(d, f"{tag}_meta.json")))
 nt = np.load(os.path.join(d, f"native_cf_{tag}.npz"))
@@ -48,7 +49,36 @@ row_of = {"T": 0, "velocity": n + 3, "spreadRate": n + 1, "Lambda": n + 2}
 for k, s in enumerate(names):
     row_of[s] = k + 1
 
-print(f"kind={kind} N={N} species={n} native dependent = {names[dep]} "
+# Compact physical-unit audit. The raw continuity scaling is -dz at each
+# interval, so a single regional median cannot certify a nonuniform grid.
+if summary_mode:
+    errors = {}
+    components = [("velocity", n+3), ("spreadRate", n+1), ("T", 0), ("Lambda", n+2)]
+    components += [(name, k+1) for k, name in enumerate(names) if k != dep-1]
+    for component, row in components:
+        scale = np.ones(N)
+        if component == "velocity":
+            scale[:-1] = -np.diff(grid)
+        elif component == "spreadRate":
+            scale[:] = 1/100
+            scale[1:-1] = 1e-4/100
+        elif component == "T":
+            scale[:] = 1/1000
+            scale[1:-1] = 1e-4/1000
+        elif component == "Lambda":
+            scale[:] = 1/10000
+            scale[0] = -1
+        else:
+            scale[1:-1] = 1e-4
+        reference = r_ct[component]
+        errors[component] = float(np.max(np.abs(r_native[row]/scale-reference)) /
+                                  max(1., np.max(np.abs(reference))))
+    print(json.dumps({"dependent_species": names[dep-1],
+                      "max_normalized_difference": max(errors.values()),
+                      "components": errors}, indent=2))
+    raise SystemExit(0)
+
+print(f"kind={kind} N={N} species={n} native dependent = {names[dep-1]} "
       f"(native row {dep + 1})")
 print(f"mirror_error = {nt['mirror_error'][0]:.3g}")
 bd = {k[9:]: v for k, v in ct.items()
