@@ -289,17 +289,28 @@ _KineticsTemperatureCache(reaction::Reaction) = _KineticsTemperatureCache(NaN,
     return value > 0 ? value^order : zero(value)
 end
 
-function _mass_action!(workspace, reaction::Reaction, C)
+function _mass_action!(workspace, reaction::Reaction, C; cantera_negative=false)
     reactants = reaction.reactant_orders
     products = reaction.product_stoich_coeffs
     ri, rv = rowvals(reactants), nonzeros(reactants)
     pi, pv = rowvals(products), nonzeros(products)
     @inbounds for i in 1:reaction.n_reactions
         forward,reverse = workspace.kf[i],workspace.kr[i]
-        forward *= _mass_action_product(C, ri, rv, reaction.reactant_stoich_coeffs, i,
-            nzrange(reactants, i))
-        if reaction.is_reversible[i]
-            reverse *= _mass_action_product(C, pi, pv, products, i, nzrange(products, i))
+        if cantera_negative
+            forward *= _mass_action_product(C, ri, rv, reaction.reactant_stoich_coeffs, i,
+                nzrange(reactants, i))
+            if reaction.is_reversible[i]
+                reverse *= _mass_action_product(C, pi, pv, products, i, nzrange(products, i))
+            end
+        else
+            for j in nzrange(reactants,i)
+                forward *= _concentration_power(C[ri[j]],rv[j])
+            end
+            if reaction.is_reversible[i]
+                for j in nzrange(products,i)
+                    reverse *= _concentration_power(C[pi[j]],pv[j])
+                end
+            end
         end
         workspace.kf[i],workspace.kr[i] = forward,reverse
         workspace.rates_of_progress[i] = forward-reverse
@@ -673,12 +684,14 @@ function wdot!(
     pressure=nothing,
     activity_concentrations=nothing,
     get_rate_constants=false,
+    cantera_negative=false,
 )
     _rate_factors!(reaction,T,C,S0,h_mole,workspace;
         rate_multipliers,log_rate_data,temperature_cache,pressure)
     kf,kr=workspace.kf,workspace.kr
     get_rate_constants && return (;forward=kf,reverse=kr,equilibrium=workspace.equilibrium_constants)
-    _mass_action!(workspace,reaction,isnothing(activity_concentrations) ? C : activity_concentrations)
+    _mass_action!(workspace,reaction,isnothing(activity_concentrations) ? C : activity_concentrations;
+        cantera_negative)
 
     if get_qdot
         return workspace.rates_of_progress

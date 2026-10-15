@@ -47,7 +47,21 @@ using Arrhenius, LinearAlgebra, SparseArrays, Test
     # conversion, with all absent species zero.
     gas = CreateSolution(joinpath(@__DIR__, "data", "nakamura_2017.yaml"))
     nh = findfirst(==("NH"), gas.species_names)
+    n2h2 = findfirst(==("N2H2"), gas.species_names)
     n2 = findfirst(==("N2"), gas.species_names)
+    reaction = gas.reaction
+    reaction115 = findfirst(i -> reaction.reactant_stoich_coeffs[n2h2,i] == 1 &&
+        reaction.product_stoich_coeffs[nh,i] == 2, 1:reaction.n_reactions)
+    @test reaction115 !== nothing
+    Cprobe = zeros(gas.n_species); Cprobe[nh] = -1.0
+    legacy = KineticsWorkspace(reaction); fill!(legacy.kf,0); fill!(legacy.kr,0)
+    legacy.kr[reaction115] = 1
+    Arrhenius._mass_action!(legacy,reaction,Cprobe)
+    @test legacy.rates_of_progress[reaction115] == -1.0
+    cantera = KineticsWorkspace(reaction); fill!(cantera.kf,0); fill!(cantera.kr,0)
+    cantera.kr[reaction115] = 1
+    Arrhenius._mass_action!(cantera,reaction,Cprobe;cantera_negative=true)
+    @test cantera.rates_of_progress[reaction115] == 0.0
     P, T = 101325.0, 300.0
     for y in (0.0, 1e-25, -1e-25, -1e-14, -1e-7)
         Y = zeros(gas.n_species)
@@ -64,7 +78,7 @@ using Arrhenius, LinearAlgebra, SparseArrays, Test
     MW = [gas.MW[nh], gas.MW[n2]]
     probe = (gas=(MW=MW,), pressure=P)
     Yraw = [0.7, -0.1]
-    density = Arrhenius._flame_density(probe, T, Yraw).density
+    density = Arrhenius._flame_density(probe, T, Yraw; cantera_no_norm=true).density
     @test density ≈ P / (dot(Yraw, 1 ./ MW) * Arrhenius.R*T) rtol=2e-15
     density_clipped = Arrhenius._flame_density(probe, T, Yraw; clip_species=true).density
     Yclipped = max.(Yraw, 0.0)

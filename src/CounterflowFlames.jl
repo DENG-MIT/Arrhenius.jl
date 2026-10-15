@@ -26,7 +26,10 @@ mutable struct CounterflowDiffusionFlame{G<:Solution}
     boundary_emissivities::Tuple{Float64,Float64}
     # (left_z, left_T, right_z, right_T) when two-point control is enabled.
     control_points::Union{Nothing,NTuple{4,Float64}}
+    # Cantera-identical signed mass-action branch is enabled for diffusion flames.
+    cantera_negative_mass_action::Bool
 end
+_flame_cantera_kinetics(f::CounterflowDiffusionFlame)=f.cantera_negative_mass_action
 
 # Scales only condition the algebraic system; physical values are returned below.
 const _counterflow_Vscale = 100.0
@@ -127,7 +130,7 @@ function CounterflowDiffusionFlame(gas::Solution; fuel,oxidizer,mdot_fuel,mdot_o
     state[end,end]=-uo*P/(R*T_oxidizer*sum(state[2:n+1,end]./gas.MW))
     flame=CounterflowDiffusionFlame(gas,z,Float64(P),Float64(T_fuel),Float64(T_oxidizer),
         yf,yo,Float64(mdot_fuel),Float64(mdot_oxidizer),state,1,argmax(yst),false,
-        :mixture_averaged,false,nothing,:mole,Float64[],false,(0.,0.),nothing)
+        :mixture_averaged,false,nothing,:mole,Float64[],false,(0.,0.),nothing,true)
     return set_radiation!(flame,radiation;boundary_emissivities)
 end
 
@@ -535,13 +538,15 @@ function _counterflow_chemistry_jacobian!(f,u,w)
     p=w.properties;n=f.gas.n_species;B,N=size(u);G=w.source_gradient;MW=f.gas.MW
     @inbounds for j in 2:N-1
         if !_flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
-                @view(u[2:n+1,j]),@view(p.X[:,j]),@view(p.h[:,j]),p.rate_caches[j])
+                @view(u[2:n+1,j]),@view(p.X[:,j]),@view(p.h[:,j]),p.rate_caches[j];
+                cantera_negative=f.cantera_negative_mass_action)
             # Signed trace species make fractional-order rate derivatives
             # non-finite; differentiate this node at a positive floor instead
             # of falling back to a finite-difference Jacobian for every node.
             _flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
                 max.(@view(u[2:n+1,j]),1e-30),max.(@view(p.X[:,j]),1e-30),
-                @view(p.h[:,j]),p.rate_caches[j]) || (_counterflow_stats(f).chem_jac_failures+=1;
+                @view(p.h[:,j]),p.rate_caches[j];cantera_negative=f.cantera_negative_mass_action) ||
+                (_counterflow_stats(f).chem_jac_failures+=1;
                 COUNTERFLOW_STATS.chem_jac_failures+=1; return false)
         end
         species=_flame_timescale/p.rho[j]
