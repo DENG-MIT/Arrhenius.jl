@@ -1,13 +1,5 @@
 using Test, Arrhenius
 
-struct _Fix39NonIdealThermo <: Arrhenius.Thermo end
-struct _Fix39NonIdealFlow
-    gas::Any
-end
-struct _Fix39NonIdealCounterflow <: Arrhenius.AbstractPremixedCounterflow
-    flow::_Fix39NonIdealFlow
-end
-
 function _fix39_assert_refined_mass_flux(f,old_grid,old_state,old_velocity)
     B=size(old_state,1)
     for i in eachindex(f.grid)
@@ -37,16 +29,6 @@ end
         "stagnation"=>ImpingingJet(gas;reactants=composition,mdot=.06,
             T_inlet=373.,T_surface=500.,P=.05*one_atm,width=.2))
     flows=make_flows()
-    nonideal=Arrhenius.Solution(gas.n_species,gas.n_reactions,gas.MW,gas.species_names,
-        gas.elements,gas.ele_matrix,_Fix39NonIdealThermo(),gas.trans,gas.reaction)
-    err=try
-        solve!(_Fix39NonIdealCounterflow(_Fix39NonIdealFlow(nonideal)))
-        nothing
-    catch e
-        e
-    end
-    @test err isa ArgumentError
-    @test occursin("ideal-gas thermodynamics",sprint(showerror,err))
     @test_throws ArgumentError solve!(flows[2].second;refinement_interpolation=:invalid)
     for (kind,f) in flows
         # Same starting state as the Cantera fixture (recorded before Sim1D.refine).

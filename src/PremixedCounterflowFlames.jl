@@ -384,7 +384,7 @@ end
 
 """
 Solve the axisymmetric flow with native equilibrium initialization and adaptive refinement.
-Time-step controls are as for premixed flames. The gas must use ideal-gas thermodynamics.
+Time-step controls are as for premixed flames.
 The default `refinement_interpolation=:velocity` interpolates axial velocity and
 reconstructs mass flux with the residual density function; `:mass_flux` retains
 linear interpolation of the stored mass-flux component.
@@ -395,8 +395,6 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto,
         refinement_interpolation=:velocity)
-    f.gas.thermo isa IdealGasThermo ||
-        throw(ArgumentError("premixed counterflow solve requires ideal-gas thermodynamics"))
     isfinite(ratio)&&ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step)&&initial_time_step>0 || throw(ArgumentError("positive initial time step required"))
     isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 ||
