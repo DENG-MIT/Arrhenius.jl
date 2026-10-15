@@ -572,6 +572,9 @@ end
 function flame_residual!(residual, f::AbstractPremixedFlame, u=f.state, w=FlameWorkspace(f);
         previous=nothing, dt=Inf, update_transport=true,nodes=eachindex(f.grid),
         previous_enthalpy=nothing)
+    # Counted at entry, before any work: every call to the public residual
+    # evaluator increments residual_evals, mirroring counterflow_residual!.
+    _premixed_stats(f).residual_evals+=1; PREMIXED_STATS.residual_evals+=1
     n,N = f.gas.n_species,length(f.grid)
     _flame_properties!(w,f,u; update_transport,nodes)
     if _conservative_flame(f)
@@ -748,6 +751,7 @@ _flame_correction_enabled(f) = _conservative_flame(f) &&
 
 function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         require_positive=false,minimum_iterations=0,loglevel=0,analytic=true,iterations=Ref(0))
+    _premixed_stats(f).newton_calls+=1; PREMIXED_STATS.newton_calls+=1
     u = f.state
     r,trial,rt = similar(u),similar(u),similar(u)
     bandwidth = 2*size(u,1)-1
@@ -772,6 +776,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     region_valid = false
     for iteration in 1:maxiters
         iterations[] = iteration
+        _premixed_stats(f).newton_iterations+=1; PREMIXED_STATS.newton_iterations+=1
         if !residual_valid
             flame_residual!(r,f,u,w; previous,dt,previous_enthalpy)
         end
@@ -792,6 +797,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         step = try
             if refresh
                 J = _flame_jacobian(f,u,w,r; previous,dt,previous_enthalpy,analytic)
+                _premixed_stats(f).jacobians+=1; PREMIXED_STATS.jacobians+=1
                 _,pivots = LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
                 if region_enabled
                     copyto!(factored_region,current_region)
@@ -913,6 +919,7 @@ end
 function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
         clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
     w = FlameWorkspace(f)
+    push!(_premixed_stats(f).grids,length(f.grid)); push!(PREMIXED_STATS.grids,length(f.grid))
     # Species reset and clipping apply to neutral premixed flames only; ionized
     # flames keep signed charged species.
     neutral = w isa FlameWorkspace
@@ -920,6 +927,7 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
     neutral && (w.clip_species[] = clip_species)
     steady_state = _flame_checkpoint_steady(f) ? copy(f.state) : nothing
     _flame_newton!(f,w; loglevel,tolerance,analytic) && return true
+    _premixed_stats(f).steady_failures+=1; PREMIXED_STATS.steady_failures+=1
     # A failed steady trial must not replace the accepted pseudo-time state.
     steady_state === nothing || copyto!(f.state,steady_state)
     dt = timestep[]
@@ -930,6 +938,7 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
     residual_at!(r,x,previous,dt) = flame_residual!(r,f,x,w; previous,dt)
     for step in 1:max_time_steps
         copyto!(previous,f.state)
+        _premixed_stats(f).time_steps+=1; PREMIXED_STATS.time_steps+=1
         if _flame_newton!(f,w; previous,dt,maxiters=20,loglevel=0,analytic,iterations)
             failures = 0
             dt = min(dt*_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
@@ -945,6 +954,7 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
         else
             copyto!(f.state,previous)
             failures += 1
+            _premixed_stats(f).time_step_failures+=1; PREMIXED_STATS.time_step_failures+=1
             if neutral && failures > 2 && _flame_reset_species!(f.state)
                 # As Cantera's resetBadValues: signed species pinned at their
                 # lower bound stall every step; clip and renormalize instead.
@@ -1098,6 +1108,7 @@ function _refine_flame!(f; ratio=3.,slope=.06,curve=.12,prune=0.,max_points=1000
         f.imposed_temperature = [_interpolate_profile(f.profile_positions,f.profile_temperatures,x) for x in newz]
         f.state[1,:] .= f.imposed_temperature ./ 1000
     end
+    f isa AbstractPremixedFlame && (_premixed_stats(f).regrids+=1; PREMIXED_STATS.regrids+=1)
     return true
 end
 
@@ -1288,6 +1299,84 @@ function _solve_auto!(f; refine_grid,ratio,slope,curve,prune,max_points,
     error("auto solve did not converge after 12 domain expansions")
 end
 
+# Cantera's Sim1D solve stats (jacobian/iteration/time-step counts), the
+# premixed counterpart of COUNTERFLOW_STATS. Stats live per flame object
+# (Cantera keeps solver_stats on the instance); the exported PREMIXED_STATS
+# mirrors the accumulated family total for whole-run consumers.
+mutable struct PremixedStats
+    newton_calls::Int
+    newton_iterations::Int
+    jacobians::Int
+    residual_evals::Int
+    time_steps::Int
+    time_step_failures::Int
+    steady_failures::Int
+    regrids::Int
+    grids::Vector{Int}
+end
+PremixedStats()=PremixedStats(0,0,0,0,0,0,0,0,Int[])
+const PREMIXED_STATS=PremixedStats()
+# Per-flame stats storage; entries die with their flame (weak keys).
+const FLAME_STATS=WeakKeyDict{Any,Any}()
+function reset!(s::PremixedStats)
+    for name in fieldnames(PremixedStats)
+        v=getfield(s,name)
+        v isa Vector ? empty!(v) : setfield!(s,name,0)
+    end
+    return s
+end
+
+"""
+    solver_stats(flame) -> stats
+
+Return the mutable solve-counter object owned by `flame`, mirroring Cantera's
+per-instance `Sim1D.solver_stats`: a `PremixedStats` for `FreeFlame`/
+`BurnerFlame` (and ionized premixed flames), a `CounterflowStats` for the
+counterflow and impinging-jet kinds. These counters are a diagnostic only;
+they never influence solver decisions.
+
+Counted fields per kind (a field a kind never increments stays zero):
+- premixed kinds (`FreeFlame`, `BurnerFlame`, `IonizedFlame`): `newton_calls`,
+  `newton_iterations`, `jacobians`, `residual_evals`, `time_steps`,
+  `time_step_failures`, `steady_failures`, `regrids`, `grids`;
+- counterflow kinds (`CounterflowDiffusionFlame`, the premixed-counterflow
+  wrappers, impinging and catalytic jets): all of the above plus
+  `fd_jacobians`, `chem_jac_failures`, `recoveries` and per-attempt `calls`
+  tuples — except catalytic jets, which record `grids` but never `calls`.
+`residual_evals` counts every call to the public residual evaluator
+(`flame_residual!`/`counterflow_residual!`) at its entry, before argument
+validation: damped-step trials, time-step-growth probes and finite-difference
+Jacobian columns are all included. Cantera's counterpart excludes the
+finite-difference Jacobian evaluations (`OneDim::eval` counts only `count!=0`
+calls, and `evalJacobian` passes 0), so native `residual_evals` runs higher
+than Cantera's on finite-difference solves.
+
+Exact semantics:
+- `solve!` resets the flame's counters at entry and they then report that
+  `solve!` only. The reset happens after the keyword-argument validation, so
+  an invalid `ratio`/`slope`/`prune`/... argument throws with the previous
+  counts intact. Checks that run after the reset point throw with the counters
+  already zeroed (counterflow two-point-control validation, catalytic
+  transport requirements) or partially counted (runtime `error`s such as a
+  `max_points` overrun or `auto` non-convergence).
+- Direct calls to the internal helpers (`_flame_newton!`, `_flame_steady!`,
+  `_refine_flame!`, `_counterflow_newton!`, `_counterflow_steady!`) accumulate
+  on top of the current counters without resetting them.
+- A steady attempt that throws is not rolled back: the scalar counters it
+  already incremented stay, and its `grids` entry (pushed at attempt entry)
+  stays, but counterflow `calls` summaries are appended only when the attempt
+  returns, so a thrown attempt gets none.
+- Immutable objects driven through the helpers (property adapters, test
+  fixtures) count into the family global instead of a per-flame entry.
+- The exported `PREMIXED_STATS`/`COUNTERFLOW_STATS` globals mirror the
+  accumulated family totals across all flames and are never reset by `solve!`;
+  call `Arrhenius.reset!` on them manually for per-run attribution.
+"""
+solver_stats(f::AbstractPremixedFlame)=_premixed_stats(f)
+# WeakKeyDict keys must be mutable; immutable shim objects (property adapters,
+# test fixtures driving the helpers directly) share the family global.
+_premixed_stats(f)=Base.ismutable(f) ? get!(() -> PremixedStats(), FLAME_STATS, f) : PREMIXED_STATS
+
 """
     solve!(flame; refine_grid=true, ratio=3, slope=0.06, curve=0.12, prune=0,
            max_points=1000, max_time_steps=500, loglevel=0, auto=false)
@@ -1315,6 +1404,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     isfinite(prune) && prune <= min(slope,curve) || throw(ArgumentError("prune must be finite and no greater than slope or curve"))
     isfinite(initial_time_step) && initial_time_step > 0 || throw(ArgumentError("initial time step must be finite and positive"))
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
+    reset!(_premixed_stats(f))  # per-flame counters report this solve only
     analytic = jacobian_mode === :auto
     controls = (;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic)
@@ -1390,4 +1480,4 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     end
     error("flame refinement did not converge after 40 passes")
 end
-export FreeFlame, BurnerFlame, set_transport!, set_temperature_profile!, solve!, temperature, mass_fractions, velocity, flame_speed, flame_residual!
+export FreeFlame, BurnerFlame, set_transport!, set_temperature_profile!, solve!, temperature, mass_fractions, velocity, flame_speed, flame_residual!, solver_stats, PremixedStats, PREMIXED_STATS
