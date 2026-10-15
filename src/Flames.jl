@@ -332,14 +332,14 @@ _flame_cantera_kinetics(f) = false
 # Keep density evaluation in one place: residuals, public flame density and
 # refinement interpolation must use the same equation of state and species
 # treatment for a given state.
-@inline function _flame_density(f,T,Y;clip_species=false)
+@inline function _flame_density(f,T,Y;clip_species=false,cantera_no_norm=false)
     sumY,inverseMW=0.0,0.0
     @inbounds for k in eachindex(f.gas.MW)
         y=clip_species ? max(Y[k],0.0) : Y[k]
         sumY+=y
         inverseMW+=y/f.gas.MW[k]
     end
-    mass_scale=clip_species ? sumY : 1.0
+    mass_scale=cantera_no_norm && !clip_species ? 1.0 : sumY
     return (density=f.pressure*mass_scale/(inverseMW*R*T),inverse_mw=inverseMW)
 end
 
@@ -374,7 +374,8 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
         # Node thermochemistry uses signed mass fractions, as Cantera's flow
         # residual does; only transport inputs at faces are clipped below.
         clip = w.clip_species[]
-        density_state=_flame_density(f,T,@view(u[2:n+1,j]);clip_species=clip)
+        density_state=_flame_density(f,T,@view(u[2:n+1,j]);clip_species=clip,
+            cantera_no_norm=cantera_negative)
         w.rho[j]=density_state.density
         inverseMW=density_state.inverse_mw
         pRT = f.pressure/(R*T)
