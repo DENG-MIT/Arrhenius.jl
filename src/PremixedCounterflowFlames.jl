@@ -175,8 +175,8 @@ velocity(f::AbstractPremixedCounterflow)=velocity(f.flow)
 spread_rate(f::AbstractPremixedCounterflow)=spread_rate(f.flow)
 pressure_curvature(f::AbstractPremixedCounterflow)=pressure_curvature(f.flow)
 function density(f::AbstractPremixedCounterflow)
-    return [f.pressure/(R*1000*f.state[1,j]*sum(f.state[k+1,j]/f.gas.MW[k]
-        for k in 1:f.gas.n_species)) for j in eachindex(f.grid)]
+    return [_flame_density(f,1000*f.state[1,j],@view(f.state[2:f.gas.n_species+1,j])).density
+        for j in eachindex(f.grid)]
 end
 """
     heat_release_rate(f)
@@ -368,12 +368,11 @@ function _refine_axisymmetric!(f;ratio,slope,curve,prune,grid_min,max_points,int
         if j<N && insert[j]
             push!(newgrid,(z[j]+z[j+1])/2)
             midpoint=(u[:,j]+u[:,j+1])/2
-            # Sim1D::refine interpolates the physical velocity, not rho*u.
-            # Reconstruct mass flux using the interpolated temperature and Y.
+            # Sim1D::refine interpolates physical velocity instead of rho*u.
+            # Use the same state-level density routine as residual evaluation.
             if interpolate_velocity
-                rho=f.pressure/(R*1000*midpoint[1]*sum(midpoint[k+1]/f.gas.MW[k]
-                    for k in 1:f.gas.n_species))
-                midpoint[B]=rho*(axial_velocity[j]+axial_velocity[j+1])/2
+                density_state=_flame_density(f,1000*midpoint[1],@view(midpoint[2:f.gas.n_species+1]))
+                midpoint[B]=density_state.density*(axial_velocity[j]+axial_velocity[j+1])/2
             end
             push!(columns,midpoint)
         end
@@ -385,9 +384,10 @@ end
 
 """
 Solve the axisymmetric flow with native equilibrium initialization and adaptive refinement.
-Time-step controls are as for premixed flames.
-The default `refinement_interpolation=:velocity` matches Cantera's physical
-axial velocity interpolation. `:mass_flux` selects the legacy interpolation.
+Time-step controls are as for premixed flames. The gas must use ideal-gas thermodynamics.
+The default `refinement_interpolation=:velocity` interpolates axial velocity and
+reconstructs mass flux with the residual density function; `:mass_flux` retains
+linear interpolation of the stored mass-flux component.
 """
 function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.1,curve=.2,
         prune=0.,grid_min=1e-10,max_points=1200,max_time_steps=800,loglevel=0,
@@ -395,6 +395,8 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto,
         refinement_interpolation=:velocity)
+    f.gas.thermo isa IdealGasThermo ||
+        throw(ArgumentError("premixed counterflow solve requires ideal-gas thermodynamics"))
     isfinite(ratio)&&ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step)&&initial_time_step>0 || throw(ArgumentError("positive initial time step required"))
     isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 ||
