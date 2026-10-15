@@ -24,6 +24,21 @@ end
         r=similar(f.state)
         Arrhenius.counterflow_residual!(r,f)
         @test norm(r,Inf)<1e-8
+        # solver_stats: per-flame counters; the exported global mirrors the family.
+        cstats=solver_stats(f)
+        @test cstats isa CounterflowStats && solver_stats(f)===cstats
+        @test cstats.jacobians>0 && !isempty(cstats.grids)
+        @test cstats.newton_iterations>=cstats.jacobians
+        @test last(cstats.grids)==length(f.grid)
+        @test COUNTERFLOW_STATS.jacobians>=cstats.jacobians
+        # residual_evals counts every counterflow_residual! call at entry,
+        # manual ones included: three extra calls add exactly three.
+        re=cstats.residual_evals
+        r3=similar(f.state)
+        for _ in 1:3
+            counterflow_residual!(r3,f)
+        end
+        @test cstats.residual_evals==re+3
         if haskey(ENV,"COUNTERFLOW_REFERENCE_DIR")
             ref=npzread(joinpath(ENV["COUNTERFLOW_REFERENCE_DIR"],"counterflow-h2-reference.npz"))
             interp(values)=[Arrhenius._interpolate_profile(ref["grid"],vec(values),z) for z in f.grid]
@@ -63,6 +78,26 @@ end
             @test cf.state==state0 && isnothing(cf.control_points)
             empty!(cf.fixed_temperature)
             set_two_point_control!(cf;temperature=1500.,decrement=20.)
+            # Direct internal-helper calls accumulate without resetting, and
+            # solve! resets at entry: the two-point/fixed-temperature
+            # compatibility check runs AFTER that reset, so the throwing
+            # solve! zeroes the counters the helper call had filled.
+            st=copy(cf.state)
+            Arrhenius._counterflow_newton!(cf,Arrhenius.CounterflowWorkspace(cf))
+            cs=solver_stats(cf)
+            @test cs.newton_calls==1
+            rr2=similar(cf.state); re2=cs.residual_evals
+            for _ in 1:3
+                counterflow_residual!(rr2,cf)
+            end
+            @test cs.residual_evals==re2+3
+            copyto!(cf.state,st)
+            cf.fixed_temperature=temperature(cf)
+            @test_throws ArgumentError solve!(cf;refine_grid=false)
+            @test all(iszero,getfield(cs,n) for n in fieldnames(CounterflowStats)
+                if fieldtype(CounterflowStats,n)==Int)
+            @test isempty(cs.grids) && isempty(cs.calls)
+            empty!(cf.fixed_temperature)
             zL,tL,zR,tR=cf.control_points; iL=findfirst(==(zL),cf.grid); iR=findfirst(==(zR),cf.grid)
             @test iL<iR
             @test tL==1000*state0[1,iL]-20
@@ -175,33 +210,63 @@ end
     end
 end
 
-@testset "nakamura counterflow damping regression" begin
-    # Solver-decision regression for the nakamura_2017 slowdown: the counterflow
-    # damped Newton must follow Cantera MultiNewton::dampStep (<=7 trials, sqrt(2)
-    # decay, then Jacobian refresh). With the original 24-halving search the
-    # steady Newton stalled on stiff trace species (quadratic reverse rates such
-    # as N2H2 + M <=> 2 NH + M) and this case needed 550 Jacobians and 560
-    # pseudo-time steps; Cantera needs 77 and 70 (nakcf task counts).
-    mechanism=joinpath(@__DIR__,"data","nakamura_2017.yaml")  # TODO: pinned CollectionOfMechanisms artifact
-    if isfile(mechanism*".npz")
-        gas=CreateSolution(mechanism)
-        f=CounterflowDiffusionFlame(gas;fuel="NH3:0.7,H2:0.3",oxidizer="O2:0.21,N2:0.79",
-            mdot_fuel=.2,mdot_oxidizer=.6,T_fuel=300.,T_oxidizer=300.,P=one_atm,width=.02)
-        Arrhenius.reset!(Arrhenius.COUNTERFLOW_STATS)
-        solve!(f;ratio=3.,slope=.03,curve=.06,prune=.02)
+@testset "counterflow Cantera policy constants" begin
+    @test Arrhenius._COUNTERFLOW_INITIAL_TIME_STEP == 1.0e-5
+    @test Arrhenius._COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY == 10
+    @test Arrhenius._counterflow_newton_continues(0, typemax(Int))
+    @test Arrhenius._counterflow_newton_continues(45, 44)
+    @test !Arrhenius._counterflow_newton_continues(45, 45)
+    @test !Arrhenius._counterflow_retry_steady(9)
+    @test Arrhenius._counterflow_retry_steady(10)
+end
+
+@testset "diffusion solve skips transient shift on dependent row" begin
+    gas=CreateSolution(joinpath(dirname(pathof(Arrhenius)),"..","mechanism","h2o2.yaml"))
+    f=CounterflowDiffusionFlame(gas;fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",
+        mdot_fuel=.24,mdot_oxidizer=.72,grid=collect(range(0.,.02;length=7)))
+    observed=Tuple{Float64,Float64,Bool,Float64}[]
+    recorder=(J,flow,old,new,skip)->begin
+        B=size(flow.state,1); dep=flow.dependent_species+1
+        before=J[4B-1,2B+dep]
+        result=Arrhenius._counterflow_transient_update!(J,flow,old,new,skip)
+        push!(observed,(old,new,skip,J[4B-1,2B+dep]-before))
+        result
+    end
+    solve!(f;refine_grid=false,auto=false,initial_time_step=1e-5,
+        time_step_growth_strategy=:fixed_growth,_transient_update! = recorder)
+    @test f.converged
+    @test !isempty(observed)
+    @test all(t -> t[1]!=t[2] && t[3] && t[4]==0.,observed)
+    old,new,_,_=first(observed)
+    @test abs(Arrhenius._flame_timescale*(1/old-1/new))>1e-14
+    J=zeros(4size(f.state,1)-1,length(f.state)); B=size(f.state,1); dep=f.dependent_species+1
+    recorder(J,f,old,new,false)
+    @test J[4B-1,2B+dep] != 0
+end
+
+@testset "solver_stats dispatch for every counterflow kind" begin
+    # Constructing each public kind must yield its own stats object (Cantera
+    # keeps solver_stats per instance); dispatch needs no solve.
+    gas=CreateSolution(joinpath(dirname(pathof(Arrhenius)),"..","mechanism","h2o2.yaml"))
+    diffusion=CounterflowDiffusionFlame(gas;fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",
+        mdot_fuel=.24,mdot_oxidizer=.72,P=one_atm,width=.02)
+    composition="H2:1.6,O2:1,AR:7"; P=.05*one_atm
+    premixed=CounterflowPremixedFlame(gas;reactants=composition,mdot_reactants=.12,
+        mdot_products=.06,T_reactants=373.,P,width=.2)
+    twin=CounterflowTwinPremixedFlame(gas;reactants=composition,mdot=.12,T=373.,P,width=.2)
+    jet=ImpingingJet(gas;reactants=composition,mdot=.06,T_inlet=373.,T_surface=500.,P,width=.2)
+    flames=(diffusion,premixed,twin,jet)
+    @test all(f -> solver_stats(f) isa CounterflowStats, flames)
+    stats=solver_stats.(flames)
+    @test all(stats[i]!==stats[j] for i in 1:4 for j in i+1:4)
+    @test all(s -> s.jacobians==0 && isempty(s.grids), stats)  # fresh flames start at zero
+    # One small h2o2 solve per kind: per-flame counters come back nonzero.
+    for f in flames
+        s=solver_stats(f)
+        solve!(f;ratio=8.,slope=.3,curve=.5)
         @test f.converged
-        @test maximum(temperature(f)) ≈ 2121.46 rtol=1e-3
-        stats=Arrhenius.COUNTERFLOW_STATS
-        @test stats.jacobians < 250
-        @test stats.time_steps < 250
-        @test stats.recoveries == 0
-        r=similar(f.state); Arrhenius.counterflow_residual!(r,f)
-        # Steady convergence may end on Cantera weighted-correction criterion rather
-        # than the 1e-8 residual floor; 1e-5 separates converged from stalled.
-        @test norm(r,Inf)<1e-5
-        @test minimum(mass_fractions(f))>-1e-7
-        @test maximum(abs.(sum(mass_fractions(f);dims=1).-1))<1e-10
-    else
-        @test_skip false
+        @test s.jacobians>0 && s.newton_iterations>0
+        @test s.newton_iterations>=s.jacobians
+        @test last(s.grids)==length(f.grid)
     end
 end

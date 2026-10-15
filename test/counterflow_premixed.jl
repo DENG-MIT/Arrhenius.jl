@@ -20,6 +20,12 @@ end
     @test maximum(abs.(sum(mass_fractions(f);dims=1).-1))<1e-10
     r=similar(f.state); Arrhenius.counterflow_residual!(r,f)
     @test norm(r,Inf)<1e-8
+    # Per-kind nonzero solve counters: solver_stats(f) counts only this flame's
+    # last solve! (Cantera keeps Sim1D.solver_stats on the instance).
+    ps=Arrhenius.solver_stats(f)
+    @test ps isa CounterflowStats && Arrhenius.solver_stats(f)===ps
+    @test ps.jacobians>0 && ps.newton_iterations>=ps.jacobians
+    @test !isempty(ps.grids) && last(ps.grids)==length(f.grid)
 
     # Inert wall and symmetry are checked directly with signed trial traces.
     twin=Arrhenius.CounterflowTwinPremixedFlame(gas;reactants=composition,mdot=.12,T=373.,P=.05*one_atm,width=.2)
@@ -49,6 +55,14 @@ end
     @test_throws ArgumentError solve!(wall;prune=.5)
     @test_throws ArgumentError solve!(wall;grid_min=0.)
 
+    # Twin-flame kind: counters of its own solve! (the mdot was set to .07 above).
+    ts=Arrhenius.solver_stats(twin)
+    @test ts.jacobians==0 && isempty(ts.grids)          # fresh flame starts at zero
+    solve!(twin;slope=.1,curve=.2)
+    @test twin.converged
+    @test ts.jacobians>0 && ts.newton_iterations>=ts.jacobians
+    @test !isempty(ts.grids) && last(ts.grids)==length(twin.grid)
+
     cold=Arrhenius.ImpingingJet(gas;reactants="AR:1",mdot=.06,T_inlet=373.,
         T_surface=500.,P=.05*one_atm,width=.2,initial_products=:inlet)
     solve!(cold)
@@ -59,4 +73,38 @@ end
     @test maximum(temperature(cold)) <= 500. + 1e-6
     @test abs(velocity(cold)[end])<1e-10
     @test maximum(abs.(mass_fractions(cold)[findfirst(==("AR"),gas.species_names),:].-1))<1e-10
+    # Impinging-jet kind: nonzero counters, and a warm solve! REPLACES them.
+    js=Arrhenius.solver_stats(cold)
+    @test js.jacobians>0 && js.newton_iterations>=js.jacobians
+    @test last(js.grids)==length(cold.grid)
+    cold_jac=js.jacobians
+    solve!(cold)
+    @test cold.converged && js.jacobians<cold_jac
+end
+
+@testset "premixed steady retry counts successful steps" begin
+    # Wiring-layer regression for the solve! cadence: Cantera retries the
+    # steady Newton solve only after m_steps={10} successful pseudo-time
+    # steps (SteadyStateSystem::timeStep increments n on success only), so a
+    # failed step advances the attempt count without counting toward the
+    # retry. COUNTERFLOW_STATS.steady_retries records (successful steps,
+    # attempts) at every retry decision, counted since the previous retry of
+    # the same transient loop. An attempt-counted wiring instead retries at
+    # attempt multiples and records fewer than ten successes whenever
+    # failures intervene (measured 9, 7 and 6 on this solve when the
+    # premixed wiring passes retry_on_successes=false).
+    gas=CreateSolution(joinpath(dirname(pathof(Arrhenius)),"..","mechanism","h2o2.yaml"))
+    f=Arrhenius.CounterflowPremixedFlame(gas;reactants="H2:1.6,O2:1,AR:7",
+        mdot_reactants=.12,mdot_products=.06,T_reactants=373.,P=.05*one_atm,width=.2)
+    Arrhenius.reset!(Arrhenius.COUNTERFLOW_STATS)
+    solve!(f;slope=.1,curve=.2)
+    @test f.converged
+    retries=Arrhenius.COUNTERFLOW_STATS.steady_retries
+    # the transient path with its steady retries must actually be exercised
+    @test !isempty(retries)
+    @test all(first.(retries).==10)
+    # failures intervene between retries on this solve (windows wider than
+    # their ten accepted steps), so the count above discriminates the two
+    # cadences instead of passing vacuously
+    @test any(last.(retries).>10)
 end

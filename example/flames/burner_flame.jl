@@ -15,7 +15,7 @@ function write_burner_stage(flame,mode)
     println(label," peak temperature: ",maximum(temperature(flame))," K")
     save_flame(joinpath(output,label*".npz"),flame)
     if mode=="multi"
-        save_flame(joinpath(output,"burner.csv"),flame)
+        save_flame(joinpath(output,"burner.csv"),flame;basis=:mole)
         save_flame(joinpath(output,"burner.npz"),flame)
     end
 end
