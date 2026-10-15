@@ -332,7 +332,7 @@ _flame_cantera_kinetics(f) = false
 # Keep density evaluation in one place: residuals, public flame density and
 # refinement interpolation must use the same equation of state and species
 # treatment for a given state.
-@inline function _flame_density(f,T,Y;clip_species=false,cantera_no_norm=false)
+@inline function _flame_density(f,T,Y;clip_species=false)
     sumY,inverseMW=0.0,0.0
     @inbounds for k in eachindex(f.gas.MW)
         y=clip_species ? max(Y[k],0.0) : Y[k]
