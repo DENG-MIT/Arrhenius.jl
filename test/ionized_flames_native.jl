@@ -90,6 +90,18 @@ const A=Arrhenius
         @test res[end-1,:]==u[end-1,:]
         @test_throws ArgumentError FreeFlame(gas;X="Ar:1",soret=true)
         @test_throws ArgumentError FreeFlame(gas;X="Ar:1",discretization=:unsupported)
+        # IonizedFlame stores physical velocity, unlike free/burner mdot rows.
+        # Its shared refiner must keep direct component interpolation.
+        ion=FreeFlame(gas;T=900.,X="Ar:0.7,He:0.3",grid=[0.,.001,.003,.007,.01])
+        ion.state[1,:].=[.8,.9,1.0,1.1,1.2]
+        ion.state[end-1,:].=[0.1,0.2,0.4,0.8,1.6]
+        ion.state[end,:].=[.2,.3,.7,.9,1.3]
+        oldstate=copy(ion.state)
+        @test A._refine_flame!(ion;ratio=1.1,slope=1.,curve=1.)
+        @test .002 in ion.grid
+        midpoint_index=findfirst(==(.002),ion.grid)
+        @test ion.state[end,midpoint_index]≈(oldstate[end,2]+oldstate[end,3])/2
+        @test ion.state[end-1,midpoint_index]≈(oldstate[end-1,2]+oldstate[end-1,3])/2
     end
 end
 end
