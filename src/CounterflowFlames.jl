@@ -898,7 +898,7 @@ function _counterflow_reset!(f,grid)
 end
 
 """
-Solve the native axisymmetric counterflow flame. With `auto=true`,
+Solve the native axisymmetric counterflow diffusion flame. With `auto=true`,
 recover failed or extinguished coarse-grid solves using the native prescribed
 initial temperature profile, then progressively finer initial grids. Failure to
 find a burning solution raises an error and leaves `converged=false`.
@@ -907,6 +907,17 @@ continuation. Two-point control always retains the current branch and disables
 automatic reinitialization; call `set_two_point_control!` to choose new targets.
 Time-step controls (`time_step_growth_factor`, `time_step_growth_strategy`,
 `time_step_callback`, `time_step_regrid`, `jacobian_mode`) are as for premixed flames.
+
+Diffusion solves deliberately retain the measured post-failure fallback policy:
+attempt-counted steady retries and a transient Jacobian shift that includes the
+algebraic normalization row. This differs from Cantera's success-counted retry
+cadence and dependent-row skip. Across the three diffusion validation cases the
+fallback retains the cfpolicy2 counts (109/140, 142/160, 122/140 Jacobians/steps).
+The separate timestep-controls example harness also converged all 8 rows; see
+`audit.md` and `verify.md` for the measured scope and the Nakamura comparison.
+`:residual_ratio` growth is supported for this diffusion kind only among the
+counterflow kinds; premixed, twin-premixed, and stagnation require Cantera
+boundary-residual parity before using it.
 """
 function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,curve=.3,prune=0.,
         max_points=1200,max_time_steps=800,loglevel=0,
@@ -920,12 +931,13 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     timestep=Ref(Float64(initial_time_step))
-    # Measured finite-difference compatibility fallback: Cantera never shifts
-    # an algebraic row, but retaining the pre-fallback retune that also shifts
-    # the normalization row holds Nakamura diffusion at 142 Jacobians / 160
-    # steps; the Cantera-faithful skip measurably regresses it (146/170, and a
-    # platform-sensitive 850/1090 blowup), while every reference-policy path
-    # below still uses the skip.
+    # Deliberate fallback for ALL CounterflowDiffusionFlame solves. Cantera
+    # skips algebraic transient rows and counts steady retries by successes;
+    # this path instead shifts the normalization row and retries by attempts.
+    # Evidence: three diffusion validation cases retain cfpolicy2 counts
+    # (109/140, 142/160, 122/140 Jacobians/steps), versus Nakamura 699/824 on
+    # main with Cantera's dependent-row skip; all eight timestep-controls
+    # example rows converged. See audit.md for measurements and scope.
     steady!(flow)=_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...,
         newton_maxiters=_COUNTERFLOW_FD_NEWTON_MAXITERS,
         transient_newton_maxiters=_COUNTERFLOW_FD_TRANSIENT_NEWTON_MAXITERS,

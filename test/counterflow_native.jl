@@ -185,7 +185,7 @@ end
     @test Arrhenius._counterflow_retry_steady(10)
 end
 
-@testset "nakamura counterflow diffusion fallback policy regression" begin
+@testset "nakamura counterflow deliberate diffusion fallback policy regression" begin
     # Solver-decision regression for the nakamura_2017 slowdown: the counterflow
     # damped Newton must follow Cantera MultiNewton::dampStep (<=7 trials, sqrt(2)
     # decay, then Jacobian refresh). With the original 24-halving search the

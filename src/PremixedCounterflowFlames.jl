@@ -387,8 +387,8 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
     isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 ||
         throw(ArgumentError("finite prune <= min(slope,curve) and positive grid_min required"))
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
-    f isa ImpingingJet && time_step_growth_strategy===:residual_ratio &&
-        throw(ArgumentError("residual-ratio growth is not supported for ImpingingJet until its Surf1D wall residual is reconstructed"))
+    time_step_growth_strategy===:residual_ratio &&
+        throw(ArgumentError("residual-ratio growth is unsupported for $(typeof(f)) until Cantera boundary-residual parity is validated"))
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     # Cantera counts successful steps toward the steady-retry cadence

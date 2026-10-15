@@ -52,11 +52,19 @@ end
         method=which(Arrhenius._counterflow_growth_residual!,
             (typeof(r),typeof(f),typeof(x),typeof(w)))
         @test Base.unwrap_unionall(method.sig).parameters[3] === T
-        if f isa ImpingingJet
-            @test_throws ArgumentError Arrhenius._counterflow_growth_residual!(r,f,x,w)
-            @test_throws ArgumentError solve!(f;time_step_growth_strategy=:residual_ratio)
-        else
+        if f isa CounterflowDiffusionFlame
             @test Arrhenius._counterflow_growth_residual!(r,f,x,w) === r
+            @test Arrhenius._check_timestep_controls(1.5,:residual_ratio,0,:auto) === nothing
+        else
+            f isa ImpingingJet && @test_throws ArgumentError Arrhenius._counterflow_growth_residual!(r,f,x,w)
+            err=try
+                solve!(f;time_step_growth_strategy=:residual_ratio)
+                nothing
+            catch e
+                e
+            end
+            @test err isa ArgumentError
+            @test occursin(string(nameof(typeof(f))),sprint(showerror,err))
         end
     end
 end
