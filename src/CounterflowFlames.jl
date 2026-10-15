@@ -856,10 +856,13 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
     copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
     successful_steps=0
+    accepted_steps=0
+    attempts=0
     residual_at!(r,x,previous,dt)=_counterflow_growth_residual!(r,f,x,w;previous,dt)
     failures=0
     retry_step=0
-    for step in 1:max_time_steps
+    while accepted_steps<max_time_steps
+        attempts+=1
         previous=copy(f.state)
         j0=w.jac_evals
         if _counterflow_newton!(f,w;previous,dt,analytic,iterations,
@@ -873,15 +876,16 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
             dt=min(dt,1e8); timestep[]=dt
             step_callback===nothing || step_callback(dt)
             successful_steps+=1
-            # Cantera throws on the accepted step exhausting the budget,
-            # before it can start another steady Newton solve.
-            step>=max_time_steps && return false
+            accepted_steps+=1
+            # Cantera's timeStep(nsteps) is checked after each accepted time step,
+            # before another steady Newton solve can start.
+            accepted_steps>=max_time_steps && return false
             if retry_on_successes ? _counterflow_retry_steady(successful_steps) :
-                    step%_COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY==0
-                retry=(successful_steps,step-retry_step)
+                    attempts%_COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY==0
+                retry=(successful_steps,attempts-retry_step)
                 push!(cs.steady_retries,retry); push!(COUNTERFLOW_STATS.steady_retries,retry)
-                retry_step=step
-                loglevel>0 && println("Counterflow transient ",step," dt=",dt)
+                retry_step=attempts
+                loglevel>0 && println("Counterflow transient ",attempts," dt=",dt)
                 copyto!(checkpoint,f.state)
                 _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters,
                     skip_dependent_transient,transient_update!) && return true

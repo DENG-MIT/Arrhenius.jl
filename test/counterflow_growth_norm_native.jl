@@ -181,12 +181,11 @@ function Arrhenius._counterflow_newton!(f::CounterflowBudgetFixture,w;previous=n
     return true
 end
 @testset "counterflow time-step budget and steady cadence" begin
-    # The transient budget caps attempts (the first two fail in this oracle),
-    # and an accepted final attempt returns before any further steady retry:
-    # Cantera throws on the accepted step exhausting the budget before it can
-    # start another steady Newton solve (SteadyStateSystem.cpp:314-319).
+    # The transient budget caps successful steps (the first two attempts fail
+    # in this oracle), and an accepted final step returns before another steady
+    # retry, matching Cantera's timeStep(nsteps) check in SteadyStateSystem.cpp.
     # Steady retries use the Cantera cadence: every ten successful steps.
-    for (budget,steadies,accepted) in ((10,1,8),(21,2,19))
+    for (budget,steadies,accepted) in ((10,1,10),(21,3,21))
         f=CounterflowBudgetFixture([0.],zeros(1,1),0,0)
         dts=Float64[]
         steps0=Arrhenius.COUNTERFLOW_STATS.time_steps
@@ -194,10 +193,8 @@ end
         @test !Arrhenius._counterflow_steady_impl!(f;max_time_steps=budget,step_callback=dt->push!(dts,dt))
         @test length(dts)==accepted
         @test Arrhenius.COUNTERFLOW_STATS.time_steps-steps0==accepted
-        @test Arrhenius.COUNTERFLOW_STATS.time_step_failures-failures0==budget-accepted
-        @test Arrhenius.COUNTERFLOW_STATS.time_steps-steps0 +
-            Arrhenius.COUNTERFLOW_STATS.time_step_failures-failures0 == budget
-        @test f.transient_calls==budget
+        @test Arrhenius.COUNTERFLOW_STATS.time_step_failures-failures0==2
+        @test f.transient_calls==budget+2
         @test f.steady_calls==steadies
     end
 end
