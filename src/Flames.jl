@@ -473,9 +473,6 @@ end
 
 const _flame_timescale = 1e-4
 
-# Debug hook (nh3/32-lockstep): when true, the flame solver prints FLAMEDBG
-# decision lines (bound fraction, damping trials, time-step accept/reject).
-const DEBUG_FLAME = Ref{Bool}(false)
 
 # Cantera SteadyStateSystem/MultiNewton solver policy for finite-difference
 # FreeFlame/BurnerFlame solves: one Jacobian is stored per grid and reused
@@ -740,11 +737,9 @@ end
 # evaluation perturbs one component at every third point without overlap.
 function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=nothing,analytic=true,
         update_transport=false)
-    DEBUG_FLAME[] && println("FLAMEDBG jacobian N=",size(u,2)," transient=",(previous !== nothing))
     if analytic && !update_transport && _conservative_flame(f) && _conservative_flame_jacobian!(f,u,w,r;previous,dt,previous_enthalpy)
         return w.band
     end
-    DEBUG_FLAME[] && println("FLAMEDBG FD branch B=",size(u,1)," N=",size(u,2)," conservative=",_conservative_flame(f))
     B,N = size(u)
     band = w.band
     fill!(band,0)
@@ -778,7 +773,6 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
         w.h .= base_properties[4]
         w.source .= base_properties[5]
     end
-    DEBUG_FLAME[] && println("FLAMEDBG jac done N=",N," band_norm=",norm(band))
     return band
 end
 
@@ -958,7 +952,6 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             end
             alpha = min(alpha,a)
         end
-        DEBUG_FLAME[] && println("FLAMEDBG iter=",iteration," fbound=",alpha," resnorm=",residual_norm)
         # Cantera MultiNewton::boundStep lands exactly on its bounds, and
         # dampStep rejects a bound factor no greater than 1e-10.
         if alpha <= 1e-10
@@ -1011,7 +1004,6 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             end
             alpha /= sqrt(2)
         end
-        DEBUG_FLAME[] && println("FLAMEDBG iter=",iteration," trials alpha_end=",alpha," accepted=",accepted," s0=",step_merit)
         loglevel > 1 && println("Newton ",iteration," residual=",residual_norm," damping=",alpha)
         if !accepted || alpha <= 1e-10
             at_floor && return true
@@ -1075,7 +1067,6 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
     # (MultiNewton::solve leaves its input untouched on failure).
     steady_state = _flame_checkpoint_steady(f) || policy ? copy(f.state) : nothing
     steady_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
-    DEBUG_FLAME[] && println("FLAMEDBG steady_attempt success=",steady_ok," N=",length(f.grid))
     steady_ok && return true
     _premixed_stats(f).steady_failures+=1; PREMIXED_STATS.steady_failures+=1
     # A failed steady trial must not replace the accepted pseudo-time state.
@@ -1096,26 +1087,22 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
             dt = min(dt*_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
                 previous,f.state,dt,iterations[]),1.0)
             timestep[] = dt
-            DEBUG_FLAME[] && println("FLAMEDBG timestep ",step," accept dt_next=",dt," iters=",iterations[])
             step_callback === nothing || step_callback(dt)
             if step % 10 == 0
                 loglevel > 0 && println("Transient step ",step," dt=",dt)
                 steady_state === nothing || copyto!(steady_state,f.state)
                 trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
-                DEBUG_FLAME[] && println("FLAMEDBG steady_trial step=",step," success=",trial_ok)
                 trial_ok && return true
                 steady_state === nothing || copyto!(f.state,steady_state)
             end
         else
             copyto!(f.state,previous)
             failures += 1
-            DEBUG_FLAME[] && println("FLAMEDBG timestep ",step," FAIL failures=",failures)
             _premixed_stats(f).time_step_failures+=1; PREMIXED_STATS.time_step_failures+=1
             if neutral && failures > 2 && _flame_reset_species!(f.state)
                 # As Cantera's resetBadValues: signed species pinned at their
                 # lower bound stall every step; clip and renormalize instead.
                 failures = 0
-                DEBUG_FLAME[] && println("FLAMEDBG timestep ",step," reset_species")
                 continue
             end
             dt *= .25
@@ -1162,28 +1149,23 @@ function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timeste
             step_callback === nothing || step_callback(dt)
             dt = min(dt,1e8)
             timestep[] = dt
-            DEBUG_FLAME[] && println("FLAMEDBG timestep ",successes," accept dt_next=",dt,
-                " iters=",iterations[]," jacobians=",(w.jacobian_evals[]-jacobians_before))
             if batch >= 10
                 batch = 0
                 loglevel > 0 && println("Transient step ",successes," dt=",dt)
                 copyto!(steady_state,f.state)
                 trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
-                DEBUG_FLAME[] && println("FLAMEDBG steady_trial step=",successes," success=",trial_ok)
                 trial_ok && return true
                 copyto!(f.state,steady_state)
             end
         else
             copyto!(f.state,previous)
             successive_failures += 1
-            DEBUG_FLAME[] && println("FLAMEDBG timestep ",successes," FAIL failures=",successive_failures)
             if successive_failures > 2
                 # Cantera SteadyStateSystem::timeStep: every third successive
                 # failure resets bad values (clip negative species and
                 # renormalize) instead of reducing dt.
                 _flame_reset_species!(f.state)
                 successive_failures = 0
-                DEBUG_FLAME[] && println("FLAMEDBG timestep reset_species")
                 continue
             end
             dt *= .5
