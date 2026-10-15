@@ -30,10 +30,10 @@ end
 
 # %%
 # Initialization
-f = FreeFlame(gas; T=Tin, P=p, X=reactants, width)
+f = FreeFlame(gas; T=Tin, P=p, X=reactants, width, discretization=:conservative)
 # These refine criteria are for a relatively quick convergence for the example
 # and may not be suitable for a publication-quality flame speed calculation.
-# The default :conservative discretization converges every restart below;
+# The explicit :conservative discretization converges every restart below;
 # discretization=:finite_difference reproduces Cantera's own converged
 # methane flame speed even more closely (34.45 cm/s and 117 points here).
 solve!(f; ratio=3, slope=0.1, curve=0.2)

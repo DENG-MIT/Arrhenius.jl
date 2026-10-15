@@ -102,8 +102,9 @@ set_transport!(flame, :multicomponent; data, soret=true)
 solve!(flame; slope=.02, curve=.04)
 ```
 
-For a prescribed burner temperature, `set_temperature_profile!(burner, z, T;
-relative=false, grid_policy=:adaptive)` stores every supplied pair and lets a
+For a prescribed burner temperature, construct the burner with
+`discretization=:conservative` before calling `set_temperature_profile!(burner, z, T;
+relative=false, grid_policy=:adaptive)`. This stores every supplied pair and lets a
 conservative, no-Soret flame refine its solution grid. Refinement also bounds the
 piecewise-linear temperature's deviation from each cell chord to 1% of the largest
 supplied temperature. The default `:full_knots` inserts all profile knots for
