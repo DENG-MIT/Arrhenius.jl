@@ -282,7 +282,7 @@ end
 
 # Cantera Refiner::analyze insertion/pruning criteria, evaluated in physical
 # units (including velocity instead of the axial mass-flux unknown).
-function _refine_axisymmetric!(f;ratio,slope,curve,prune,grid_min,max_points,interpolate_velocity=false)
+function _refine_axisymmetric!(f;ratio,slope,curve,prune,grid_min,max_points,interpolate_velocity=true)
     u,z=f.state,f.grid
     B,N=size(u)
     insert=falses(N-1)
@@ -365,15 +365,14 @@ end
 """
 Solve the axisymmetric flow with native equilibrium initialization and adaptive refinement.
 Time-step controls are as for premixed flames.
-`refinement_interpolation=:velocity` interpolates Cantera's physical axial
-velocity. Automatic twin solves replay startup in this mode after a failed
-refinement solve; successful mass-flux-interpolation solves are retained.
+The default `refinement_interpolation=:velocity` matches Cantera's physical
+axial velocity interpolation. `:mass_flux` selects the legacy interpolation.
 """
 function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.1,curve=.2,
         prune=0.,grid_min=1e-10,max_points=1200,max_time_steps=800,loglevel=0,
         initial_time_step=1e-6,auto=true,time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto,
-        refinement_interpolation=:mass_flux)
+        refinement_interpolation=:velocity)
     isfinite(ratio)&&ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step)&&initial_time_step>0 || throw(ArgumentError("positive initial time step required"))
     isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 ||
@@ -382,7 +381,6 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
     refinement_interpolation in (:mass_flux,:velocity) ||
         throw(ArgumentError("refinement_interpolation must be :mass_flux or :velocity"))
     interpolate_velocity=refinement_interpolation===:velocity
-    startup_grid=copy(f.grid)
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     f.converged=false
@@ -427,17 +425,6 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
         while !_premixed_counterflow_steady!(f;max_time_steps,timestep,loglevel,controls...)
             # Cantera's time_step_regrid: refine the failed state and retry.
             if !(regrids<time_step_regrid && _refine_axisymmetric!(f;ratio,slope,curve,prune,grid_min,max_points,interpolate_velocity))
-                if auto && f isa CounterflowTwinPremixedFlame && !interpolate_velocity
-                    # Replay startup with Cantera's physical-velocity interpolation.
-                    # A grid-only retry would retain the preceding time-step history.
-                    COUNTERFLOW_STATS.recoveries+=1
-                    loglevel>0 && println("Retrying twin startup with velocity interpolation")
-                    _counterflow_reset!(f,startup_grid)
-                    return solve!(f;refine_grid,ratio,slope,curve,prune,grid_min,max_points,
-                        max_time_steps,loglevel,initial_time_step,auto,time_step_growth_factor,
-                        time_step_growth_strategy,time_step_callback,time_step_regrid,jacobian_mode,
-                        refinement_interpolation=:velocity)
-                end
                 error("native premixed counterflow failed on $(length(f.grid)) points")
             end
             regrids+=1; timestep[]=initial_time_step

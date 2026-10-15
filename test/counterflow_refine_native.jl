@@ -15,7 +15,7 @@ using Test, Arrhenius
     for (kind,f) in flows
         z=copy(f.grid); state=copy(f.state)
         @test Arrhenius._refine_axisymmetric!(f;ratio=3.,slope=.03,curve=.06,prune=.02,
-            grid_min=1e-10,max_points=1200,interpolate_velocity=true)
+            grid_min=1e-10,max_points=1200)
         @test f.grid ≈ ref["$kind/grid"] atol=1e-15
         @test temperature(f) ≈ ref["$kind/T"] rtol=1e-9
         @test mass_fractions(f) ≈ ref["$kind/Y"] atol=1e-9
