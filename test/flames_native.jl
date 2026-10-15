@@ -28,6 +28,81 @@ using Arrhenius, LinearAlgebra, Test
     @test maximum(f.state[end,:])-minimum(f.state[end,:]) < 1e-10
     @test norm(flame_residual!(similar(f.state),f),Inf) < 1e-8
 
+    # solver_stats: per-flame deterministic counters. Cantera keeps Sim1D
+    # solver_stats on the instance; each flame counts only its own solves and
+    # the exported PREMIXED_STATS mirrors the accumulated family total.
+    # The assertions below pin the documented semantics exactly (see the
+    # solver_stats docstring): reset at solve! entry after keyword
+    # validation, residual_evals counted at flame_residual! entry, direct
+    # internal-helper calls accumulating, throwing attempts not rolled back.
+    counts(s)=(s.jacobians,s.newton_calls,s.newton_iterations,s.residual_evals,s.time_steps,
+        s.time_step_failures,s.steady_failures,s.regrids,copy(s.grids))
+    stats=solver_stats(f)
+    @test stats isa PremixedStats && solver_stats(f)===stats
+    @test solver_stats(FreeFlame(gas;X))!==stats         # per-flame, not a shared global
+    fcounts=counts(stats)
+    @test fcounts[1]>0                                   # f's own solve reached its counters
+    @test fcounts[4]>0 && fcounts[4]>=fcounts[3]         # residual_evals >= newton_iterations
+    fresh=FreeFlame(gas;X,discretization=:finite_difference)
+    @test counts(solver_stats(fresh))==(0,0,0,0,0,0,0,0,Int[])
+    solve!(fresh)
+    run1=counts(solver_stats(fresh))
+    @test run1[1]>0 && run1[2]>0 && run1[3]>0            # jacobians, newton_calls, newton_iterations
+    @test run1[3]>=run1[1]                                # every Jacobian serves a Newton iteration
+    @test run1[4]>=run1[3]                                # every iteration evaluated a residual
+    @test last(run1[9])==length(fresh.grid)               # final steady attempt kept the final grid
+    @test counts(stats)==fcounts                          # solving fresh left f's counters untouched
+    @test PREMIXED_STATS.jacobians>=run1[1]               # global mirrors the family total
+    again=FreeFlame(gas;X,discretization=:finite_difference)
+    solve!(again)
+    @test counts(solver_stats(again))==run1               # equivalent cold solve is deterministic
+    # residual_evals counts every flame_residual! call at entry, manual ones
+    # included: three extra calls add exactly three.
+    rs=solver_stats(fresh); re=rs.residual_evals
+    for _ in 1:3
+        flame_residual!(similar(fresh.state),fresh)
+    end
+    @test rs.residual_evals==re+3
+    # Keyword validation precedes the entry reset: an invalid keyword throws
+    # with the previous counts intact.
+    before=counts(rs)
+    @test_throws ArgumentError solve!(fresh;slope=0.)
+    @test counts(rs)==before
+    # Direct calls to the internal helpers accumulate without resetting.
+    nc=rs.newton_calls
+    Arrhenius._flame_newton!(fresh,Arrhenius.FlameWorkspace(fresh))
+    @test rs.newton_calls==nc+1
+    ng,jc,ts=length(rs.grids),rs.jacobians,rs.time_steps
+    Arrhenius._flame_steady!(fresh;max_time_steps=2)     # converged: entry Newton returns at once
+    @test rs.newton_calls==nc+2 && length(rs.grids)==ng+1 && rs.jacobians==jc && rs.time_steps==ts
+    # A throwing steady attempt keeps its grids entry and partial counters;
+    # it is never rolled back. (analytic=:bogus makes the Jacobian refresh
+    # raise a TypeError; the perturbed state keeps the entry Newton working.)
+    saved=copy(fresh.state); ng2,nc2=length(rs.grids),rs.newton_calls
+    fresh.state[1,:] .+= .05
+    @test_throws TypeError Arrhenius._flame_steady!(fresh;max_time_steps=1,analytic=:bogus)
+    fresh.state .= saved
+    @test length(rs.grids)==ng2+1 && rs.newton_calls>nc2
+    solve!(fresh;ratio=2.,slope=.02,curve=.05)            # a second solve! replaces the counters
+    c2=counts(solver_stats(fresh))
+    @test 0<c2[1]<run1[1]                                 # tighter criteria recount from zero
+    @test c2[9]!=run1[9]                                  # the replaced grids differ from run1
+    @test counts(stats)==fcounts
+    # Burner flames count through the same shared helpers, per flame.
+    burner=BurnerFlame(gas;X,mdot=.1,discretization=:finite_difference)
+    bs=solver_stats(burner)
+    @test bs!==stats && counts(bs)==(0,0,0,0,0,0,0,0,Int[])
+    solve!(burner)
+    @test burner.converged && bs.jacobians>0 && bs.newton_iterations>=bs.jacobians
+    @test last(bs.grids)==length(burner.grid) && counts(stats)==fcounts
+    # Fixed-temperature burner: same per-flame accounting on the imposed-profile path.
+    fixed=BurnerFlame(gas;X,mdot=.1,discretization=:finite_difference)
+    set_temperature_profile!(fixed,[0.,.25,1.],[300.,1600.,300.])
+    fxs=solver_stats(fixed)
+    solve!(fixed)
+    @test fixed.converged && fxs.jacobians>0 && fxs.newton_iterations>=fxs.jacobians
+    @test counts(stats)==fcounts
+
     # Cantera's fourth refine criterion: prune=0 must reproduce the default.
     explicit = solve!(FreeFlame(gas;X,discretization=:finite_difference);prune=0.)
     @test explicit.grid==f.grid && explicit.state==f.state

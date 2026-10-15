@@ -188,10 +188,15 @@ end
     # Steady retries use the Cantera cadence: every ten successful steps.
     for (budget,steadies,accepted) in ((10,1,8),(21,2,19))
         f=CounterflowBudgetFixture([0.],zeros(1,1),0,0)
-        dts=Float64[]; count0=Arrhenius.COUNTERFLOW_STATS.time_steps
+        dts=Float64[]
+        steps0=Arrhenius.COUNTERFLOW_STATS.time_steps
+        failures0=Arrhenius.COUNTERFLOW_STATS.time_step_failures
         @test !Arrhenius._counterflow_steady_impl!(f;max_time_steps=budget,step_callback=dt->push!(dts,dt))
         @test length(dts)==accepted
-        @test Arrhenius.COUNTERFLOW_STATS.time_steps-count0==budget
+        @test Arrhenius.COUNTERFLOW_STATS.time_steps-steps0==accepted
+        @test Arrhenius.COUNTERFLOW_STATS.time_step_failures-failures0==budget-accepted
+        @test Arrhenius.COUNTERFLOW_STATS.time_steps-steps0 +
+            Arrhenius.COUNTERFLOW_STATS.time_step_failures-failures0 == budget
         @test f.transient_calls==budget
         @test f.steady_calls==steadies
     end

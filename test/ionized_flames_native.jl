@@ -8,6 +8,7 @@ const A=Arrhenius
         f=FreeFlame(gas;T=900.,X="Ar:0.7,He:0.3",grid=[0,.001,.003,.007,.01])
         n=gas.n_species;B=n+3;N=length(f.grid)
         @test f isa IonizedFlame
+        @test A.solver_stats(f) isa A.PremixedStats  # per-flame dispatch on the premixed path
         @test !f.field_enabled
         u=f.state
         for j in 1:N
@@ -33,6 +34,14 @@ const A=Arrhenius
             @test weights[end-1]≈1e-4*sum(abs,u[end-1,:])/N+(transient ? 1e-11 : 1e-9)/1000
         end
         w=A.FlameWorkspace(f);res=similar(u);flame_residual!(res,f,u,w)
+        # residual_evals counts every flame_residual! call at entry — manual
+        # calls included, and calls that then fail the residual's own argument
+        # validation (dt>0) still count.
+        rs=A.solver_stats(f);re=rs.residual_evals
+        flame_residual!(res,f,u,w);flame_residual!(res,f,u,w)
+        @test rs.residual_evals==re+2
+        @test_throws ArgumentError flame_residual!(res,f,u,w;dt=0.)
+        @test rs.residual_evals==re+3
         @test mole_fractions(f)≈w.X
         @test density(f)≈w.rho
         @test heat_release_rate(f)≈-vec(sum(w.h.*w.source;dims=1))

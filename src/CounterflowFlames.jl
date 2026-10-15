@@ -348,6 +348,35 @@ end
 CounterflowStats()=CounterflowStats(0,0,0,0,0,0,0,0,0,0,0,Int[],NTuple{8,Float64}[],
     NTuple{2,Int}[])
 const COUNTERFLOW_STATS=CounterflowStats()
+# Per-flame view (FLAME_STATS in Flames.jl); the global keeps the accumulated
+# family total for main's existing consumers.
+"""
+    solver_stats(f::CounterflowDiffusionFlame) -> CounterflowStats
+
+Per-flame solve counters; see `Arrhenius.solver_stats` for the exact reset,
+accumulation and failure semantics. Beyond the shared counters the counterflow
+kinds also count `fd_jacobians` (chemistry-Jacobian fallbacks to finite
+differences), `chem_jac_failures` and `recoveries`, and append one `calls`
+tuple per `_counterflow_steady!` attempt —
+`(grid, dt, newton_iterations, jacobians, time_steps, time_step_failures,
+wall_seconds, converged)` — when that attempt returns; attempts that throw
+get their `grids` entry only (catalytic jets record `grids` but never
+`calls`). All counterflow kinds count `residual_evals` once per
+`counterflow_residual!` call, including the wrapper and catalytic methods,
+which delegate here.
+"""
+solver_stats(f::CounterflowDiffusionFlame)=_counterflow_stats(f)
+# Premixed-counterflow kinds (and the catalytic jet) are immutable wrappers
+# around their mutable flow, so their counters are keyed on - and shared
+# with - that flow.
+function _counterflow_stats(f)
+    key=(isdefined(@__MODULE__,:AbstractPremixedCounterflow) &&
+        f isa AbstractPremixedCounterflow) ? f.flow : f
+    # WeakKeyDict keys must be mutable; immutable shim objects driving the
+    # helpers directly (test fixtures, property adapters) share the global.
+    Base.ismutable(key) || return COUNTERFLOW_STATS
+    return get!(() -> CounterflowStats(), FLAME_STATS, key)
+end
 function reset!(s::CounterflowStats)
     for name in fieldnames(CounterflowStats)
         v=getfield(s,name)
@@ -360,7 +389,7 @@ end
 function counterflow_residual!(residual,f::CounterflowDiffusionFlame,u=f.state,
         w=CounterflowWorkspace(f);previous=nothing,dt=Inf,update_transport=true,
         nodes=eachindex(f.grid),freeze_source=false)
-    COUNTERFLOW_STATS.residual_evals+=1
+    _counterflow_stats(f).residual_evals+=1; COUNTERFLOW_STATS.residual_evals+=1
     p=w.properties
     # Mixture-averaged face viscosities come from the same transport evaluation.
     shared_viscosity=f.transport_model==:mixture_averaged
@@ -497,7 +526,8 @@ function _counterflow_jacobian!(f,u,w,r;previous=nothing,dt=Inf,analytic=true)
         p.X .= saved[1]; p.rho .= saved[2]; p.cp .= saved[3]; p.h .= saved[4]; p.source .= saved[5]
     end
     hybrid && (_counterflow_chemistry_jacobian!(f,u,w) ||
-        (COUNTERFLOW_STATS.fd_jacobians+=1; return _counterflow_jacobian!(f,u,w,r;previous,dt,analytic=false)))
+        (_counterflow_stats(f).fd_jacobians+=1; COUNTERFLOW_STATS.fd_jacobians+=1;
+         return _counterflow_jacobian!(f,u,w,r;previous,dt,analytic=false)))
     return w.band
 end
 
@@ -511,7 +541,8 @@ function _counterflow_chemistry_jacobian!(f,u,w)
             # of falling back to a finite-difference Jacobian for every node.
             _flame_source_jacobian!(G,w.derivatives,f.gas,f.pressure,1000u[1,j],
                 max.(@view(u[2:n+1,j]),1e-30),max.(@view(p.X[:,j]),1e-30),
-                @view(p.h[:,j]),p.rate_caches[j]) || (COUNTERFLOW_STATS.chem_jac_failures+=1; return false)
+                @view(p.h[:,j]),p.rate_caches[j]) || (_counterflow_stats(f).chem_jac_failures+=1;
+                COUNTERFLOW_STATS.chem_jac_failures+=1; return false)
         end
         species=_flame_timescale/p.rho[j]
         cpmean=0.0
@@ -596,12 +627,12 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
     residual_valid = false
     weighted_converged=false
     reevals=0
-    COUNTERFLOW_STATS.newton_calls+=1
+    _counterflow_stats(f).newton_calls+=1; COUNTERFLOW_STATS.newton_calls+=1
     iteration = 0
     while _counterflow_newton_continues(maxiters, iteration)
         iteration += 1
         iterations[]=iteration
-        COUNTERFLOW_STATS.newton_iterations+=1
+        _counterflow_stats(f).newton_iterations+=1; COUNTERFLOW_STATS.newton_iterations+=1
         if !residual_valid
             counterflow_residual!(r,f,u,w;previous,dt)
         end
@@ -618,7 +649,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
             if refresh
                 J=_counterflow_jacobian!(f,u,w,r;previous,dt,analytic)
                 w.jac_evals+=1
-                COUNTERFLOW_STATS.jacobians+=1
+                _counterflow_stats(f).jacobians+=1; COUNTERFLOW_STATS.jacobians+=1
                 copyto!(w.jacobian,w.band)
                 correction_enabled && _counterflow_residual_scales!(residual_scales,J,u,bandwidth)
                 _,w.pivots=LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
@@ -745,16 +776,22 @@ function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INI
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
         newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
         skip_dependent_transient=true)
-    s=COUNTERFLOW_STATS
-    push!(s.grids,length(f.grid))
-    snap=(s.newton_iterations,s.jacobians,s.time_steps,s.time_step_failures)
+    # One entry in both the flame's own stats and the family global.
+    owned=_counterflow_stats(f)
+    objs=(owned,COUNTERFLOW_STATS)
+    snaps=[(s.newton_iterations,s.jacobians,s.time_steps,s.time_step_failures) for s in objs]
+    for s in objs
+        push!(s.grids,length(f.grid))
+    end
     t0=time()
     converged=_counterflow_steady_impl!(f;max_time_steps,timestep,loglevel,
         growth_factor,growth_strategy,step_callback,analytic,newton_maxiters,
         transient_newton_maxiters,retry_on_successes,skip_dependent_transient)
-    push!(s.calls,(length(f.grid),timestep[],s.newton_iterations-snap[1],
-        s.jacobians-snap[2],s.time_steps-snap[3],s.time_step_failures-snap[4],
-        time()-t0,converged))
+    for (s,snap) in zip(objs,snaps)
+        push!(s.calls,(length(f.grid),timestep[],s.newton_iterations-snap[1],
+            s.jacobians-snap[2],s.time_steps-snap[3],s.time_step_failures-snap[4],
+            time()-t0,converged))
+    end
     return converged
 end
 
@@ -808,12 +845,13 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
         newton_maxiters=0,transient_newton_maxiters=0,retry_on_successes=true,
         skip_dependent_transient=true)
     w=CounterflowWorkspace(f)
+    cs=_counterflow_stats(f)
     # A failed steady trial must not replace the pseudo-time state; Cantera
     # writes trials to a separate vector (SteadyStateSystem::solve).
     checkpoint=copy(f.state)
     _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters,
         skip_dependent_transient) && return true
-    COUNTERFLOW_STATS.steady_failures+=1
+    cs.steady_failures+=1; COUNTERFLOW_STATS.steady_failures+=1
     copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
     successful_steps=0
@@ -821,11 +859,11 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
     failures=0
     retry_step=0
     for step in 1:max_time_steps
-        COUNTERFLOW_STATS.time_steps+=1
         previous=copy(f.state)
         j0=w.jac_evals
         if _counterflow_newton!(f,w;previous,dt,analytic,iterations,
                 maxiters=transient_newton_maxiters,skip_dependent_transient)
+            cs.time_steps+=1; COUNTERFLOW_STATS.time_steps+=1
             failures=0
             # Cantera grows dt only when the step evaluated no Jacobian
             # (SteadyStateSystem::timeStep: m_jac->nEvals()==j0).
@@ -839,8 +877,8 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
             step>=max_time_steps && return false
             if retry_on_successes ? _counterflow_retry_steady(successful_steps) :
                     step%_COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY==0
-                push!(COUNTERFLOW_STATS.steady_retries,
-                    (successful_steps,step-retry_step))
+                retry=(successful_steps,step-retry_step)
+                push!(cs.steady_retries,retry); push!(COUNTERFLOW_STATS.steady_retries,retry)
                 retry_step=step
                 loglevel>0 && println("Counterflow transient ",step," dt=",dt)
                 copyto!(checkpoint,f.state)
@@ -853,7 +891,7 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
         else
             f.state .= previous
             failures+=1
-            COUNTERFLOW_STATS.time_step_failures+=1
+            cs.time_step_failures+=1; COUNTERFLOW_STATS.time_step_failures+=1
             if failures>2
                 # SteadyStateSystem::timeStep: the third successive failure
                 # resetBadValues clips negative species instead of cutting dt.
@@ -926,6 +964,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
     isfinite(prune) && prune<=min(slope,curve) || throw(ArgumentError("invalid pruning criterion"))
     isfinite(initial_time_step) && initial_time_step>0 || throw(ArgumentError("positive finite initial time step required"))
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
+    reset!(_counterflow_stats(f))  # per-flame counters report this solve only
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     timestep=Ref(Float64(initial_time_step))
@@ -953,7 +992,7 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
         loglevel>0 && println("Counterflow solve on ",length(f.grid)," points")
         success=steady!(f)
         if auto && (!success || extinct(f))
-            COUNTERFLOW_STATS.recoveries+=1
+            _counterflow_stats(f).recoveries+=1; COUNTERFLOW_STATS.recoveries+=1
             loglevel>0 && println("Recovering with the native initial temperature profile")
             _counterflow_reset!(f,copy(f.grid))
             f.fixed_temperature=temperature(f)
@@ -968,7 +1007,8 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
         # failed state and retry while refinement changes the grid.
         while !success && refine_grid && regrids<time_step_regrid &&
                 _refine_flame!(f;ratio,slope,curve,prune,max_points)
-            regrids+=1; COUNTERFLOW_STATS.regrids+=1; timestep[]=initial_time_step
+            regrids+=1; _counterflow_stats(f).regrids+=1; COUNTERFLOW_STATS.regrids+=1;
+                timestep[]=initial_time_step
             loglevel>0 && println("Counterflow regrid retry on ",length(f.grid)," points")
             success=steady!(f)
             burning=success && (!auto || !extinct(f))
@@ -991,7 +1031,8 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
             # Cantera's time_step_regrid: refine the failed state and retry.
             regrids<time_step_regrid && _refine_flame!(f;ratio,slope,curve,prune,max_points) ||
                 error("native counterflow solver failed on $(length(f.grid)) points")
-            regrids+=1; COUNTERFLOW_STATS.regrids+=1; timestep[]=initial_time_step
+            regrids+=1; _counterflow_stats(f).regrids+=1; COUNTERFLOW_STATS.regrids+=1;
+                timestep[]=initial_time_step
             loglevel>0 && println("Counterflow regrid retry on ",length(f.grid)," points")
         end
         auto && extinct(f) && error("counterflow flame extinguished during refinement")

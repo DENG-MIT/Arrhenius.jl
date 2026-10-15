@@ -29,6 +29,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 abstract type AbstractPremixedCounterflow end
+solver_stats(f::AbstractPremixedCounterflow)=solver_stats(f.flow)
 
 "Premixed reactants opposed by a prescribed product stream."
 struct CounterflowPremixedFlame{F,C} <: AbstractPremixedCounterflow
@@ -389,6 +390,7 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
     time_step_growth_strategy===:residual_ratio &&
         throw(ArgumentError("residual-ratio growth is unsupported for $(typeof(f)) until Cantera boundary-residual parity is validated"))
+    reset!(_counterflow_stats(f))  # per-flame counters report this solve only
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     # Cantera counts successful steps toward the steady-retry cadence
