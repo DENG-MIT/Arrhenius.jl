@@ -339,7 +339,7 @@ _flame_cantera_kinetics(f) = false
         sumY+=y
         inverseMW+=y/f.gas.MW[k]
     end
-    mass_scale=cantera_no_norm && !clip_species ? 1.0 : sumY
+    mass_scale=clip_species ? sumY : 1.0
     return (density=f.pressure*mass_scale/(inverseMW*R*T),inverse_mw=inverseMW)
 end
 
@@ -374,8 +374,7 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
         # Node thermochemistry uses signed mass fractions, as Cantera's flow
         # residual does; only transport inputs at faces are clipped below.
         clip = w.clip_species[]
-        density_state=_flame_density(f,T,@view(u[2:n+1,j]);clip_species=clip,
-            cantera_no_norm=cantera_negative)
+        density_state=_flame_density(f,T,@view(u[2:n+1,j]);clip_species=clip)
         w.rho[j]=density_state.density
         inverseMW=density_state.inverse_mw
         pRT = f.pressure/(R*T)

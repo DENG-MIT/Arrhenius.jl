@@ -279,8 +279,7 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             # Match the branch the positive finite-difference step samples:
             # traces within one step below zero use the forward derivative.
             d.density_gradient[k+1,j]=_flame_node_weight(w,u[k+1,j])*w.rho[j]*
-                (cantera_negative && !w.clip_species[] ? -1/(MW[k]*inverseMW) :
-                    1/sumY-1/(MW[k]*inverseMW))
+                (w.clip_species[] ? 1/sumY-1/(MW[k]*inverseMW) : -1/(MW[k]*inverseMW))
         end
         d.density_gradient[1,j]=-1000w.rho[j]/T
         d.enthalpy_gradient[1,j]=1000c.cp[j];d.cp_gradient[1,j]=cpT
