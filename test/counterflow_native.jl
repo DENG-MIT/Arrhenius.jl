@@ -220,27 +220,28 @@ end
     @test Arrhenius._counterflow_retry_steady(10)
 end
 
-@testset "nakamura counterflow dependent-row skip regression" begin
-    mechanism=joinpath(@__DIR__,"data","nakamura_2017.yaml")
-    if isfile(mechanism*".npz")
-        gas=CreateSolution(mechanism)
-        f=CounterflowDiffusionFlame(gas;fuel="NH3:0.7,H2:0.3",oxidizer="O2:0.21,N2:0.79",
-            mdot_fuel=.2,mdot_oxidizer=.6,T_fuel=300.,T_oxidizer=300.,P=one_atm,width=.02)
-        J=zeros(4size(f.state,1)-1,length(f.state))
-        # This is the exact default selected in diffusion solve!'s steady! closure.
-        Arrhenius._counterflow_transient_update!(J,f,1e-5,Inf)
-        B,N=size(f.state); diag=4B-1; dep=f.dependent_species+1
-        for j in 2:N-1, k in 1:gas.n_species+2
-            delta=J[diag,(j-1)*B+k]
-            @test delta≈(k==dep ? 0. : Arrhenius._flame_timescale/1e-5) atol=1e-14
-        end
-        @test Arrhenius._counterflow_retry_steady(10)
-        @test !Arrhenius._counterflow_retry_steady(9)
-        # Nakamura full-solve cost/failure with the correct row policy is tracked
-        # as an open performance issue; see task RESULT and nakdiff2.
-    else
-        @test_skip false
+@testset "diffusion solve skips transient shift on dependent row" begin
+    gas=CreateSolution(joinpath(dirname(pathof(Arrhenius)),"..","mechanism","h2o2.yaml"))
+    f=CounterflowDiffusionFlame(gas;fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",
+        mdot_fuel=.24,mdot_oxidizer=.72,grid=collect(range(0.,.02;length=7)))
+    observed=Tuple{Float64,Float64,Bool,Float64}[]
+    recorder=(J,flow,old,new,skip)->begin
+        B=size(flow.state,1); dep=flow.dependent_species+1
+        before=J[4B-1,2B+dep]
+        result=Arrhenius._counterflow_transient_update!(J,flow,old,new,skip)
+        push!(observed,(old,new,skip,J[4B-1,2B+dep]-before))
+        result
     end
+    solve!(f;refine_grid=false,auto=false,initial_time_step=1e-5,
+        time_step_growth_strategy=:fixed_growth,_transient_update! = recorder)
+    @test f.converged
+    @test !isempty(observed)
+    @test all(t -> t[1]!=t[2] && t[3] && t[4]==0.,observed)
+    old,new,_,_=first(observed)
+    @test abs(Arrhenius._flame_timescale*(1/old-1/new))>1e-14
+    J=zeros(4size(f.state,1)-1,length(f.state)); B=size(f.state,1); dep=f.dependent_species+1
+    recorder(J,f,old,new,false)
+    @test J[4B-1,2B+dep] != 0
 end
 
 @testset "solver_stats dispatch for every counterflow kind" begin
