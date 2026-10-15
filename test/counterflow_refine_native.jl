@@ -29,13 +29,14 @@ end
     gas=CreateSolution(joinpath(@__DIR__,"..","mechanism","h2o2.yaml"))
     ref=Arrhenius.npzread(joinpath(@__DIR__,"data","cantera_counterflow_refine.npz"))
     composition="H2:1.6,O2:1,AR:7"
-    flows=(
+    make_flows()=(
         "premixed"=>CounterflowPremixedFlame(gas;reactants=composition,mdot_reactants=.12,
             mdot_products=.06,T_reactants=373.,P=.05*one_atm,width=.2),
         "twin"=>CounterflowTwinPremixedFlame(gas;reactants=composition,mdot=.12,
             T=373.,P=.05*one_atm,width=.2),
         "stagnation"=>ImpingingJet(gas;reactants=composition,mdot=.06,
             T_inlet=373.,T_surface=500.,P=.05*one_atm,width=.2))
+    flows=make_flows()
     nonideal=Arrhenius.Solution(gas.n_species,gas.n_reactions,gas.MW,gas.species_names,
         gas.elements,gas.ele_matrix,_Fix39NonIdealThermo(),gas.trans,gas.reaction)
     err=try
@@ -48,6 +49,13 @@ end
     @test occursin("ideal-gas thermodynamics",sprint(showerror,err))
     @test_throws ArgumentError solve!(flows[2].second;refinement_interpolation=:invalid)
     for (kind,f) in flows
+        # Same starting state as the Cantera fixture (recorded before Sim1D.refine).
+        @test f.grid ≈ ref["$kind/pre/grid"] atol=1e-15
+        @test temperature(f) ≈ ref["$kind/pre/T"] rtol=1e-9
+        @test mass_fractions(f) ≈ ref["$kind/pre/Y"] atol=1e-9
+        @test velocity(f) ≈ ref["$kind/pre/velocity"] rtol=1e-9
+        @test spread_rate(f) ≈ ref["$kind/pre/spreadRate"] rtol=1e-9 atol=1e-12
+        @test pressure_curvature(f) ≈ ref["$kind/pre/Lambda"] rtol=1e-9 atol=1e-12
         z=copy(f.grid); state=copy(f.state); uold=velocity(f)
         @test Arrhenius._refine_axisymmetric!(f;ratio=3.,slope=.03,curve=.06,prune=.02,
             grid_min=1e-10,max_points=1200)
@@ -63,5 +71,12 @@ end
             i=findfirst(==(z[j]),f.grid)
             isnothing(i) || @test f.state[:,i]==state[:,j]
         end
+    end
+    # Legacy rho*u interpolation misses Cantera's refined velocity (measured 0.21-0.64 m/s).
+    for (kind,f) in make_flows()
+        @test Arrhenius._refine_axisymmetric!(f;ratio=3.,slope=.03,curve=.06,prune=.02,
+            grid_min=1e-10,max_points=1200,interpolate_velocity=false)
+        @test length(f.grid)==length(ref["$kind/grid"])
+        @test maximum(abs.(velocity(f)-ref["$kind/velocity"]))>1e-2
     end
 end

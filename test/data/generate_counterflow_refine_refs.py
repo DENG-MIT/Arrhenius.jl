@@ -2,7 +2,7 @@
 
 Run with Cantera 4.0 using the repository mechanism/h2o2.yaml. The initial
 conditions match counterflow_initial_guess_native.jl; the output records
-physical flow components after one Sim1D.refine call.
+physical flow components before and after one Sim1D.refine call.
 """
 from pathlib import Path
 import sys
@@ -29,6 +29,11 @@ for kind in ("premixed", "twin", "stagnation"):
         f.surface.T = 500.
     f.set_initial_guess("equil") if kind == "stagnation" else f.set_initial_guess()
     f.energy_enabled = True
+    # pre-refinement state: the native test asserts it starts from this same state
+    records.update({f"{kind}/pre/{key}": value for key, value in {
+        "grid": f.grid, "T": f.T, "Y": f.Y, "velocity": f.velocity,
+        "spreadRate": f.spread_rate, "Lambda": f.L,
+    }.items()})
     f.set_refine_criteria(ratio=3., slope=.03, curve=.06, prune=.02)
     f.refine(loglevel=0)
     records.update({f"{kind}/{key}": value for key, value in {
