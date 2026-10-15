@@ -63,11 +63,22 @@ end
     factor=ref["factor"]; jac_evals=ref["jac_evals"]
     w=CounterflowWorkspace(f); r=similar(f.state)
     physical!(r,x,p,dt)=Arrhenius._counterflow_growth_residual!(r,f,x,w;previous=p,dt)
-    # The first attempt size is only known to the printed precision. Even
-    # with full-precision sizes the reconstructed physical norms differ from
-    # Cantera's by transport-property rounding at the trajectory's extreme
-    # states (measured worst 1.2e-7 relative on the applied factor).
-    rtol=ref["reconstruction_ok"][1] ? 1e-6 : 2e-3
+    # The generator reconstructs every accepted attempt size at full
+    # precision, cross-checked against Cantera's printed sizes (4 significant
+    # digits) with zero mismatches at fixture generation. A fixture that had
+    # fallen back to the printed sizes would carry print rounding into every
+    # applied factor; assert that invariant here instead of loosening the
+    # gate for it.
+    @test ref["reconstruction_ok"][1]
+    # Fixed tolerances justified by measured reconstruction error, not chosen
+    # from the fixture: with full-precision sizes the worst deviation of the
+    # reconstructed growth factor from Cantera's applied factor over all
+    # non-gated steps is 1.2e-7 relative (transport-property rounding at the
+    # trajectory's ~3970 K states), so 1e-6 bounds it with an 8x margin. The
+    # first attempt size is the sole print-seeded quantity (its full-precision
+    # value is unknowable from the log), bounded by 5e-4 relative rounding of
+    # the 4-significant-digit print, so its factor gets 2e-3.
+    step_rtol(k)=k==1 ? 2e-3 : 1e-6
     grown=gated=flat=0
     for k in eachindex(attempt_dt)
         g=Arrhenius._timestep_growth(physical!,r,:residual_ratio,1.5,
@@ -78,10 +89,10 @@ end
             @test g>=1.0
         elseif factor[k]>1+1e-6
             grown+=1
-            @test g≈factor[k] rtol=(k==1 ? 2e-3 : rtol)
+            @test g≈factor[k] rtol=step_rtol(k)
         else
             flat+=1
-            @test g≈factor[k] rtol=(k==1 ? 2e-3 : rtol)
+            @test g≈factor[k] rtol=step_rtol(k)
         end
     end
     # the trajectory must exercise grown, gated and flat decisions alike

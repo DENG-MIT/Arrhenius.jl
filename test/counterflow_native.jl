@@ -185,13 +185,18 @@ end
     @test Arrhenius._counterflow_retry_steady(10)
 end
 
-@testset "nakamura counterflow post-failure policy regression" begin
+@testset "nakamura counterflow diffusion fallback policy regression" begin
     # Solver-decision regression for the nakamura_2017 slowdown: the counterflow
     # damped Newton must follow Cantera MultiNewton::dampStep (<=7 trials, sqrt(2)
     # decay, then Jacobian refresh). With the original 24-halving search the
     # steady Newton stalled on stiff trace species (quadratic reverse rates such
     # as N2H2 + M <=> 2 NH + M) and this case needed 550 Jacobians and 560
     # pseudo-time steps; Cantera needs 77 and 70 (nakcf task counts).
+    # This case runs through the diffusion solve! compatibility fallback
+    # (retry_on_successes=false, skip_dependent_transient=false) — the one
+    # documented deviation from the reference row-skip policy, kept for the
+    # measured counts below; see audit.md for the Cantera sources and the
+    # measurement.
     mechanism=joinpath(@__DIR__,"data","nakamura_2017.yaml")  # TODO: pinned CollectionOfMechanisms artifact
     if isfile(mechanism*".npz")
         gas=CreateSolution(mechanism)
