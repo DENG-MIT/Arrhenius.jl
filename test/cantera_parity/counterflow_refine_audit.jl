@@ -10,7 +10,7 @@ before=npzread(ENV["BEFORE_REFINE"])
 f=build_native(spec,gas,vec(before["grid"]))
 f.state=before["state"]
 @assert Arrhenius._refine_axisymmetric!(f;ratio=spec["ratio"],slope=spec["slope"],
-    curve=spec["curve"],prune=get(spec,"prune",0.),grid_min=1e-10,max_points=1200)
+    curve=spec["curve"],prune=get(spec,"prune",0.),grid_min=1e-10,max_points=1200,interpolate_velocity=true)
 ct=npzread(ENV["CT_AFTER_REFINE"])
 @assert f.grid==vec(ct["grid"])
 println("REFINE_AUDIT max_velocity_error=",maximum(abs.(velocity(f).-vec(ct["values/velocity"]))))

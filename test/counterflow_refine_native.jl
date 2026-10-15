@@ -11,10 +11,11 @@ using Test, Arrhenius
             T=373.,P=.05*one_atm,width=.2),
         "stagnation"=>ImpingingJet(gas;reactants=composition,mdot=.06,
             T_inlet=373.,T_surface=500.,P=.05*one_atm,width=.2))
+    @test_throws ArgumentError solve!(flows[2].second;refinement_interpolation=:invalid)
     for (kind,f) in flows
         z=copy(f.grid); state=copy(f.state)
         @test Arrhenius._refine_axisymmetric!(f;ratio=3.,slope=.03,curve=.06,prune=.02,
-            grid_min=1e-10,max_points=1200)
+            grid_min=1e-10,max_points=1200,interpolate_velocity=true)
         @test f.grid ≈ ref["$kind/grid"] atol=1e-15
         @test temperature(f) ≈ ref["$kind/T"] rtol=1e-9
         @test mass_fractions(f) ≈ ref["$kind/Y"] atol=1e-9

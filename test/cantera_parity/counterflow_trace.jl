@@ -1,4 +1,4 @@
-# Counterflow decision trace on the production initial grid.
+# Twin premixed counterflow decision trace on the production initial grid.
 # TRACE_SPEC: harness spec; TRACE_OUT: directory containing ct_state.npz.
 # TRACE_CAP: path to run_capped; PY: Cantera Python executable.
 # Run from the mechanism directory under the task wall-time cap.
@@ -8,6 +8,7 @@ BLAS.set_num_threads(1)
 empty!(ARGS)
 include(joinpath(@__DIR__, "native_dump_cf.jl"))
 spec=YAML.load_file(ENV["TRACE_SPEC"])
+spec["kind"]=="twin" || error("trace currently supports twin premixed counterflow")
 gas=CreateSolution(spec["mechanism"]*".yaml")
 dump_state(ENV["TRACE_OUT"],spec,gas,"ct_state.npz")
 run(`$(ENV["TRACE_CAP"]) 60 $(ENV["PY"]) $(joinpath(@__DIR__,"compare_cf.py")) $(ENV["TRACE_OUT"])`)
