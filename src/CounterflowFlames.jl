@@ -339,6 +339,21 @@ CounterflowStats()=CounterflowStats(0,0,0,0,0,0,0,0,0,0,0,Int[],NTuple{8,Float64
 const COUNTERFLOW_STATS=CounterflowStats()
 # Per-flame view (FLAME_STATS in Flames.jl); the global keeps the accumulated
 # family total for main's existing consumers.
+"""
+    solver_stats(f::CounterflowDiffusionFlame) -> CounterflowStats
+
+Per-flame solve counters; see `Arrhenius.solver_stats` for the exact reset,
+accumulation and failure semantics. Beyond the shared counters the counterflow
+kinds also count `fd_jacobians` (chemistry-Jacobian fallbacks to finite
+differences), `chem_jac_failures` and `recoveries`, and append one `calls`
+tuple per `_counterflow_steady!` attempt —
+`(grid, dt, newton_iterations, jacobians, time_steps, time_step_failures,
+wall_seconds, converged)` — when that attempt returns; attempts that throw
+get their `grids` entry only (catalytic jets record `grids` but never
+`calls`). All counterflow kinds count `residual_evals` once per
+`counterflow_residual!` call, including the wrapper and catalytic methods,
+which delegate here.
+"""
 solver_stats(f::CounterflowDiffusionFlame)=_counterflow_stats(f)
 # Premixed-counterflow kinds (and the catalytic jet) are immutable wrappers
 # around their mutable flow, so their counters are keyed on - and shared

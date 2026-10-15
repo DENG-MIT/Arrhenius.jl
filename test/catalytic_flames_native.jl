@@ -73,6 +73,9 @@ end
         @test c1[1]>0 && c1[2]>0 && c1[3]>0           # the cold reactive solve did real work
         @test c1[2]>=c1[3]                             # every Jacobian serves a Newton iteration
         @test !isempty(cs.grids) && last(cs.grids)==length(f.grid)
+        # Documented catalytic gap: the catalytic steady path records grids
+        # entries but never per-attempt calls tuples.
+        @test isempty(cs.calls)
         @test COUNTERFLOW_STATS.jacobians>=c1[3]       # global mirrors the family total
         Arrhenius.solve!(f)                            # a warm resolve ...
         c2=(cs.newton_calls,cs.newton_iterations,cs.jacobians,cs.time_steps,

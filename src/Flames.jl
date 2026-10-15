@@ -572,6 +572,9 @@ end
 function flame_residual!(residual, f::AbstractPremixedFlame, u=f.state, w=FlameWorkspace(f);
         previous=nothing, dt=Inf, update_transport=true,nodes=eachindex(f.grid),
         previous_enthalpy=nothing)
+    # Counted at entry, before any work: every call to the public residual
+    # evaluator increments residual_evals, mirroring counterflow_residual!.
+    _premixed_stats(f).residual_evals+=1; PREMIXED_STATS.residual_evals+=1
     n,N = f.gas.n_species,length(f.grid)
     _flame_properties!(w,f,u; update_transport,nodes)
     if _conservative_flame(f)
@@ -1304,13 +1307,14 @@ mutable struct PremixedStats
     newton_calls::Int
     newton_iterations::Int
     jacobians::Int
+    residual_evals::Int
     time_steps::Int
     time_step_failures::Int
     steady_failures::Int
     regrids::Int
     grids::Vector{Int}
 end
-PremixedStats()=PremixedStats(0,0,0,0,0,0,0,Int[])
+PremixedStats()=PremixedStats(0,0,0,0,0,0,0,0,Int[])
 const PREMIXED_STATS=PremixedStats()
 # Per-flame stats storage; entries die with their flame (weak keys).
 const FLAME_STATS=WeakKeyDict{Any,Any}()
@@ -1328,14 +1332,45 @@ end
 Return the mutable solve-counter object owned by `flame`, mirroring Cantera's
 per-instance `Sim1D.solver_stats`: a `PremixedStats` for `FreeFlame`/
 `BurnerFlame` (and ionized premixed flames), a `CounterflowStats` for the
-counterflow and impinging-jet kinds. Counters mirror Cantera's totals:
-`newton_calls`, `newton_iterations`, `jacobians`, `time_steps`, `regrids`
-(refinement passes that changed the grid) and `grids` (points at each steady
-attempt), plus `time_step_failures` and `steady_failures`. Each object counts
-only its own flame's solves; the exported `PREMIXED_STATS`/`COUNTERFLOW_STATS`
-globals mirror the accumulated family totals. Call
-`reset!(solver_stats(flame))` before `solve!` to attribute the counts to that
-solve.
+counterflow and impinging-jet kinds. These counters are a diagnostic only;
+they never influence solver decisions.
+
+Counted fields per kind (a field a kind never increments stays zero):
+- premixed kinds (`FreeFlame`, `BurnerFlame`, `IonizedFlame`): `newton_calls`,
+  `newton_iterations`, `jacobians`, `residual_evals`, `time_steps`,
+  `time_step_failures`, `steady_failures`, `regrids`, `grids`;
+- counterflow kinds (`CounterflowDiffusionFlame`, the premixed-counterflow
+  wrappers, impinging and catalytic jets): all of the above plus
+  `fd_jacobians`, `chem_jac_failures`, `recoveries` and per-attempt `calls`
+  tuples — except catalytic jets, which record `grids` but never `calls`.
+`residual_evals` counts every call to the public residual evaluator
+(`flame_residual!`/`counterflow_residual!`) at its entry, before argument
+validation: damped-step trials, time-step-growth probes and finite-difference
+Jacobian columns are all included. Cantera's counterpart excludes the
+finite-difference Jacobian evaluations (`OneDim::eval` counts only `count!=0`
+calls, and `evalJacobian` passes 0), so native `residual_evals` runs higher
+than Cantera's on finite-difference solves.
+
+Exact semantics:
+- `solve!` resets the flame's counters at entry and they then report that
+  `solve!` only. The reset happens after the keyword-argument validation, so
+  an invalid `ratio`/`slope`/`prune`/... argument throws with the previous
+  counts intact. Checks that run after the reset point throw with the counters
+  already zeroed (counterflow two-point-control validation, catalytic
+  transport requirements) or partially counted (runtime `error`s such as a
+  `max_points` overrun or `auto` non-convergence).
+- Direct calls to the internal helpers (`_flame_newton!`, `_flame_steady!`,
+  `_refine_flame!`, `_counterflow_newton!`, `_counterflow_steady!`) accumulate
+  on top of the current counters without resetting them.
+- A steady attempt that throws is not rolled back: the scalar counters it
+  already incremented stay, and its `grids` entry (pushed at attempt entry)
+  stays, but counterflow `calls` summaries are appended only when the attempt
+  returns, so a thrown attempt gets none.
+- Immutable objects driven through the helpers (property adapters, test
+  fixtures) count into the family global instead of a per-flame entry.
+- The exported `PREMIXED_STATS`/`COUNTERFLOW_STATS` globals mirror the
+  accumulated family totals across all flames and are never reset by `solve!`;
+  call `Arrhenius.reset!` on them manually for per-run attribution.
 """
 solver_stats(f::AbstractPremixedFlame)=_premixed_stats(f)
 # WeakKeyDict keys must be mutable; immutable shim objects (property adapters,

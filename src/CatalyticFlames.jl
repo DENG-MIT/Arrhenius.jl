@@ -300,7 +300,9 @@ end
 
 function _catalytic_steady!(f;max_time_steps=800,timestep=Ref(1e-6),loglevel=0)
     w=CounterflowWorkspace(f)
-    # One entry in both the flame's own stats and the family global.
+    # One entry in both the flame's own stats and the family global. Unlike
+    # _counterflow_steady!, the catalytic path records no per-attempt calls
+    # tuples (grids entry only); see solver_stats for the documented semantics.
     cs=_catalytic_stats(f)
     push!(cs.grids,length(f.grid)); push!(COUNTERFLOW_STATS.grids,length(f.grid))
     _catalytic_newton!(f,w;loglevel) && return true

@@ -31,6 +31,14 @@ end
         @test cstats.newton_iterations>=cstats.jacobians
         @test last(cstats.grids)==length(f.grid)
         @test COUNTERFLOW_STATS.jacobians>=cstats.jacobians
+        # residual_evals counts every counterflow_residual! call at entry,
+        # manual ones included: three extra calls add exactly three.
+        re=cstats.residual_evals
+        r3=similar(f.state)
+        for _ in 1:3
+            counterflow_residual!(r3,f)
+        end
+        @test cstats.residual_evals==re+3
         if haskey(ENV,"COUNTERFLOW_REFERENCE_DIR")
             ref=npzread(joinpath(ENV["COUNTERFLOW_REFERENCE_DIR"],"counterflow-h2-reference.npz"))
             interp(values)=[Arrhenius._interpolate_profile(ref["grid"],vec(values),z) for z in f.grid]
@@ -70,6 +78,26 @@ end
             @test cf.state==state0 && isnothing(cf.control_points)
             empty!(cf.fixed_temperature)
             set_two_point_control!(cf;temperature=1500.,decrement=20.)
+            # Direct internal-helper calls accumulate without resetting, and
+            # solve! resets at entry: the two-point/fixed-temperature
+            # compatibility check runs AFTER that reset, so the throwing
+            # solve! zeroes the counters the helper call had filled.
+            st=copy(cf.state)
+            Arrhenius._counterflow_newton!(cf,Arrhenius.CounterflowWorkspace(cf))
+            cs=solver_stats(cf)
+            @test cs.newton_calls==1
+            rr2=similar(cf.state); re2=cs.residual_evals
+            for _ in 1:3
+                counterflow_residual!(rr2,cf)
+            end
+            @test cs.residual_evals==re2+3
+            copyto!(cf.state,st)
+            cf.fixed_temperature=temperature(cf)
+            @test_throws ArgumentError solve!(cf;refine_grid=false)
+            @test all(iszero,getfield(cs,n) for n in fieldnames(CounterflowStats)
+                if fieldtype(CounterflowStats,n)==Int)
+            @test isempty(cs.grids) && isempty(cs.calls)
+            empty!(cf.fixed_temperature)
             zL,tL,zR,tR=cf.control_points; iL=findfirst(==(zL),cf.grid); iR=findfirst(==(zR),cf.grid)
             @test iL<iR
             @test tL==1000*state0[1,iL]-20

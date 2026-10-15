@@ -34,6 +34,8 @@
 function flame_residual!(residual,f::IonizedFlame,u,w::IonizedFlameWorkspace;
         previous=nothing,dt=Inf,update_transport=true,nodes=eachindex(f.grid),
         previous_enthalpy=nothing)
+    # Counted at entry, before argument validation, like the generic method.
+    _premixed_stats(f).residual_evals+=1; PREMIXED_STATS.residual_evals+=1
     n,N=f.gas.n_species,length(f.grid)
     size(residual)==size(u)==(n+3,N) || throw(DimensionMismatch("ionized residual/state size mismatch"))
     previous===nothing || size(previous)==size(u) || throw(DimensionMismatch("previous state size mismatch"))
