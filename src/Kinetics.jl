@@ -296,17 +296,112 @@ function _mass_action!(workspace, reaction::Reaction, C)
     pi, pv = rowvals(products), nonzeros(products)
     @inbounds for i in 1:reaction.n_reactions
         forward,reverse = workspace.kf[i],workspace.kr[i]
-        for j in nzrange(reactants,i)
-            forward *= _concentration_power(C[ri[j]],rv[j])
-        end
+        forward *= _mass_action_product(C, ri, rv, reaction.reactant_stoich_coeffs, i,
+            nzrange(reactants, i))
         if reaction.is_reversible[i]
-            for j in nzrange(products,i)
-                reverse *= _concentration_power(C[pi[j]],pv[j])
-            end
+            reverse *= _mass_action_product(C, pi, pv, products, i, nzrange(products, i))
         end
         workspace.kf[i],workspace.kr[i] = forward,reverse
         workspace.rates_of_progress[i] = forward-reverse
     end
+end
+
+"""Cantera's optimized C1/C2/C3 and general stoichiometry concentration product."""
+@inline function _mass_action_product(C, species, orders, stoich, column, entries)
+    standard = _mass_action_standard(orders, stoich, species, column, entries)
+    nterms = 0
+    if standard
+        @inbounds for j in entries
+            nterms += Int(stoich[species[j], column])
+        end
+    end
+    standard &= 1 <= nterms <= 3
+
+    multiplier = isempty(entries) ? one(eltype(C)) : one(C[species[first(entries)]])
+    if standard
+        negative_factors = 0
+        @inbounds for j in entries
+            c = C[species[j]]
+            for _ in 1:Int(stoich[species[j], column])
+                negative_factors += c < 0
+                multiplier *= c
+            end
+        end
+        return negative_factors >= 2 ? zero(multiplier) : multiplier
+    end
+
+    # Cantera's arbitrary-order path returns zero if any participating
+    # concentration is nonpositive. Species with zero order are skipped.
+    @inbounds for j in entries
+        order = orders[j]
+        order == 0 && continue
+        c = C[species[j]]
+        c > 0 || return zero(multiplier)
+        multiplier *= c^order
+    end
+    return multiplier
+end
+
+@inline function _mass_action_standard(orders, stoich, species, column, entries)
+    length(entries) <= 3 || return false
+    @inbounds for j in entries
+        coefficient = stoich[species[j], column]
+        (orders[j] == coefficient && coefficient >= 0 && isinteger(coefficient)) || return false
+    end
+    return true
+end
+
+"""Accumulate the derivative of Cantera's active mass-action product branch."""
+function _mass_action_product_gradient!(gradient, C, species, orders, stoich,
+        column, entries, scale)
+    standard = _mass_action_standard(orders, stoich, species, column, entries)
+    nterms = 0
+    if standard
+        @inbounds for j in entries
+            nterms += Int(stoich[species[j], column])
+        end
+    end
+    standard &= 1 <= nterms <= 3
+    if standard
+        negative_factors = 0
+        @inbounds for j in entries
+            c = C[species[j]]
+            negative_factors += Int(c < 0) * Int(stoich[species[j], column])
+        end
+        negative_factors >= 2 && return gradient
+    else
+        @inbounds for j in entries
+            orders[j] == 0 && continue
+            C[species[j]] > 0 || return gradient
+        end
+    end
+
+    @inbounds for j in entries
+        k = species[j]
+        order = standard ? Int(stoich[k, column]) : orders[j]
+        order == 0 && continue
+        derivative = zero(scale)
+        if standard
+            # Repeat the species factor `order` times, omitting each occurrence
+            # once in turn; this handles zero concentrations without division.
+            for _ in 1:order
+                term = C[k]^(order - 1)
+                for other in entries
+                    other == j && continue
+                    term *= C[species[other]]^Int(stoich[species[other], column])
+                end
+                derivative += term
+            end
+        else
+            derivative = order * C[k]^(order - 1)
+            for other in entries
+                other == j && continue
+                derivative *= C[species[other]]^orders[other]
+            end
+        end
+        gradient[k] += scale * derivative
+    end
+    return gradient
 end
 
 # Prepared indices are valid only for this mechanism and reversibility mask.
