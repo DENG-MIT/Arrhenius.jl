@@ -64,22 +64,6 @@ end
     return nothing
 end
 
-# Product differentiation does not divide by concentration, so first-order
-# reactants retain their finite derivative at exactly zero concentration.
-function _flame_product_gradient!(gradient,A,reaction_index,C,scale)
-    rows,orders=rowvals(A),nonzeros(A)
-    @inbounds for slot in nzrange(A,reaction_index)
-        order=orders[slot];k=rows[slot]
-        order==0 && continue
-        derivative=order==1 ? 1.0 : order*_concentration_power(C[k],order-1)
-        for other in nzrange(A,reaction_index)
-            other==slot && continue
-            derivative *= _concentration_power(C[rows[other]],orders[other])
-        end
-        gradient[k] += scale*derivative
-    end
-end
-
 function _flame_base_rate(reaction,i,T,h)
     value=reaction.Arrhenius_coeffs[i,1]*exp(reaction.Arrhenius_coeffs[i,2]*log(T)-
         reaction.Arrhenius_coeffs[i,3]*(4184.0/R)/T)
@@ -126,19 +110,19 @@ function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache)
     cached=cache!==nothing && cache.temperature==T
     cached_plog=cached && cache.pressure==P
     @inbounds for i in 1:reaction.n_reactions
-        _flame_product_gradient!(d.rate_gradient,reaction.reactant_orders,i,C,kf[i])
+        _mass_action_product_gradient!(d.rate_gradient,C,rowvals(reaction.reactant_orders),
+            nonzeros(reaction.reactant_orders),reaction.reactant_stoich_coeffs,i,
+            nzrange(reaction.reactant_orders,i),kf[i])
         if reaction.is_reversible[i]
-            _flame_product_gradient!(d.rate_gradient,reaction.product_stoich_coeffs,i,C,-kr[i])
+            _mass_action_product_gradient!(d.rate_gradient,C,rowvals(reaction.product_stoich_coeffs),
+                nonzeros(reaction.product_stoich_coeffs),reaction.product_stoich_coeffs,i,
+                nzrange(reaction.product_stoich_coeffs,i),-kr[i])
         end
-        pf=1.0;pr=reaction.is_reversible[i] ? 1.0 : 0.0
-        for slot in nzrange(reaction.reactant_orders,i)
-            pf *= _concentration_power(C[rowvals(reaction.reactant_orders)[slot]],nonzeros(reaction.reactant_orders)[slot])
-        end
-        if reaction.is_reversible[i]
-            for slot in nzrange(reaction.product_stoich_coeffs,i)
-                pr *= _concentration_power(C[rowvals(reaction.product_stoich_coeffs)[slot]],nonzeros(reaction.product_stoich_coeffs)[slot])
-            end
-        end
+        pf=_mass_action_product(C,rowvals(reaction.reactant_orders),nonzeros(reaction.reactant_orders),
+            reaction.reactant_stoich_coeffs,i,nzrange(reaction.reactant_orders,i))
+        pr=reaction.is_reversible[i] ? _mass_action_product(C,rowvals(reaction.product_stoich_coeffs),
+            nonzeros(reaction.product_stoich_coeffs),reaction.product_stoich_coeffs,i,
+            nzrange(reaction.product_stoich_coeffs,i)) : 0.0
         multiplier=pf-(reaction.is_reversible[i] ? pr/d.kinetics.equilibrium_constants[i] : 0.0)
         collider_derivative=0.0
         if plog_cursor<=length(plog.reaction_indices) && plog.reaction_indices[plog_cursor]==i
@@ -218,7 +202,8 @@ function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache)
         d.dual_h[k] *= R*Td;d.dual_s[k] *= R
         d.entropy[k]=ForwardDiff.value(d.dual_s[k])
     end
-    wdot!(d.dual_source,gas.reaction,Td,d.dual_C,d.dual_s,d.dual_h,d.dual_kinetics;pressure=P)
+    wdot!(d.dual_source,gas.reaction,Td,d.dual_C,d.dual_s,d.dual_h,d.dual_kinetics;
+        pressure=P)
     _flame_concentration_jacobian!(d,gas.reaction,T,P,d.concentration,h,d.entropy,cache) || return false
     mul!(d.source_direction,d.concentration_jacobian,X)
     @inbounds for k in 1:n
@@ -260,7 +245,8 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             d.cp_gradient[k+1,j]=w.cp[k,j]/MW[k]
             # Match the branch the positive finite-difference step samples:
             # traces within one step below zero use the forward derivative.
-            d.density_gradient[k+1,j]=_flame_node_weight(w,u[k+1,j])*w.rho[j]*(1/sumY-1/(MW[k]*inverseMW))
+            d.density_gradient[k+1,j]=_flame_node_weight(w,u[k+1,j])*w.rho[j]*
+                (w.clip_species[] ? 1/sumY-1/(MW[k]*inverseMW) : -1/(MW[k]*inverseMW))
         end
         d.density_gradient[1,j]=-1000w.rho[j]/T
         d.enthalpy_gradient[1,j]=1000c.cp[j];d.cp_gradient[1,j]=cpT
@@ -271,7 +257,8 @@ function _flame_node_derivatives!(d,f,u,w,r,previous,dt,previous_enthalpy)
             d.dual_h[k] *= R*Td;d.dual_s[k] *= R
             d.entropy[k]=ForwardDiff.value(d.dual_s[k])
         end
-        wdot!(d.dual_source,gas.reaction,Td,d.dual_C,d.dual_s,d.dual_h,d.dual_kinetics;pressure=f.pressure)
+        wdot!(d.dual_source,gas.reaction,Td,d.dual_C,d.dual_s,d.dual_h,d.dual_kinetics;
+            pressure=f.pressure)
         _flame_concentration_jacobian!(d,gas.reaction,T,f.pressure,d.concentration,
             @view(w.h[:,j]),d.entropy,w.rate_caches[j]) || return false
         mul!(d.source_direction,d.concentration_jacobian,@view(w.X[:,j]))

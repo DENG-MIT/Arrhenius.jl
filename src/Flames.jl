@@ -338,7 +338,30 @@ _flame_clipped(w) = w isa FlameWorkspace && w.clip_species[]
         sumY+=y
         inverseMW+=y/f.gas.MW[k]
     end
-    return (density=f.pressure*(sumY/inverseMW)/(R*T),inverse_mw=inverseMW)
+    density=clip_species ? f.pressure*(sumY/inverseMW)/(R*T) :
+        f.pressure/(inverseMW*R*T)
+    return (density,inverse_mw=inverseMW)
+end
+
+@inline function _flame_midpoint_composition!(ymid,xmid,Yleft,Yright,MW,positive)
+    sumY,inverseMW=0.0,0.0
+    @inbounds for k in eachindex(MW)
+        value=.5*(Yleft[k]+Yright[k])
+        y=positive ? max(value,0.0) : value
+        ymid[k]=y
+        sumY+=y
+        inverseMW+=y/MW[k]
+    end
+    meanMW=positive ? sumY/inverseMW : 1/inverseMW
+    if positive
+        @inbounds for k in eachindex(MW)
+            ymid[k]/=sumY
+        end
+    end
+    @inbounds for k in eachindex(MW)
+        xmid[k]=ymid[k]*meanMW/MW[k]
+    end
+    return meanMW
 end
 
 function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid),freeze_source=false,
@@ -369,17 +392,9 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
     end
     @inbounds for j in 1:N-1
         Tmid = 500*(u[1,j]+u[1,j+1])
-        ysum, inverseMW = 0.0, 0.0
-        for k in 1:n
-            w.ymid[k] = max(0.0, .5*(u[k+1,j]+u[k+1,j+1]))
-            ysum += w.ymid[k]
-            inverseMW += w.ymid[k]/gas.MW[k]
-        end
-        meanMW = ysum/inverseMW
-        for k in 1:n
-            w.ymid[k] /= ysum
-            w.xmid[k] = w.ymid[k]*meanMW/gas.MW[k]
-        end
+        meanMW = _flame_midpoint_composition!(w.ymid,w.xmid,
+            @view(u[2:n+1,j]),@view(u[2:n+1,j+1]),gas.MW,
+            conservative || f.transport_model == :multicomponent || f.soret_enabled)
         if update_transport
             if f.transport_model == :multicomponent
                 w.conductivity[j] = multicomponent_transport!(w.multi_transport,
