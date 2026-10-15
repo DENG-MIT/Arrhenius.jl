@@ -81,3 +81,30 @@ end
     solve!(cold)
     @test cold.converged && js.jacobians<cold_jac
 end
+
+@testset "premixed steady retry counts successful steps" begin
+    # Wiring-layer regression for the solve! cadence: Cantera retries the
+    # steady Newton solve only after m_steps={10} successful pseudo-time
+    # steps (SteadyStateSystem::timeStep increments n on success only), so a
+    # failed step advances the attempt count without counting toward the
+    # retry. COUNTERFLOW_STATS.steady_retries records (successful steps,
+    # attempts) at every retry decision, counted since the previous retry of
+    # the same transient loop. An attempt-counted wiring instead retries at
+    # attempt multiples and records fewer than ten successes whenever
+    # failures intervene (measured 9, 7 and 6 on this solve when the
+    # premixed wiring passes retry_on_successes=false).
+    gas=CreateSolution(joinpath(dirname(pathof(Arrhenius)),"..","mechanism","h2o2.yaml"))
+    f=Arrhenius.CounterflowPremixedFlame(gas;reactants="H2:1.6,O2:1,AR:7",
+        mdot_reactants=.12,mdot_products=.06,T_reactants=373.,P=.05*one_atm,width=.2)
+    Arrhenius.reset!(Arrhenius.COUNTERFLOW_STATS)
+    solve!(f;slope=.1,curve=.2)
+    @test f.converged
+    retries=Arrhenius.COUNTERFLOW_STATS.steady_retries
+    # the transient path with its steady retries must actually be exercised
+    @test !isempty(retries)
+    @test all(first.(retries).==10)
+    # failures intervene between retries on this solve (windows wider than
+    # their ten accepted steps), so the count above discriminates the two
+    # cadences instead of passing vacuously
+    @test any(last.(retries).>10)
+end
