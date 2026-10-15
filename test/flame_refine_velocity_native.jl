@@ -1,4 +1,4 @@
-using Test, Arrhenius, Statistics
+using Test, Arrhenius
 
 @testset "planar flame refinement interpolates velocity like Cantera" begin
     ref = Arrhenius.npzread(joinpath(@__DIR__, "data", "cantera_flame_refine_velocity.npz"))
@@ -58,7 +58,7 @@ using Test, Arrhenius, Statistics
                 println("RESIDUAL kind=$kind component=$name no-interior-signal")
             else
                 ratios = nr[native_row,selected] ./ cr[selected]
-                med = median(ratios)
+                med = sort(ratios)[cld(length(ratios),2)]
                 spread = maximum(abs.(ratios ./ med .- 1))
                 println("RESIDUAL kind=$kind component=$name ctmax=$(maximum(abs.(cr))) natmax=$(maximum(abs.(nr[native_row,:]))) ratio=$med spread=$spread")
             end
