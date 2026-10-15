@@ -192,7 +192,7 @@ end
         failures0=Arrhenius.COUNTERFLOW_STATS.time_step_failures
         @test !Arrhenius._counterflow_steady_impl!(f;max_time_steps=budget,step_callback=dt->push!(dts,dt))
         @test length(dts)==accepted
-        @test Arrhenius.COUNTERFLOW_STATS.time_steps-steps0==accepted
+        @test Arrhenius.COUNTERFLOW_STATS.time_steps-steps0==budget
         @test Arrhenius.COUNTERFLOW_STATS.time_step_failures-failures0==2
         @test f.transient_calls==budget+2
         @test f.steady_calls==steadies
