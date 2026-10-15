@@ -32,6 +32,10 @@ end
             "initial_mole_fractions"=>ones(ng)./ng,"initial_temperature"=>[900.],"initial_pressure"=>[one_atm]))
         m=SurfaceMechanism(path)
         f=Arrhenius.CatalyticImpingingJet(gas,m;reactants="H2:1,AR:4",mdot=.06,T_inlet=900.,T_surface=900.)
+        old_grid=copy(f.grid); old_state=copy(f.state); old_velocity=velocity(f)
+        @test Arrhenius._refine_axisymmetric!(f;ratio=3.,slope=.03,curve=.06,prune=.02,
+            grid_min=1e-10,max_points=1200)
+        _fix39_assert_refined_mass_flux(f,old_grid,old_state,old_velocity)
         @test_throws ArgumentError Arrhenius.set_catalytic_reactions!(f;gas_multiplier=-1.)
         @test_throws ArgumentError Arrhenius.set_catalytic_inlet!(f,"H2:1";mdot=0.)
         @test_throws ArgumentError Arrhenius.set_catalytic_inlet!(f,"H2:1";temperature=0.)
