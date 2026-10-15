@@ -339,8 +339,9 @@ _flame_cantera_kinetics(f) = false
         sumY+=y
         inverseMW+=y/f.gas.MW[k]
     end
-    mass_scale=cantera_no_norm && !clip_species ? 1.0 : sumY
-    return (density=f.pressure*mass_scale/(inverseMW*R*T),inverse_mw=inverseMW)
+    density=cantera_no_norm && !clip_species ? f.pressure/(inverseMW*R*T) :
+        f.pressure*(sumY/inverseMW)/(R*T)
+    return (density,inverse_mw=inverseMW)
 end
 
 @inline function _flame_midpoint_composition!(ymid,xmid,Yleft,Yright,MW,positive)

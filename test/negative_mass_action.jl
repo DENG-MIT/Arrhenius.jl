@@ -79,7 +79,7 @@ using Arrhenius, LinearAlgebra, SparseArrays, Test
     probe = (gas=(MW=MW,), pressure=P)
     Yraw = [0.7, -0.1]
     density = Arrhenius._flame_density(probe, T, Yraw).density
-    @test density ≈ P*sum(Yraw) / (dot(Yraw, 1 ./ MW) * Arrhenius.R*T) rtol=2e-15
+    @test density == P*(sum(Yraw)/dot(Yraw, 1 ./ MW)) / (Arrhenius.R*T)
     density_nonorm = Arrhenius._flame_density(probe, T, Yraw; cantera_no_norm=true).density
     @test density_nonorm ≈ P / (dot(Yraw, 1 ./ MW) * Arrhenius.R*T) rtol=2e-15
     density_clipped = Arrhenius._flame_density(probe, T, Yraw; clip_species=true).density
