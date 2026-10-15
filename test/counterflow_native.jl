@@ -24,10 +24,13 @@ end
         r=similar(f.state)
         Arrhenius.counterflow_residual!(r,f)
         @test norm(r,Inf)<1e-8
-        # solver_stats dispatch: counterflow kinds report the shared COUNTERFLOW_STATS.
-        @test solver_stats(f)===COUNTERFLOW_STATS
-        @test COUNTERFLOW_STATS.jacobians>0 && !isempty(COUNTERFLOW_STATS.grids)
-        @test COUNTERFLOW_STATS.newton_iterations>=COUNTERFLOW_STATS.jacobians
+        # solver_stats: per-flame counters; the exported global mirrors the family.
+        cstats=solver_stats(f)
+        @test cstats isa CounterflowStats && solver_stats(f)===cstats
+        @test cstats.jacobians>0 && !isempty(cstats.grids)
+        @test cstats.newton_iterations>=cstats.jacobians
+        @test last(cstats.grids)==length(f.grid)
+        @test COUNTERFLOW_STATS.jacobians>=cstats.jacobians
         if haskey(ENV,"COUNTERFLOW_REFERENCE_DIR")
             ref=npzread(joinpath(ENV["COUNTERFLOW_REFERENCE_DIR"],"counterflow-h2-reference.npz"))
             interp(values)=[Arrhenius._interpolate_profile(ref["grid"],vec(values),z) for z in f.grid]
@@ -207,5 +210,32 @@ end
         @test maximum(abs.(sum(mass_fractions(f);dims=1).-1))<1e-10
     else
         @test_skip false
+    end
+end
+
+@testset "solver_stats dispatch for every counterflow kind" begin
+    # Constructing each public kind must yield its own stats object (Cantera
+    # keeps solver_stats per instance); dispatch needs no solve.
+    gas=CreateSolution(joinpath(dirname(pathof(Arrhenius)),"..","mechanism","h2o2.yaml"))
+    diffusion=CounterflowDiffusionFlame(gas;fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",
+        mdot_fuel=.24,mdot_oxidizer=.72,P=one_atm,width=.02)
+    composition="H2:1.6,O2:1,AR:7"; P=.05*one_atm
+    premixed=CounterflowPremixedFlame(gas;reactants=composition,mdot_reactants=.12,
+        mdot_products=.06,T_reactants=373.,P,width=.2)
+    twin=CounterflowTwinPremixedFlame(gas;reactants=composition,mdot=.12,T=373.,P,width=.2)
+    jet=ImpingingJet(gas;reactants=composition,mdot=.06,T_inlet=373.,T_surface=500.,P,width=.2)
+    flames=(diffusion,premixed,twin,jet)
+    @test all(f -> solver_stats(f) isa CounterflowStats, flames)
+    stats=solver_stats.(flames)
+    @test all(stats[i]!==stats[j] for i in 1:4 for j in i+1:4)
+    @test all(s -> s.jacobians==0 && isempty(s.grids), stats)  # fresh flames start at zero
+    # One small h2o2 solve per kind: per-flame counters come back nonzero.
+    for f in flames
+        s=solver_stats(f)
+        solve!(f;ratio=8.,slope=.3,curve=.5)
+        @test f.converged
+        @test s.jacobians>0 && s.newton_iterations>0
+        @test s.newton_iterations>=s.jacobians
+        @test last(s.grids)==length(f.grid)
     end
 end

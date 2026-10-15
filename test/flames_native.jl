@@ -28,22 +28,47 @@ using Arrhenius, LinearAlgebra, Test
     @test maximum(f.state[end,:])-minimum(f.state[end,:]) < 1e-10
     @test norm(flame_residual!(similar(f.state),f),Inf) < 1e-8
 
-    # solver_stats: deterministic per-solve counters (Cantera's Sim1D.solver_stats totals).
-    @test solver_stats(f)===PREMIXED_STATS
+    # solver_stats: per-flame deterministic counters. Cantera keeps Sim1D
+    # solver_stats on the instance; each flame counts only its own solves and
+    # the exported PREMIXED_STATS mirrors the accumulated family total.
+    counts(s)=(s.jacobians,s.newton_calls,s.newton_iterations,s.time_steps,
+        s.time_step_failures,s.steady_failures,s.regrids,copy(s.grids))
     stats=solver_stats(f)
-    counts()=(stats.jacobians,stats.newton_calls,stats.newton_iterations,stats.time_steps,
-        stats.time_step_failures,stats.steady_failures,stats.regrids,copy(stats.grids))
-    Arrhenius.reset!(stats)
-    @test counts()==(0,0,0,0,0,0,0,Int[])
-    counted=FreeFlame(gas;X,discretization=:finite_difference)
-    solve!(counted)
-    run1=counts()
+    @test stats isa PremixedStats && solver_stats(f)===stats
+    @test solver_stats(FreeFlame(gas;X))!==stats         # per-flame, not a shared global
+    fcounts=counts(stats)
+    @test fcounts[1]>0                                   # f's own solve reached its counters
+    fresh=FreeFlame(gas;X,discretization=:finite_difference)
+    @test counts(solver_stats(fresh))==(0,0,0,0,0,0,0,Int[])
+    solve!(fresh)
+    run1=counts(solver_stats(fresh))
     @test run1[1]>0 && run1[2]>0 && run1[3]>0            # jacobians, newton_calls, newton_iterations
     @test run1[3]>=run1[1]                                # every Jacobian serves a Newton iteration
-    @test last(run1[8])==length(counted.grid)             # final steady attempt kept the final grid
-    Arrhenius.reset!(stats)
-    solve!(FreeFlame(gas;X,discretization=:finite_difference))
-    @test counts()==run1                                  # counts are deterministic
+    @test last(run1[8])==length(fresh.grid)               # final steady attempt kept the final grid
+    @test counts(stats)==fcounts                          # solving fresh left f's counters untouched
+    @test PREMIXED_STATS.jacobians>=run1[1]               # global mirrors the family total
+    again=FreeFlame(gas;X,discretization=:finite_difference)
+    solve!(again)
+    @test counts(solver_stats(again))==run1               # equivalent cold solve is deterministic
+    solve!(fresh;ratio=2.,slope=.02,curve=.05)            # a second solve! replaces the counters
+    c2=counts(solver_stats(fresh))
+    @test 0<c2[1]<run1[1]                                 # tighter criteria recount from zero
+    @test c2[8]!=run1[8]                                  # the replaced grids differ from run1
+    @test counts(stats)==fcounts
+    # Burner flames count through the same shared helpers, per flame.
+    burner=BurnerFlame(gas;X,mdot=.1,discretization=:finite_difference)
+    bs=solver_stats(burner)
+    @test bs!==stats && counts(bs)==(0,0,0,0,0,0,0,Int[])
+    solve!(burner)
+    @test burner.converged && bs.jacobians>0 && bs.newton_iterations>=bs.jacobians
+    @test last(bs.grids)==length(burner.grid) && counts(stats)==fcounts
+    # Fixed-temperature burner: same per-flame accounting on the imposed-profile path.
+    fixed=BurnerFlame(gas;X,mdot=.1,discretization=:finite_difference)
+    set_temperature_profile!(fixed,[0.,.25,1.],[300.,1600.,300.])
+    fxs=solver_stats(fixed)
+    solve!(fixed)
+    @test fixed.converged && fxs.jacobians>0 && fxs.newton_iterations>=fxs.jacobians
+    @test counts(stats)==fcounts
 
     # Cantera's fourth refine criterion: prune=0 must reproduce the default.
     explicit = solve!(FreeFlame(gas;X,discretization=:finite_difference);prune=0.)

@@ -29,7 +29,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 abstract type AbstractPremixedCounterflow end
-solver_stats(::AbstractPremixedCounterflow)=COUNTERFLOW_STATS
+solver_stats(f::AbstractPremixedCounterflow)=solver_stats(f.flow)
 
 "Premixed reactants opposed by a prescribed product stream."
 struct CounterflowPremixedFlame{F,C} <: AbstractPremixedCounterflow
@@ -367,8 +367,9 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
     isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 ||
         throw(ArgumentError("finite prune <= min(slope,curve) and positive grid_min required"))
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
+    reset!(_counterflow_stats(f))  # per-flame counters report this solve only
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
-        step_callback=time_step_callback,analytic=jacobian_mode===:auto)
+        step_callback=step_callback=time_step_callback,analytic=jacobian_mode===:auto)
     f.converged=false
     timestep=Ref(Float64(initial_time_step))
     initial_N=length(f.grid)
