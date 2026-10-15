@@ -340,12 +340,19 @@ function _refine_axisymmetric!(f;ratio,slope,curve,prune,grid_min,max_points)
     end
     !any(insert) && all(x->x>=0,keep) && return false
     newgrid=Float64[]; columns=Vector{Float64}[]
+    axial_velocity=velocity(f)
     for j in 1:N
         keep[j]==-1 && continue
         push!(newgrid,z[j]); push!(columns,u[:,j])
         if j<N && insert[j]
             push!(newgrid,(z[j]+z[j+1])/2)
-            push!(columns,(u[:,j]+u[:,j+1])/2)
+            midpoint=(u[:,j]+u[:,j+1])/2
+            # Sim1D::refine interpolates the physical velocity, not rho*u.
+            # Reconstruct mass flux using the interpolated temperature and Y.
+            rho=f.pressure/(R*1000*midpoint[1]*sum(midpoint[k+1]/f.gas.MW[k]
+                for k in 1:f.gas.n_species))
+            midpoint[B]=rho*(axial_velocity[j]+axial_velocity[j+1])/2
+            push!(columns,midpoint)
         end
     end
     length(newgrid)<=max_points || error("axisymmetric refinement exceeds max_points=$max_points")
