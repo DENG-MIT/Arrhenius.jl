@@ -24,6 +24,10 @@ end
         r=similar(f.state)
         Arrhenius.counterflow_residual!(r,f)
         @test norm(r,Inf)<1e-8
+        # solver_stats dispatch: counterflow kinds report the shared COUNTERFLOW_STATS.
+        @test solver_stats(f)===COUNTERFLOW_STATS
+        @test COUNTERFLOW_STATS.jacobians>0 && !isempty(COUNTERFLOW_STATS.grids)
+        @test COUNTERFLOW_STATS.newton_iterations>=COUNTERFLOW_STATS.jacobians
         if haskey(ENV,"COUNTERFLOW_REFERENCE_DIR")
             ref=npzread(joinpath(ENV["COUNTERFLOW_REFERENCE_DIR"],"counterflow-h2-reference.npz"))
             interp(values)=[Arrhenius._interpolate_profile(ref["grid"],vec(values),z) for z in f.grid]

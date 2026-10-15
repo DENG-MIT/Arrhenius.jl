@@ -29,6 +29,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 abstract type AbstractPremixedCounterflow end
+solver_stats(::AbstractPremixedCounterflow)=COUNTERFLOW_STATS
 
 "Premixed reactants opposed by a prescribed product stream."
 struct CounterflowPremixedFlame{F,C} <: AbstractPremixedCounterflow

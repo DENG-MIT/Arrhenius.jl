@@ -337,6 +337,7 @@ mutable struct CounterflowStats
 end
 CounterflowStats()=CounterflowStats(0,0,0,0,0,0,0,0,0,0,0,Int[],NTuple{8,Float64}[])
 const COUNTERFLOW_STATS=CounterflowStats()
+solver_stats(::CounterflowDiffusionFlame)=COUNTERFLOW_STATS
 function reset!(s::CounterflowStats)
     for name in fieldnames(CounterflowStats)
         v=getfield(s,name)

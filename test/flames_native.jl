@@ -28,6 +28,23 @@ using Arrhenius, LinearAlgebra, Test
     @test maximum(f.state[end,:])-minimum(f.state[end,:]) < 1e-10
     @test norm(flame_residual!(similar(f.state),f),Inf) < 1e-8
 
+    # solver_stats: deterministic per-solve counters (Cantera's Sim1D.solver_stats totals).
+    @test solver_stats(f)===PREMIXED_STATS
+    stats=solver_stats(f)
+    counts()=(stats.jacobians,stats.newton_calls,stats.newton_iterations,stats.time_steps,
+        stats.time_step_failures,stats.steady_failures,stats.regrids,copy(stats.grids))
+    Arrhenius.reset!(stats)
+    @test counts()==(0,0,0,0,0,0,0,Int[])
+    counted=FreeFlame(gas;X,discretization=:finite_difference)
+    solve!(counted)
+    run1=counts()
+    @test run1[1]>0 && run1[2]>0 && run1[3]>0            # jacobians, newton_calls, newton_iterations
+    @test run1[3]>=run1[1]                                # every Jacobian serves a Newton iteration
+    @test last(run1[8])==length(counted.grid)             # final steady attempt kept the final grid
+    Arrhenius.reset!(stats)
+    solve!(FreeFlame(gas;X,discretization=:finite_difference))
+    @test counts()==run1                                  # counts are deterministic
+
     # Cantera's fourth refine criterion: prune=0 must reproduce the default.
     explicit = solve!(FreeFlame(gas;X,discretization=:finite_difference);prune=0.)
     @test explicit.grid==f.grid && explicit.state==f.state
