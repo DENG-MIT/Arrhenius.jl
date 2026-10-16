@@ -4,7 +4,7 @@ Arrhenius.jl requires Julia. Install the package with Julia's package manager:
 
 ~~~julia
 ]
-add https://github.com/Subsapce-Lab/Arrhenius.jl
+add https://github.com/DENG-MIT/Arrhenius.jl
 ~~~
 
 A local checkout can be developed with Pkg.develop(path="."). The optional reactor example environment contains SciML solver dependencies used by the zero-dimensional examples.

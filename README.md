@@ -13,7 +13,7 @@ Arrhenius.jl is a Julia package for reacting-flow and combustion calculations. I
 
 ## Install
 
-In Julia's package manager, enter <code>] add https://github.com/Subsapce-Lab/Arrhenius.jl</code>. For a local checkout, activate the repository project and run <code>Pkg.instantiate()</code> before using its examples. See the [installation guide](https://deng-mit.github.io/Arrhenius.jl/dev/install/).
+In Julia's package manager, enter <code>] add https://github.com/DENG-MIT/Arrhenius.jl</code>. For a local checkout, activate the repository project and run <code>Pkg.instantiate()</code> before using its examples. See the [installation guide](https://deng-mit.github.io/Arrhenius.jl/dev/install/).
 
 ## Quick start: constant-pressure ignition
 
