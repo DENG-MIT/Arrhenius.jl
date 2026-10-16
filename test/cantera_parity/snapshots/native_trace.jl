@@ -10,8 +10,7 @@ mkpath(outdir)
 gas = CreateSolution(spec["mechanism"] * ".yaml")
 X = Dict(String(k) => parse(Float64, v) for (k, v) in split.(split(spec["X"], ","), ":"))
 P = spec["P_atm"] * one_atm
-f = FreeFlame(gas; T=spec["T"], P, X, width=spec["width"], transport_model=:mixture_averaged)
-f.energy_enabled = true
+f = FreeFlame(gas; T=spec["T"], P, X, width=spec["width"], transport_model=:mixture_averaged, discretization=:finite_difference)
 
 const ATTEMPTS = NamedTuple[]
 const TRANSIENT_SUCCESSES = Ref(0)
@@ -26,7 +25,7 @@ function save_first_failure!(f, input_state, dt, iterations, jac_before, jac_aft
     z = copy(f.grid)
     T = 1000 .* input_state[1, :]
     Y = permutedims(copy(input_state[2:end-1, :]))
-    meanMW = 1 ./ (Y' * (1 ./ gas.MW))
+    meanMW = 1 ./ (Y * (1 ./ gas.MW))
     rho = P .* meanMW ./ (Arrhenius.R .* T)
     u = input_state[end, :] ./ rho
     npzwrite(joinpath(outdir, "native_first_failed_input.npz"), Dict(
@@ -91,7 +90,7 @@ try
     solve!(f; ratio=spec["ratio"], slope=spec["slope"], curve=spec["curve"],
         time_step_callback=on_step, loglevel=0)
 catch e
-    err = first(sprint(showerror, e), 240)
+    global err = first(sprint(showerror, e), 240)
 end
 open(joinpath(outdir, "native_attempts.csv"), "w") do io
     println(io, "kind,dt,success,iterations,jac_before,jac_after,jac_delta,age_before,age_after,successful_steps,failed_steps,steady_attempts,steady_failures")

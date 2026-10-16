@@ -831,17 +831,23 @@ function _flame_correction_weights(u,transient)
     end
     return weights
 end
-function _flame_correction_norm(step,weights)
+function _flame_correction_norm(step,weights;extra_components=0)
     total=0.0
     for j in axes(step,2),k in axes(step,1)
         total += (step[k,j]/weights[k])^2
     end
-    return sqrt(total/length(step))
+    norm_size=length(step)+extra_components*size(step,2)
+    return sqrt(total/norm_size)
 end
-# Prescribed-temperature systems retain residual merit; correction merit helps
-# the coupled species and energy solve.
+# Prescribed-temperature transient solves retain residual merit; correction merit helps
+# the coupled species and energy solve. FD steady solves use Cantera merit for all kinds.
 _flame_correction_enabled(f) = _conservative_flame(f) &&
     !(f isa BurnerFlame && !isempty(f.imposed_temperature))
+
+# Cantera returns Newton status 1 once an accepted damped trial has weighted correction norm <= 1.
+# In FD mode this is the steady-solve exit criterion, including prescribed-temperature burners.
+_flame_steady_correction_converged(policy, previous, s1, fixed_temperature=false) =
+    policy && !fixed_temperature && previous === nothing && s1 <= 1
 
 function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         require_positive=false,minimum_iterations=0,loglevel=0,analytic=true,iterations=Ref(0))
@@ -889,7 +895,9 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     # Prescribed-temperature systems retain residual merit.
     fixed_temperature = f isa BurnerFlame && !isempty(f.imposed_temperature)
     cantera_transient = previous !== nothing && !_flame_correction_enabled(f) && !fixed_temperature
+    # FD free/burner steady solves use Cantera correction merit, including imposed-T burners.
     policy_merit = policy && !fixed_temperature
+    norm_extra_components = policy_merit ? 4 : 0
     correction_enabled = _flame_correction_enabled(f) || cantera_transient || policy_merit
     correction_weights = correction_enabled ? _flame_correction_weights(f,u,previous !== nothing) : Float64[]
     trial_correction = correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
@@ -954,7 +962,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         # MultiNewton::solve increments the Jacobian age after every step.
         policy && (age[] += 1)
         if _flame_needs_correction_check(f) && iteration > minimum_iterations &&
-                residual_norm < tolerance && _flame_correction_norm(step,correction_weights) < 1
+                residual_norm < tolerance && _flame_correction_norm(step,correction_weights;extra_components=norm_extra_components) < 1
             return true
         end
         # The strict final-grid tolerance can lie below the residual's round-off
@@ -962,7 +970,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         # Newton correction below one in the steady weighted norm.
         at_floor = previous === nothing && refresh && tolerance <= 1e-8 && !require_positive &&
             iteration > minimum_iterations && residual_norm < 10tolerance &&
-            _flame_correction_norm(step,_flame_correction_weights(f,u,false)) < 1
+            _flame_correction_norm(step,_flame_correction_weights(f,u,false);extra_components=norm_extra_components) < 1
         alpha = 1.0
         for j in axes(u,2), k in axes(u,1)
             # Small negative species values are permitted in Newton iterates;
@@ -995,7 +1003,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             continue
         end
         # Trial correction merit uses the already factored (lagged) Newton J.
-        step_merit = correction_enabled ? _flame_correction_norm(step,correction_weights) : 0.0
+        step_merit = correction_enabled ? _flame_correction_norm(step,correction_weights;extra_components=norm_extra_components) : 0.0
         accepted = false
         # Cantera's MultiNewton::dampStep: at most seven trials, each sqrt(2)
         # shorter, before the Jacobian is refreshed or the step fails.
@@ -1008,7 +1016,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
                 if correction_enabled
                     copyto!(trial_correction,vec(rt))
                     LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,trial_correction)
-                    trial_merit = _flame_correction_norm(reshape(trial_correction,size(u)),correction_weights)
+                    trial_merit = _flame_correction_norm(reshape(trial_correction,size(u)),correction_weights;extra_components=norm_extra_components)
                     # Cantera dampStep accepts s1 < 1 or s1 < s0 and treats
                     # s1 < 1 as convergence of the Newton solve.
                     trial_contracts = (cantera_transient || policy_merit) ?
@@ -1021,9 +1029,9 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             if trial_contracts
                 u .= trial
                 accepted = true
-                # s1 < 1 converges a time step (Cantera dampStep); the steady
-                # solve continues to the residual tolerance instead.
-                cantera_transient && trial_merit < 1 && return true
+                # Cantera dampStep status 1 converges transient and steady solves at s1 <= 1.
+                cantera_transient && trial_merit <= 1 && return true
+                _flame_steady_correction_converged(policy, previous, trial_merit, fixed_temperature) && return true
                 break
             end
             alpha /= sqrt(2)
