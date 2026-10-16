@@ -506,6 +506,9 @@ _flame_persistent_jacobian(f::Union{FreeFlame,BurnerFlame}) =
 # the rows where flame_residual! adds the transient term: temperature and
 # species at interior points, except the temperature row of a
 # prescribed-temperature burner.
+_flame_recoverable_factorization_error(e) = e isa SingularException ||
+    (e isa LinearAlgebra.LAPACKException && e.info > 0)
+
 function _flame_factorize!(f::Union{FreeFlame,BurnerFlame},w::FlameWorkspace,rdt)
     B,N = size(f.state)
     # A failed factorization overwrites the band before LAPACK reports its
@@ -863,7 +866,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             pivots = try
                 _flame_factorize!(f,w,rdt)
             catch e
-                e isa SingularException || rethrow()
+                _flame_recoverable_factorization_error(e) || rethrow()
                 return false
             end
         end
@@ -944,7 +947,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,correction)
             reshape(correction,size(u))
         catch e
-            e isa SingularException || rethrow()
+            _flame_recoverable_factorization_error(e) || rethrow()
             return false
         end
         all(isfinite,step) || return false
