@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exact final-state and deterministic-counter comparison for native case NPZs."""
 import sys
+import json
 from pathlib import Path
 import numpy as np
 
@@ -24,6 +25,7 @@ files = sorted(base_files)
 if len(files) != 26 or set(files) != set(candidate_files):
     raise SystemExit(f"expected matching 26-case output sets; base={len(files)} candidate={len(candidate_files)}")
 all_exact = True
+counts_summary = {}
 for name in files:
     with np.load(base_files[name], allow_pickle=False) as a, np.load(candidate_files[name], allow_pickle=False) as b:
         state_exact = True
@@ -47,6 +49,12 @@ for name in files:
         if count_keys and counts_exact:
             print("  counters=" + repr({k: int(a[k][0]) for k in count_keys}))
         print(f"{name[:-4]}: state_exact={state_exact} counters_exact={counts_exact}")
+        counts_summary[name[:-4]] = {
+            "jacobians": int(a["stats_jacobians"][0]),
+            "newton": int(a["stats_newton_iterations"][0]),
+            "steps": int(a["stats_time_steps"][0]),
+            "failures": int(a["stats_failures"][0]),
+        }
         if nh3_root:
             spec = specs[name[:-4]]
             mechanism = spec["mechanism"]
@@ -72,6 +80,7 @@ for name in files:
                     invariant_max["planar_mass_flux_rel"] = max(invariant_max["planar_mass_flux_rel"], flux_rel)
                     print(f"  {label}_planar_mass_flux_rel={flux_rel:.17g}")
         all_exact &= state_exact and counts_exact
+print("counts_json=" + json.dumps(counts_summary, sort_keys=True))
 if nh3_root:
     print("invariant_maxima=" + repr(invariant_max))
 print(f"exact={sum(1 for p in files)} cases; verdict={'PASS' if all_exact else 'FAIL'}")
