@@ -508,6 +508,12 @@ _flame_persistent_jacobian(f::Union{FreeFlame,BurnerFlame}) =
 # prescribed-temperature burner.
 function _flame_factorize!(f::Union{FreeFlame,BurnerFlame},w::FlameWorkspace,rdt)
     B,N = size(f.state)
+    # A failed factorization overwrites the band before LAPACK reports its
+    # singular pivot. Invalidate every cache field before touching that band;
+    # callers may catch the exception and retry the solve later.
+    w.jacobian_valid[] = false
+    empty!(w.jacobian_pivots[])
+    w.jacobian_rdt[] = NaN
     band = w.band
     copyto!(band,w.steady_jacobian)
     if rdt != 0
@@ -529,6 +535,7 @@ function _flame_factorize!(f::Union{FreeFlame,BurnerFlame},w::FlameWorkspace,rdt
     _,pivots = LinearAlgebra.LAPACK.gbtrf!(2B-1,2B-1,B*N,band)
     w.jacobian_rdt[] = rdt
     w.jacobian_pivots[] = pivots
+    w.jacobian_valid[] = true
     return pivots
 end
 
@@ -921,7 +928,6 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
                     w.jacobian_evals[] += 1
                     _premixed_stats(f).jacobians+=1; PREMIXED_STATS.jacobians+=1
                     pivots = _flame_factorize!(f,w,rdt)
-                    w.jacobian_valid[] = true
                 else
                     J = _flame_jacobian(f,u,w,r; previous,dt,previous_enthalpy,analytic)
                     _premixed_stats(f).jacobians+=1; PREMIXED_STATS.jacobians+=1
