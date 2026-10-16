@@ -27,6 +27,7 @@ server_pid=$!
 exec 9>"$fifo"
 count=0
 while IFS= read -r id || [[ -n $id ]]; do
+    id=${id%$'\r'}
     [[ -n $id ]] || continue
     spec=$(awk -F, -v id="$id" '$1 == id {print $2}' "$manifest")
     [[ -n $spec ]] || { echo "unknown validation id: $id" >&2; exit 2; }
