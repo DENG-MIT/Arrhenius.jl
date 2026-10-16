@@ -15,12 +15,14 @@ if nh3_root:
     gas_cache = {}
     invariant_max = {"sumY_abs": 0.0, "element_mass_fraction_abs": 0.0, "planar_mass_flux_rel": 0.0}
 state_keys = ("grid", "T", "Y", "velocity", "inlet_Y", "SL")
-files = sorted(p.name for p in base.glob("*.npz"))
-if len(files) != 26 or set(files) != {p.name for p in candidate.glob("*.npz")}:
-    raise SystemExit(f"expected matching 26-case output sets; base={len(files)} candidate={len(list(candidate.glob('*.npz')))}")
+base_files = {p.name: p for p in base.rglob("*.npz")}
+candidate_files = {p.name: p for p in candidate.rglob("*.npz")}
+files = sorted(base_files)
+if len(files) != 26 or set(files) != set(candidate_files):
+    raise SystemExit(f"expected matching 26-case output sets; base={len(files)} candidate={len(candidate_files)}")
 all_exact = True
 for name in files:
-    with np.load(base/name, allow_pickle=False) as a, np.load(candidate/name, allow_pickle=False) as b:
+    with np.load(base_files[name], allow_pickle=False) as a, np.load(candidate_files[name], allow_pickle=False) as b:
         state_exact = True
         for key in state_keys:
             if key not in a or key not in b or not np.array_equal(a[key], b[key]):
