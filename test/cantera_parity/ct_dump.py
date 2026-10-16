@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Cantera-side dump tool for lockstep comparison with Arrhenius.jl.
 
-Usage (from the nh3-parity directory so mechanism YAMLs resolve):
+Usage (from the validation harness directory (NH3_HARNESS_DIR) so mechanism YAMLs resolve):
     ct_dump.py spec.json outdir state    # initial-guess state + steady residual + Jacobian
     ct_dump.py spec.json outdir trace    # full solve; per-timestep states + stdout log
 
@@ -39,7 +39,7 @@ def build(spec):
     gas = ct.Solution(spec["mechanism"] + ".yaml")
     kind = spec["kind"]
     if kind in ("diffusion", "premixed", "twin", "stagnation"):
-        # Counterflow family; case setup mirrors nh3-parity/h/nh3_cantera.py.
+        # Counterflow family; case setup mirrors the harness Cantera driver.
         if kind == "diffusion":
             gas.TP = spec["T"], spec["P_atm"] * ct.one_atm
             f = ct.CounterflowDiffusionFlame(gas, width=spec["width"])
@@ -140,7 +140,7 @@ def dump_state(spec, outdir):
     # auto=True -> set_initial_guess on the initial grid); mirror that here.
     if spec["kind"] != "stagnation":
         # build() already set the stagnation initial guess ("equil"), matching
-        # the nh3-parity adapter; re-guessing would only rebuild the same state.
+        # the harness adapter; re-guessing would only rebuild the same state.
         f.set_initial_guess()
     # FlowBase.__init__ enables the energy equation, but Flow1D::setupGrid ->
     # resize() extends m_do_energy from the 1-point constructor grid, so all
