@@ -74,6 +74,31 @@ function main()
         end
         total
     end
+    if hasproperty(gas.reaction, :reactant_mass_action_terms)
+        planned_forward_products!() = begin
+            total = 0.0
+            plans = gas.reaction.reactant_mass_action_terms
+            @inbounds for i in 1:gas.reaction.n_reactions
+                total += Arrhenius._mass_action_product(C, reactant_species, reactant_orders,
+                    gas.reaction.reactant_stoich_coeffs, i,
+                    nzrange(gas.reaction.reactant_orders, i), plans[i])
+            end
+            total
+        end
+        planned_reverse_products!() = begin
+            total = 0.0
+            plans = gas.reaction.product_mass_action_terms
+            @inbounds for i in eachindex(gas.reaction.is_reversible)
+                gas.reaction.is_reversible[i] || continue
+                total += Arrhenius._mass_action_product(C, product_species, product_orders,
+                    gas.reaction.product_stoich_coeffs, i,
+                    nzrange(gas.reaction.product_stoich_coeffs, i), plans[i])
+            end
+            total
+        end
+        measure("forward_concentration_products_preclassified",planned_forward_products!)
+        measure("reverse_concentration_products_preclassified",planned_reverse_products!)
+    end
     scatter!() = begin
         fill!(out, 0.0)
         rows, coefficients = rowvals(gas.reaction.vk), nonzeros(gas.reaction.vk)

@@ -296,13 +296,29 @@ function _mass_action!(workspace, reaction::Reaction, C)
     @inbounds for i in 1:reaction.n_reactions
         forward,reverse = workspace.kf[i],workspace.kr[i]
         forward *= _mass_action_product(C, ri, rv, reaction.reactant_stoich_coeffs, i,
-            nzrange(reactants, i))
+            nzrange(reactants, i), reaction.reactant_mass_action_terms[i])
         if reaction.is_reversible[i]
-            reverse *= _mass_action_product(C, pi, pv, products, i, nzrange(products, i))
+            reverse *= _mass_action_product(C, pi, pv, products, i, nzrange(products, i),
+                reaction.product_mass_action_terms[i])
         end
         workspace.kf[i],workspace.kr[i] = forward,reverse
         workspace.rates_of_progress[i] = forward-reverse
     end
+end
+
+@inline function _mass_action_product(C, species, orders, stoich, column, entries,
+        standard_terms::UInt8)
+    standard_terms == 0 && return _mass_action_product(C, species, orders, stoich, column, entries)
+    multiplier = isempty(entries) ? one(eltype(C)) : one(C[species[first(entries)]])
+    negative_factors = 0
+    @inbounds for j in entries
+        c = C[species[j]]
+        for _ in 1:Int(orders[j])
+            negative_factors += c < 0
+            multiplier *= c
+        end
+    end
+    return negative_factors >= 2 ? zero(multiplier) : multiplier
 end
 
 """Cantera's optimized C1/C2/C3 and general stoichiometry concentration product."""

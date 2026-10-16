@@ -54,7 +54,43 @@ struct Reaction{T<:AbstractFloat}
     vk::SparseMatrixCSC{T,Int64}
     vk_sum::Array{T,1}
     plog::PlogData{T}
+    reactant_mass_action_terms::Vector{UInt8}
+    product_mass_action_terms::Vector{UInt8}
     blowers_masel::BlowersMaselData{T}
+end
+
+# Record the standard C1/C2/C3 classification once when the mechanism is
+# constructed. The net-production hot loop can then skip repeated sparse
+# stoichiometry lookups while retaining the same multiplication path.
+function _mass_action_term_counts(orders::SparseMatrixCSC, stoich::SparseMatrixCSC)
+    species, order_values = rowvals(orders), nonzeros(orders)
+    counts = zeros(UInt8, size(orders, 2))
+    @inbounds for column in 1:size(orders, 2)
+        entries = nzrange(orders, column)
+        length(entries) <= 3 || continue
+        terms = 0
+        standard = true
+        for j in entries
+            coefficient = stoich[species[j], column]
+            if order_values[j] == coefficient && coefficient >= 0 && isinteger(coefficient)
+                terms += Int(coefficient)
+            else
+                standard = false
+                break
+            end
+        end
+        standard && 1 <= terms <= 3 && (counts[column] = UInt8(terms))
+    end
+    return counts
+end
+
+function Reaction(product,reactant,orders,reversible,arrhenius,low,troe,third,falloff,
+        falloff_troe,efficiencies,reactant_indices,product_indices,n,vk,vk_sum,
+        plog::PlogData{T}, blowers_masel::BlowersMaselData{T}) where T
+    return Reaction(product,reactant,orders,reversible,arrhenius,low,troe,third,falloff,
+        falloff_troe,efficiencies,reactant_indices,product_indices,n,vk,vk_sum,plog,
+        _mass_action_term_counts(orders, reactant),
+        _mass_action_term_counts(product, product), blowers_masel)
 end
 
 # Preserve the pre-Blowers–Masel constructor used by downstream mechanisms.

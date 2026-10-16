@@ -7,11 +7,17 @@ counts = ("stats_jacobians", "stats_newton_iterations", "stats_time_steps",
           "stats_regrids", "stats_final_points", "stats_failures")
 paths = sorted(glob.glob(base_dir + "/*.npz"))
 failures = 0
+max_sum_y_error = 0.0
 print("case,field,max_abs,max_relative,shape_equal")
 for base_path in paths:
     name = base_path.rsplit("/", 1)[-1]
     candidate_path = candidate_dir + "/" + name
     with np.load(base_path, allow_pickle=False) as base, np.load(candidate_path, allow_pickle=False) as cand:
+        if "Y" in cand:
+            max_sum_y_error = max(
+                max_sum_y_error,
+                float(np.max(np.abs(np.sum(cand["Y"], axis=0) - 1.0), initial=0.0)),
+            )
         for field in fields:
             a, b = np.asarray(base[field]), np.asarray(cand[field])
             same_shape = a.shape == b.shape
@@ -40,4 +46,5 @@ for base_path in paths:
             candidate_time = float(np.mean(cand["batch_means"]))
             print(f"{name[:-4]},timing_seconds,{base_time:.9g},{candidate_time:.9g},ratio={candidate_time/base_time:.9g}")
 print(f"compared_cases={len(paths)} failures={failures}")
+print(f"max_abs_sum_Y_error={max_sum_y_error:.17g}")
 sys.exit(bool(failures))

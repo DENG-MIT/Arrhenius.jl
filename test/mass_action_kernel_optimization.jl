@@ -170,9 +170,13 @@ function check_mass_action_mechanism(path)
                 reaction.reactant_stoich_coeffs, col, rr)
             new = Arrhenius._mass_action_product(C, reactant_species, reactant_orders,
                 reaction.reactant_stoich_coeffs, col, rr)
+            planned = Arrhenius._mass_action_product(C, reactant_species, reactant_orders,
+                reaction.reactant_stoich_coeffs, col, rr,
+                reaction.reactant_mass_action_terms[col])
             main = current_main_mass_action_product(C, reactant_species, reactant_orders,
                 reaction.reactant_stoich_coeffs, col, rr)
             old === new || error("forward PR-base mismatch: $path reaction=$col state=$state_index old=$old new=$new")
+            @test planned === new
             main === new || error("forward current-main mismatch: $path reaction=$col state=$state_index main=$main candidate=$new")
             current_main_forward += 1
             forward_count += 1
@@ -182,9 +186,12 @@ function check_mass_action_mechanism(path)
                     product_entries, col, pr)
                 new_reverse = Arrhenius._mass_action_product(C, product_species, product_orders,
                     product_entries, col, pr)
+                planned_reverse = Arrhenius._mass_action_product(C, product_species, product_orders,
+                    product_entries, col, pr, reaction.product_mass_action_terms[col])
                 main_reverse = current_main_mass_action_product(C, product_species, product_orders,
                     product_entries, col, pr)
                 old_reverse === new_reverse || error("reverse PR-base mismatch: $path reaction=$col state=$state_index old=$old_reverse new=$new_reverse")
+                @test planned_reverse === new_reverse
                 main_reverse === new_reverse || error("reverse current-main mismatch: $path reaction=$col state=$state_index main=$main_reverse candidate=$new_reverse")
                 current_main_reverse += 1
                 reverse_count += 1
