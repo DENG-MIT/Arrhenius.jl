@@ -39,6 +39,8 @@ for name in files:
             print("  counters differ:", {k: (a[k].tolist() if k in a else None, b[k].tolist() if k in b else None)
                   for k in sorted(set(count_keys) | {k for k in b.files if k.startswith("stats_")})
                   if k not in a or k not in b or not np.array_equal(a[k], b[k])})
+        if count_keys and counts_exact:
+            print("  counters=" + repr({k: int(a[k][0]) for k in count_keys}))
         print(f"{name[:-4]}: state_exact={state_exact} counters_exact={counts_exact}")
         if nh3_root:
             spec = specs[name[:-4]]
