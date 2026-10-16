@@ -17,7 +17,7 @@ module Arrhenius
     include("GasMechanismThermoIO.jl")
     include("GasMechanismTransportIO.jl")
     include("GasMechanismAudit.jl")
-    export audit_mechanism, refit_nasa7_continuity, refit_nasa7_common_tmid
+    export audit_mechanism, refit_nasa7_continuity, refit_nasa7_common_tmid, refit_plog_to_chebyshev
     include("Solution.jl")
     include("Magic.jl")
     include("Thermo.jl")

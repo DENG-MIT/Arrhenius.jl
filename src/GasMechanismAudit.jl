@@ -5,6 +5,16 @@
 The report is a named tuple with `species`, `reactions`, `issues`, and `checks`.
 Collision-limit and transport-range findings are explicitly heuristic screens.
 """
+function _signed_log_sum(logabs, signs)
+    isempty(logabs) && return (0, -Inf)
+    m=maximum(logabs)
+    scaled=setprecision(BigFloat,256) do
+        sum(BigFloat(signs[i])*exp(BigFloat(logabs[i]-m)) for i in eachindex(logabs))
+    end
+    iszero(scaled) && return (0,-Inf)
+    (sign(scaled),m+Float64(log(abs(scaled))))
+end
+
 function audit_mechanism(path; phase=nothing, data_paths=String[])
     root = YAML.load_file(path)
     phaseidx = phase === nothing ? 1 : findfirst(p -> get(p,"name","")==String(phase),root["phases"])
@@ -57,6 +67,72 @@ function audit_mechanism(path; phase=nothing, data_paths=String[])
         rc=get(r,"rate-constant",nothing)
         rc isa AbstractDict && get(rc,"A",0) isa Real && rc["A"]<0 && get(r,"negative-A",false)!==true &&
             push!(issues,(level=:error,check=:negative_A,reaction=j,detail="negative A lacks negative-A: true"))
+    end
+    # PLOG diagnostics use log(A) + b*log(T) - Ea/(RT), then log-sum-exp
+    # within each pressure group. This detects values that ordinary exp would
+    # round to zero while continuing through every reaction in one audit pass.
+    for (j,r) in enumerate(reactions)
+        lowercase(String(get(r,"type",""))) in ("pressure-dependent-arrhenius","plog") || continue
+        entries=get(r,"rate-constants",Any[])
+        isempty(entries) && continue
+        units=_gas_units(root,get(r,"units",Dict()))
+        pvals=Float64[_gas_pressure(item["P"],root) for item in entries]
+        groups=Dict{Float64,Vector{Any}}()
+        for (item,p) in zip(entries,pvals); push!(get!(groups,p,Any[]),item); end
+        pressures=sort!(collect(keys(groups)))
+        trange=get(r,"temperature-range",get(r,"valid-temperature-range",nothing))
+        range_source=:reaction_metadata
+        if !(trange isa AbstractVector && length(trange)==2)
+            participant=findall(i->arrays["reactant_stoich_coeffs"][i,j]!=0 || arrays["product_stoich_coeffs"][i,j]!=0,eachindex(names))
+            bounds=Tuple{Float64,Float64}[]
+            for i in participant
+                thermo=get(defs[names[i]],"thermo",nothing)
+                rr=thermo isa AbstractDict ? get(thermo,"temperature-ranges",nothing) : nothing
+                rr isa AbstractVector && length(rr)>=2 && push!(bounds,(Float64(first(rr)),Float64(last(rr))))
+            end
+            if !isempty(bounds)
+                trange=[maximum(first.(bounds)),minimum(last.(bounds))]
+                range_source=:participating_species_thermo_intersection
+                if trange[1]>=trange[2]
+                    push!(issues,(level=:warning,check=:plog_empty_temperature_intersection,
+                        reaction=j,participant_ranges=bounds,detail="participating species thermo ranges have no shared interval"))
+                    trange=nothing; range_source=:no_shared_thermo_interval
+                end
+            else
+                trange=nothing; range_source=:not_declared
+            end
+        end
+        tlo,thi=trange isa AbstractVector && length(trange)==2 ? (Float64(trange[1]),Float64(trange[2])) : (nothing,nothing)
+        temperatures=Float64[200,300,500,1000,2000,3000]
+        tlo!==nothing && append!(temperatures,(tlo,thi))
+        for T in unique(temperatures)
+            T>0 || continue
+            for p in pressures
+                logs=Float64[]; signs=Int[]
+                for item in groups[p]
+                    A,b,Ea=_gas_arrhenius(item,Float64(sum(arrays["reactant_orders"][:,j])),units)
+                    if A!=0
+                        push!(logs,log(abs(A))+b*log(T)-Ea*4184.0/R/T)
+                        push!(signs,signbit(A) ? -1 : 1)
+                    end
+                end
+                isempty(logs) && continue
+                signk,logk=_signed_log_sum(logs,signs)
+                if signk<=0
+                    push!(issues,(level=:error,check=:plog_nonpositive_rate,
+                        reaction=j,temperature=T,pressure=p,log_abs_rate=logk,
+                        detail="summed PLOG rate at this tabulated pressure is nonpositive"))
+                elseif logk < log(floatmin(Float64))
+                    push!(issues,(level=:warning,check=:plog_underflow_risk,reaction=j,
+                        temperature=T,pressure=p,log_rate=logk,
+                        detail="PLOG group is below Float64 normal range; diagnostic computed in log space"))
+                end
+            end
+        end
+        push!(issues,(level=:info,check=:plog_valid_range,reaction=j,
+            temperature_range=trange===nothing ? nothing : (tlo,thi),temperature_range_source=range_source,
+            pressure_range=(first(pressures),last(pressures)),
+            detail="P range is the tabulated interval; T range is reaction metadata or the intersection of participating species thermo ranges, when available"))
     end
     thermo_issues = _audit_nasa_continuity(root,ph,names,defs)
     append!(issues,thermo_issues)
@@ -134,8 +210,10 @@ The high cp polynomial is the least-squares fit to its original cp values on
 an evenly spaced temperature grid subject to matching cp and dcp/dT at Tmid;
 h and s integration constants are then anchored continuously at Tmid.
 """
-function refit_nasa7_continuity(path, output; phase=nothing, samples=80)
+function refit_nasa7_continuity(path, output; phase=nothing, samples=80,
+        max_dimensionless_change=0.05, force=false)
     samples>=8 || throw(ArgumentError("samples must be at least 8"))
+    isfinite(max_dimensionless_change) && max_dimensionless_change>=0 || throw(ArgumentError("max_dimensionless_change must be finite and nonnegative"))
     root=YAML.load_file(path); phidx=phase===nothing ? 1 : findfirst(p->get(p,"name","")==String(phase),root["phases"])
     phidx===nothing && throw(ArgumentError("phase $phase not found")); ph=root["phases"][phidx]
     root=_solution_species_yaml(root,String(path),String[])
@@ -171,8 +249,18 @@ function refit_nasa7_continuity(path, output; phase=nothing, samples=80)
         dh=maximum(abs(newh(T)-oldh(T)) for T in Ts)
         ds=maximum(abs(news(T)-olds(T)) for T in Ts)
         dg=maximum(abs((newh(T)-news(T))-(oldh(T)-olds(T))) for T in Ts)
+        error=max(dcp,dh,ds,dg); accepted=force || error<=max_dimensionless_change
+        if !accepted
+            push!(changes,(species=name,Tmid=mid,max_abs_delta_cp_R=dcp,
+                max_abs_delta_h_RT=dh,max_abs_delta_s_R=ds,max_abs_delta_g_RT=dg,
+                max_dimensionless_change=error,accepted=false,
+                reason="exceeds max_dimensionless_change=$max_dimensionless_change"))
+            continue
+        end
         data[2]=high; defs[name]["thermo"]["data"]=data
-        push!(changes,(species=name,Tmid=mid,max_abs_delta_cp_R=dcp,max_abs_delta_h_RT=dh,max_abs_delta_s_R=ds,max_abs_delta_g_RT=dg))
+        push!(changes,(species=name,Tmid=mid,max_abs_delta_cp_R=dcp,max_abs_delta_h_RT=dh,
+            max_abs_delta_s_R=ds,max_abs_delta_g_RT=dg,max_dimensionless_change=error,
+            accepted=true,reason="within tolerance"))
     end
     # YAML.jl emits malformed indentation for Cantera's multiline `note` fields;
     # these are comments/annotations, so remove them in the refitted copy.
@@ -187,14 +275,17 @@ function refit_nasa7_continuity(path, output; phase=nothing, samples=80)
     end
     strip_notes!(root)
     YAML.write_file(output,root)
-    (species_changed=length(changes),changes=changes,output=String(output)),String(output)
+    (species_changed=count(c->c.accepted,changes),species_refused=count(c->!c.accepted,changes),
+        changes=changes,output=String(output)),String(output)
 end
 """Refit all eligible NASA7 species to a single selected midpoint.
 The output retains each species' temperature endpoints, fits both cp segments by
 constrained least squares, enforces cp and d(cp)/dT continuity, and anchors h/s.
 """
-function refit_nasa7_common_tmid(path, output; phase=nothing, Tmid=nothing, samples=80)
+function refit_nasa7_common_tmid(path, output; phase=nothing, Tmid=nothing, samples=80,
+        max_dimensionless_change=0.05, force=false)
     samples >= 12 || throw(ArgumentError("samples must be at least 12"))
+    isfinite(max_dimensionless_change) && max_dimensionless_change>=0 || throw(ArgumentError("max_dimensionless_change must be finite and nonnegative"))
     root=YAML.load_file(path)
     idx=phase===nothing ? 1 : findfirst(p->get(p,"name","")==String(phase),root["phases"])
     idx===nothing && throw(ArgumentError("phase $phase not found"))
@@ -271,9 +362,22 @@ function refit_nasa7_common_tmid(path, output; phase=nothing, Tmid=nothing, samp
         dh=maximum(abs(newh(T)-oldh(T)) for T in grid)
         ds=maximum(abs(news(T)-olds(T)) for T in grid)
         dg=maximum(abs((newh(T)-news(T))-(oldh(T)-olds(T))) for T in grid)
+        # All four metrics are dimensionless NASA quantities. Refuse a species
+        # refit above the default 0.05 absolute-change ceiling unless overridden.
+        error=max(dcp,dh,ds,dg)
+        accepted=force || error<=max_dimensionless_change
+        if !accepted
+            push!(changes,(species=name,old_Tmid=oldmid,Tmid=tm,
+                max_abs_delta_cp_R=dcp,max_abs_delta_h_RT=dh,
+                max_abs_delta_s_R=ds,max_abs_delta_g_RT=dg,
+                max_dimensionless_change=error,accepted=false,
+                reason="exceeds max_dimensionless_change=$max_dimensionless_change"))
+            continue
+        end
         th["temperature-ranges"]=[loT,tm,hiT]; th["data"]=[low,high]
         push!(changes,(species=name,old_Tmid=oldmid,Tmid=tm,max_abs_delta_cp_R=dcp,
-            max_abs_delta_h_RT=dh,max_abs_delta_s_R=ds,max_abs_delta_g_RT=dg))
+            max_abs_delta_h_RT=dh,max_abs_delta_s_R=ds,max_abs_delta_g_RT=dg,
+            max_dimensionless_change=error,accepted=true,reason="within tolerance"))
     end
     function strip_notes!(x)
         if x isa AbstractDict
@@ -284,6 +388,130 @@ function refit_nasa7_common_tmid(path, output; phase=nothing, Tmid=nothing, samp
         x
     end
     strip_notes!(root); YAML.write_file(output,root)
-    (species_changed=length(changes),skipped_species=skipped,Tmid=tm,
-        shared_interval=(lower,upper),changes=changes,output=String(output)),String(output)
+    (species_changed=count(c->c.accepted,changes),species_refused=count(c->!c.accepted,changes),
+        skipped_species=skipped,Tmid=tm,shared_interval=(lower,upper),
+        changes=changes,output=String(output)),String(output)
+end
+
+function _plog_lograte_for_refit(r,T,P,root,order,units)
+    entries=get(r,"rate-constants",Any[]); isempty(entries) && throw(ArgumentError("PLOG reaction has no rate-constants"))
+    grouped=Dict{Float64,Vector{Tuple{Float64,Int}}}()
+    for item in entries
+        p=_gas_pressure(item["P"],root)
+        A,b,Ea=_gas_arrhenius(item,order,units)
+        A==0 && continue
+        push!(get!(grouped,p,Tuple{Float64,Int}[]),(log(abs(A))+b*log(T)-Ea*4184.0/R/T,signbit(A) ? -1 : 1))
+    end
+    ps=sort!(collect(keys(grouped)))
+    logk=Float64[]
+    for p in ps
+        values=grouped[p]
+        signrate,lograte=_signed_log_sum(first.(values),last.(values))
+        signrate>0 || throw(ArgumentError("summed PLOG rate is nonpositive at T=$T, P=$p"))
+        push!(logk,lograte)
+    end
+    P<=first(ps) && return first(logk)
+    P>=last(ps) && return last(logk)
+    hi=searchsortedfirst(ps,P); lo=hi-1
+    f=log(P/ps[lo])/log(ps[hi]/ps[lo])
+    muladd(f,logk[hi]-logk[lo],logk[lo])
+end
+
+@inline function _chebyshev_values(x,n)
+    out=Vector{Float64}(undef,n); out[1]=1.0
+    n==1 && return out
+    out[2]=x
+    for i in 3:n; out[i]=2x*out[i-1]-out[i-2]; end
+    out
+end
+
+"""Fit one root-section PLOG reaction to Cantera Chebyshev YAML.
+
+The source file is never modified. The output is written only when the maximum
+validation-grid error is within `max_log10_error`, unless `force=true`. The
+returned Chebyshev mechanism is for Cantera; the native reader currently rejects
+Chebyshev rates explicitly.
+"""
+function refit_plog_to_chebyshev(path,output,reaction_index;temperature_range,
+        pressure_range=nothing,temperature_order=6,pressure_order=6,
+        samples=24,max_log10_error=0.05,force=false)
+    temperature_order>=2 && pressure_order>=1 || throw(ArgumentError("Chebyshev orders must be at least 2 by 1"))
+    samples>=max(temperature_order,pressure_order)+2 || throw(ArgumentError("samples must exceed both polynomial orders"))
+    Tmin,Tmax=Float64.(temperature_range)
+    isfinite(Tmin) && isfinite(Tmax) && 0<Tmin<Tmax || throw(ArgumentError("temperature_range must be positive and increasing"))
+    root=YAML.load_file(path)
+    reactions=get(root,"reactions",Any[])
+    1<=reaction_index<=length(reactions) || throw(BoundsError(reactions,reaction_index))
+    r=reactions[reaction_index]
+    lowercase(String(get(r,"type",""))) in ("pressure-dependent-arrhenius","plog") || throw(ArgumentError("selected reaction is not PLOG"))
+    (haskey(r,"collider") || haskey(r,"efficiencies") || haskey(r,"default-efficiency")) &&
+        throw(ArgumentError("PLOG collider and efficiency refits are not supported"))
+    entries=get(r,"rate-constants",Any[]); isempty(entries) && throw(ArgumentError("PLOG reaction has no rate-constants"))
+    rawpressures=sort!(unique(Float64[_gas_pressure(x["P"],root) for x in entries]))
+    Pmin,Pmax=pressure_range===nothing ? (first(rawpressures),last(rawpressures)) : Float64.(pressure_range)
+    isfinite(Pmin) && isfinite(Pmax) && 0<Pmin<Pmax || throw(ArgumentError("pressure_range must be positive and increasing"))
+    first(rawpressures)<=Pmin && Pmax<=last(rawpressures) || throw(ArgumentError("pressure_range must lie inside the tabulated PLOG pressure interval"))
+    isfinite(max_log10_error) && max_log10_error>=0 || throw(ArgumentError("max_log10_error must be finite and nonnegative"))
+    nspecies=String.(get(root["phases"][1],"species",String[]))
+    isempty(nspecies) && throw(ArgumentError("selected phase must list species by name"))
+    stoich,products,reversible,collider=_gas_reaction_equation(get(r,"equation",""),Dict(n=>i for (i,n) in enumerate(nspecies)),"reaction $reaction_index")
+    collider===nothing || throw(ArgumentError("PLOG collider refits are not supported"))
+    species_defs=Dict(String(x["name"])=>x for x in get(root,"species",Any[]))
+    participants=findall(x->!iszero(x),stoich)
+    tranges=Tuple{Float64,Float64}[]
+    for i in participants
+        thermo=get(get(species_defs,nspecies[i],Dict()),"thermo",nothing)
+        rr=thermo isa AbstractDict ? get(thermo,"temperature-ranges",nothing) : nothing
+        rr isa AbstractVector && length(rr)>=2 && push!(tranges,(Float64(first(rr)),Float64(last(rr))))
+    end
+    isempty(tranges) && throw(ArgumentError("participating species have no declared thermo temperature ranges"))
+    lowerT=maximum(first.(tranges)); upperT=minimum(last.(tranges))
+    lowerT<=Tmin && Tmax<=upperT || throw(ArgumentError("temperature_range must lie inside participating species thermo interval ($lowerT, $upperT)"))
+    order=sum(stoich)
+    for (name,value) in get(r,"orders",Dict())
+        haskey(Dict(n=>i for (i,n) in enumerate(nspecies)),String(name)) || get(r,"nonreactant-orders",false) || throw(ArgumentError("undeclared order species $name"))
+        haskey(Dict(n=>i for (i,n) in enumerate(nspecies)),String(name)) && (order += Float64(value)-stoich[findfirst(==(String(name)),nspecies)])
+        haskey(Dict(n=>i for (i,n) in enumerate(nspecies)),String(name)) || (order += Float64(value))
+    end
+    units=_gas_units(root,get(r,"units",Dict()))
+    offset=_gas_arrhenius(Dict("A"=>1.0,"b"=>0.0,"Ea"=>0.0),order,units)[1]
+    invtemps=range(1/Tmax,1/Tmin,length=samples); Ts=1.0 ./ invtemps
+    logpressures=range(log10(Pmin),log10(Pmax),length=samples); Ps=10.0 .^ logpressures
+    tnodes=Float64[]; pnodes=Float64[]; targets=Float64[]
+    function reduced(T,P)
+        ((2/T-1/Tmin-1/Tmax)/(1/Tmax-1/Tmin),
+         (2log10(P)-log10(Pmin)-log10(Pmax))/(log10(Pmax)-log10(Pmin)))
+    end
+    for P in Ps, T in Ts
+        x,y=reduced(T,P)
+        push!(tnodes,x); push!(pnodes,y)
+        push!(targets,_plog_lograte_for_refit(r,T,P,root,order,units)/log(10)-log10(offset))
+    end
+    design=Matrix{Float64}(undef,length(targets),temperature_order*pressure_order)
+    for i in eachindex(targets)
+        tv=_chebyshev_values(tnodes[i],temperature_order); pv=_chebyshev_values(pnodes[i],pressure_order)
+        design[i,:].=vec(tv*pv')
+    end
+    coeffs=reshape(design\targets,temperature_order,pressure_order)
+    validation_T=1.0 ./ range(1/Tmax,1/Tmin,length=2samples+1)
+    validation_P=10.0 .^ range(log10(Pmin),log10(Pmax),length=2samples+1)
+    maxerr=0.0
+    for P in validation_P,T in validation_T
+        x,y=reduced(T,P); tv=_chebyshev_values(x,temperature_order); pv=_chebyshev_values(y,pressure_order)
+        fit=sum(coeffs.*(tv*pv'))+log10(offset)
+        actual=_plog_lograte_for_refit(r,T,P,root,order,units)/log(10)
+        maxerr=max(maxerr,abs(fit-actual))
+    end
+    accepted=force || maxerr<=max_log10_error
+    if accepted
+        delete!(r,"rate-constants")
+        r["type"]="Chebyshev"; r["temperature-range"]=["$(Tmin) K","$(Tmax) K"]
+        r["pressure-range"]=["$(Pmin) Pa","$(Pmax) Pa"]; r["data"]=[collect(coeffs[i,:]) for i in axes(coeffs,1)]
+    end
+    YAML.write_file(output,root)
+    (reaction_index=reaction_index,accepted=accepted,forced=force,
+     max_log10_error=maxerr,tolerance=max_log10_error,
+     temperature_range=(Tmin,Tmax),pressure_range=(Pmin,Pmax),
+     temperature_order=temperature_order,pressure_order=pressure_order,
+     output=String(output)),String(output)
 end

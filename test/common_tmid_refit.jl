@@ -12,9 +12,17 @@ using Arrhenius, Test, YAML
             "species"=>[species("H","H",900.0,[3.5,0.,0.,0.,0.,0.,1.],[4.2,0.,0.,0.,0.,0.,2.]),
                         species("O","O",1600.0,[3.3,0.,0.,0.,0.,0.,1.],[4.4,0.,0.,0.,0.,0.,2.]),single],
             "reactions"=>Any[]))
-        report,_=refit_nasa7_common_tmid(path,output;Tmid=1200.0,samples=32)
+        refused,_=refit_nasa7_common_tmid(path,output;Tmid=1200.0,samples=32)
+        @test refused.species_changed==1
+        @test refused.species_refused==2
+        @test count(c->!c.accepted,refused.changes)==2
+        @test isempty(refused.skipped_species)
+        original=YAML.load_file(path); refused_yaml=YAML.load_file(output)
+        @test refused_yaml["species"][1]["thermo"]["temperature-ranges"] == original["species"][1]["thermo"]["temperature-ranges"]
+        report,_=refit_nasa7_common_tmid(path,output;Tmid=1200.0,samples=32,force=true)
         @test report.species_changed==3
-        @test isempty(report.skipped_species)
+        @test report.species_refused==0
+        @test all(c.accepted for c in report.changes)
         @test report.shared_interval==(300.0,4000.0)
         out=YAML.load_file(output)
         for sp in out["species"]
