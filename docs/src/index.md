@@ -1,41 +1,22 @@
-# [Arrhenius.jl](https://github.com/DENG-MIT/Arrhenius.jl)
-*Reacting Flow and Combustion Modeling Software 2.0.*
+# Arrhenius.jl
 
-![logo.png](https://user-images.githubusercontent.com/8445647/118408755-e0cd6f80-b654-11eb-8c36-80188e4703ce.png)
+Arrhenius.jl provides Julia-native tools for chemical kinetics and reacting-flow calculations. It reads Cantera YAML mechanisms and uses preprocessed sidecar files for kinetic and transport data. Cantera is not required at calculation time.
 
-**Package Features**
+## Start here
 
-`Arrhenius.jl` is designed with following in mind:
+- [Installation](install.md) explains how to add the package and prepare a mechanism.
+- [Mechanisms](mechanisms.md) describes supported mechanism data and sidecars.
+- [Zero-dimensional reactors](reactors.md) introduces ignition calculations and ODE solver integration.
+- [One-dimensional flames](flames.md) covers flame types, transport, and discretization.
+- [Solver options](solver_options.md) documents refinement, time stepping, and transport controls.
+- [Examples](examples.md) indexes runnable examples by application.
+- [Validation methods](validation.md) explains code-parity and solution-accuracy comparisons.
+- [API reference](api.md) lists exported types and functions.
 
-* [Combustion software 2.0](https://www.linkedin.com/pulse/arrheniusjl-combustion-software-20-weiqi-ji/)
-* [Differential programing](https://github.com/Cantera/enhancements/issues/82)
-* [Physics informed machine learning](https://github.com/Cantera/enhancements/issues/82)
-* Combustion simulation education.
+## Capability overview
 
-## Outline
+The package includes ideal-gas thermochemistry, kinetics, equilibrium and sound-speed calculations; constant-pressure and constant-volume reactors; reactor networks; planar and opposed-flow flames; catalytic and ionized models; transport, plasma, porous-media, pure-water, and real-gas tools. See the [examples index](examples.md) for entry points.
 
-Documentation comes in following forms:
+## Citation
 
-1. How-to examples
-1. Explanatory guide
-3. Reference docstrings for the entire interface are avaliable in the API Documentation section.
-
-> For developers, when updating these documents, make sure this is synced with docs/make.jl !!
-
-## Baiscs
-
-```@contents
-Pages = ["install.md", "get_started.md", "concepts.md"]
-```
-
-## Tutorials
-
-```@contents
-Pages = ["tutorial.md"]
-```
-
-## Reference
-
-```@contents
-Pages = ["faq.md", "api.md"]
-```
+Ji, W. et al., [“Arrhenius.jl: A Differentiable Combustion Simulation Package”](https://arxiv.org/abs/2107.06172).
