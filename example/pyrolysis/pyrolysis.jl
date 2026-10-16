@@ -8,7 +8,14 @@ using Plots
 using DelimitedFiles
 using Profile
 
-cd("./example/pyrolysis")
+cd(@__DIR__)
+
+if !isfile("pyrolysis.dat")
+    withenv("MPLBACKEND" => "Agg", "ARRHENIUS_GENERATE_ONLY" => "1") do
+        python = get(ENV, "PY", "python3")
+        run(`$python pyrolysis.py`)
+    end
+end
 cantera_data = readdlm("pyrolysis.dat")
 ct_ts= cantera_data[:, 1]
 ct_T = cantera_data[:, 2]
