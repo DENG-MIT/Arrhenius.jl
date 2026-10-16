@@ -1,0 +1,1508 @@
+{
+  "native_commit": "caeb50c05b13d2f4f5ee49e1a0c6025ff3191153",
+  "cantera_source_commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+  "performance_targets": [
+    "wsl"
+  ],
+  "minimum_speed_ratio": 0.95,
+  "speed_ratio_definition": "median of three complete Cantera batch means / median of three complete Julia batch means",
+  "scope": "Complete published stage sequences, including fresh flame construction, initialization, solver setup, continuation, adaptive solves and required numerical profiles. Loaded mechanisms are reused. Imports, compilation, mechanism/sidecar loading, validation and file I/O are excluded.",
+  "timing_policy": {
+    "warm_calls": 12,
+    "batch_size": 4,
+    "batches": 3,
+    "excluded_first_complete_calls": 1,
+    "explicit_collection": "One after excluded warmup on both runtimes; automatic GC remains enabled and included in all measured calls.",
+    "maximum_batch_mean_spread": 0.05,
+    "minimum_median_ratio": 0.95,
+    "minimum_conservative_ratio": 0.95,
+    "samples_trimmed": 0,
+    "qualification": "All physical, replay, source, timing and local-CI gates must pass. Noise failure is inconclusive; stable subthreshold speed is below target.",
+    "elapsed_clock": "CLOCK_MONOTONIC_RAW"
+  },
+  "local_ci": {
+    "passed": true,
+    "assertions": 3129,
+    "testsets": 85,
+    "source_commit": "caeb50c05b13d2f4f5ee49e1a0c6025ff3191153",
+    "log_sha256": "c1c19ca006780fa1ba694571614093b507eb55bedf669f938a14ea146903bcfb",
+    "additional_independent_checks": 973,
+    "benchmark_guard_tests": 12
+  },
+  "cases": {
+    "onedim/ion_burner_flame": {
+      "correctness_pass": true,
+      "performance_pass": true,
+      "performance_verdict": "qualified",
+      "targets": {
+        "wsl": {
+          "case": "ion-burner",
+          "formal": true,
+          "date": "2026-09-13 20:11:59 +0800",
+          "target": "wsl",
+          "elapsed_clock": "CLOCK_MONOTONIC_RAW",
+          "julia_elapsed_clock": "CLOCK_MONOTONIC_RAW",
+          "cantera_version": "4.0.0a2",
+          "mechanism_sha256": "1409cc65488ea885118257c65d0a0b72fbcf5968f7b4a0572f637f9bdec9a66a",
+          "sidecar_sha256": "fcb1dcd3dadbebe6696159093545748f6aad192bc7f45d63ede5c41104c97531",
+          "multicomponent_sha256": null,
+          "fixed_temperature_profile_sha256": null,
+          "reference_hashes": {
+            "burner-field-0.npz": "77e5054ee5579b8b80ec0735099771201ba84c4c3cb509e4de77640859088ec8",
+            "burner-field-1.npz": "2e7279d9b46cd545b86f53e88d253644c55551373efc238dcfddc7050238850a",
+            "burner-field-2.npz": "ba6fa11883dbfc560f3b6d28d3eaa71eb6b24b1b117e2a3f66c2af903f9a8ba1",
+            "burner-frozen-0.npz": "c18253520dc68424421a91c6689b9987769212c9521b37c5ba3044476a91f53d",
+            "burner-frozen-1.npz": "c49e6443bcfc20e1091d27878004c0657a1966413922d3889bce0221377aac08",
+            "burner-frozen-2.npz": "41b790d260e196df3309b481b131ce1e66906aa54e828bd6f6a9c1e077457c60"
+          },
+          "benchmark_driver_hashes": {
+            "conservative_source_bench.py": "b5f040b0c8fd7c2d5bf093c0b0e231aa528bc7f1dc1b99978e7ea44f4f40b82f",
+            "conservative_source_bench.jl": "e16fdb5d624d6d0e7df7e5c10c7331b9eb4061092e8e945b7780e52169074712",
+            "conservative_source_accuracy.py": "e1993c6d74f74ed4c7d0e1ecd0f81151da187c595bf6368551a31afca35b66d0",
+            "ionized_source_accuracy.py": "0cac65c485007f68965e12cf8811a4f5b2c34958bd5495f059a6647f638f6fab",
+            "ion_source_sequence.py": "ebfec5f59246f0af893aa5a56f4e800503c739da3fb38247baedc1b96a885e94",
+            "flame_benchmarks.py": "31a093adb4baff665f24021a2c0fc2e33366f4567fd4fe59884bd4125fcd4563",
+            "benchmark_environment.py": "a7fb9c06cf45edf95872d38cf0a66ae19e8eadb834641c0b4d0ab08614b350fb",
+            "numerical_threads.jl": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739"
+          },
+          "native_example_hashes": {
+            "source_flame_sequence.jl": "f5e83ee768a7860c6e085ecc147d5d8f10f5e7dec072d64bd73fdd22587eb90a",
+            "source_ion_flame_sequence.jl": "cb852e1fbd3981dbf52eeb747d3b12bd083046625d9a16a87e037ad1fc5b8134",
+            "adiabatic_flame.jl": "d8815f877e5399211e00745ff4f83b06b327c0368804c5cfee333a9217a0baeb",
+            "burner_flame.jl": "57c05a29538ecb5097b78cd2d1cdd416faff68dfe8d5c99de98e11450631e31d",
+            "flame_fixed_T.jl": "43b7ab4a95fb4097a5652a327b8efc83a45e06536d43d21a0639e334f8462c13"
+          },
+          "native_source_hashes": {
+            "src/Arrhenius.jl": "66955aeaae9949841416b45b99be7430e27591c9c57c406f58d3b03b48a0d4b6",
+            "src/BlowersMasel.jl": "984f41457a3773bd5344d598c4c13dea39b44f163248eac3410bc4606c35b4e1",
+            "src/CatalyticFlames.jl": "556a56ffaba0efab9cfee3a8bf9446d9e878bf645ce358177476ae866c161ef1",
+            "src/CondensedEquilibrium.jl": "cc87745498cbf3a39cf31f9ff02039da3ee82fc5681fb9fd3965b53011617b6f",
+            "src/Constants.jl": "bfb9adcaca09a62fd066c192be0ef6b78d5c9ff3ba14dd0d15fa22f1a63b2f85",
+            "src/CounterflowFlames.jl": "2968bd0aa9148b1594adb913728289340fbb2afccf31b425c561597021a9e904",
+            "src/CoverageDependentThermo.jl": "a85d5a7b350d1027a1df8bb5fd3083696c892f2699a109e6ebd4b0d8cc0072d1",
+            "src/CriticalProperties.jl": "2e35232ae55571b659c6e0f9fa841a6687afb27cf8a5c71ad158d7b70ef65787",
+            "src/DataStructure.jl": "73f89edb49e0c640e316333e3d1750a31ef941041cd75154f2674790c71954c0",
+            "src/DustyGasTransport.jl": "038c18a8a2f8896fe8df1b89a64f55c77e040c09d7490a7744615c5059caa702",
+            "src/Equilibrium.jl": "0583534a1cebf593abf256ab6b378ee3b3ea59cf091a98bbe2d1df56b88ad09e",
+            "src/FlameDerivatives.jl": "f99160db20ef5ef46d66dd26bed53a62dd6ab8529602d35717169cce9deffb68",
+            "src/FlameIO.jl": "c1a31d6aa550294ac6c2dc4b72f3a83a444314deb996141e939f3e235f94ff5b",
+            "src/Flames.jl": "fd91887e033feedca9158aed7d620c585e55c738d19cb5f28abbdf1dd86a26a8",
+            "src/IdealGasMixing.jl": "b20393e4b2b585b4d6b425f9a234aa969ed3d19b006a0d43a6f2743668af9059",
+            "src/IdealGasStates.jl": "ff25fb32c0b3d0236e4056b7425e10009ed5ff3f624f6e6f7112e4b93cb6d793",
+            "src/IonConservativeFlames.jl": "b1e629f2361be4b0bc047f016a5eed828b3b221ad94c7d0bf061d34c07243b4c",
+            "src/IonFlameProperties.jl": "34c31366408bf6db630768f23e21ffa8a22892a99c55d5d034f7ec00a5b9ed63",
+            "src/IonFlameResidual.jl": "26d7049290a3b3e8f7a3a1c4e4c75bc5ff76bbf3a068302b638b4791b4017e1e",
+            "src/IonTransport.jl": "09c7e3e50d874672dba9090eeb879081330225f213c4b00fb22a4303e7dceacf",
+            "src/IonizedFlames.jl": "52cefd824a798ef52f412b93116c81352ac62b276348a816a08ecf1a56dbe5f8",
+            "src/Kinetics.jl": "93429db6a18ceb3ed06677368dccc06b218795a0223a1d98d7e0536cafcb3561",
+            "src/Magic.jl": "2668705b59a8c165e3ef83e7b2819e38e2621e556bb4dcd52ab9da5071547d05",
+            "src/MovingWallReactors.jl": "797eef9d601f6267c1c86230ca56f4b52a0cf0167b447ca8d5ebb3964f4e8042",
+            "src/MulticomponentTransport.jl": "be6c79094a461cacd89d4b32d071981d97dac155320e39773055476ff46a6f66",
+            "src/PlasmaEEDF.jl": "eb97e918a78001462e3ce77011dd184d216c29af4f3e8a5c27cab7affc416895",
+            "src/PlasmaEEDFIO.jl": "3c330ce787bbd60e91a1ac9646603400260693b489013d389d078729423d6975",
+            "src/PlasmaEEDFTypes.jl": "4de3339a4b3c200de4b93ce7ecfdb06f491022d837c7024f0b4a8b1e69f771a8",
+            "src/PlasmaEnergyReactor.jl": "08f3b01c2930779bf3b7d58d93ea2ea0b9f2a48e17662936c20596f37b3c1fbd",
+            "src/PlasmaIO.jl": "b1677e34adb4755050178ac289b0fb22c1c73feb0554731a1b412f9341ba458b",
+            "src/PlasmaKinetics.jl": "68a5fd1a48064112e03cdc279bf1a3f8a5fb8d3ed8bf80c4a9fcd230edf3efe5",
+            "src/PlasmaRateIO.jl": "4847d5647fcc02fca0bb06237cbd99eb3e8a5ddc641844de59051f24bfb5cf9f",
+            "src/PlasmaThermochemistry.jl": "0f55d45ea941eae4ebef35a5dd1886bfc17d40d4bf300c496e322a6ccef10830",
+            "src/Precision.jl": "f4bf7b2306a132cff9a1666bc2bf91f9966082c54de98cd20966902f146a13f8",
+            "src/PremixedCounterflowFlames.jl": "6fa806b11f9e1b3fa0093a4899cfd73c026e7ec1178e0d94e1a513e8746f6a22",
+            "src/PureWater.jl": "0a7c0cac82ecd2a4ec03ec39244a3bb3ea8f9c24dd17515f411801a481fccbac",
+            "src/ReactorNetworks.jl": "2280b2d488e7951666211689faaad6a32bfe1cf49c1934527f9eb88d926651a3",
+            "src/Reactors.jl": "fbf200fb0d9437c351f9765304f33e3f896b342adb962f16b6e2cae3691a4452",
+            "src/RealGasReactors.jl": "4eff53bd105b96d5fae54b104d1fc7a52c07013dce5b1b007de8dcfe5593be0e",
+            "src/RealGasThermo.jl": "f6d766ef9309436d20865b0935098d5a4639250a0d86e9327b2e640c7dc9e1c4",
+            "src/SignedEquilibrium.jl": "f370f8741bbb95aed2432fbc102d6c978e999524265cd49ee457e5f9702aa4c0",
+            "src/Solution.jl": "72f250fbe5613adc9a7b57ef90caf2cdf60e4279b09b8da095fd84735b2c5c98",
+            "src/SurfaceFlowReactors.jl": "ea0c99c30548f8bd6c88d7d3ee11bb0dabaa82298afbdba1f20cdd28afa485f9",
+            "src/SurfaceKinetics.jl": "5e09d9431acafaefac61620793d978a106636a41850f262f4c6c5ca620f1e45d",
+            "src/Thermo/IdealGasThermo.jl": "da7b665352be8eef480c7e4af4ee0056a48aeb3971c711e58f0eec6e44383df2",
+            "src/Thermo.jl": "c62484dab57278889893e23484e94d4e97dd40ea9afd3c13d8e78a67433e31bd",
+            "src/Transport.jl": "9ac83a8621e29d0915c7b3516517ee920e3c6c3b523674dcf7656f621c093246",
+            "src/_Arrhenius_dev.jl": "d1dc25ca8db181fc3c9210e62fd6f1f96de0cea1311f7cf7d0764680cead3c68",
+            "src/_transport_test.jl": "c05ea401d9a45a591f4158c01a267d2719c7926003645551a1a3245a52c8bd51"
+          },
+          "native_commit": "caeb50c05b13d2f4f5ee49e1a0c6025ff3191153",
+          "cantera_stage_seconds": [
+            [
+              10.372671311,
+              4.575628774
+            ],
+            [
+              10.590681516,
+              4.523226695
+            ],
+            [
+              10.443758756,
+              4.464233118
+            ],
+            [
+              10.436430253,
+              4.479402108
+            ],
+            [
+              10.165691066,
+              4.430290831
+            ],
+            [
+              10.364436953,
+              4.484029856
+            ],
+            [
+              10.37477043,
+              4.348129661
+            ],
+            [
+              10.516955121,
+              4.436455397
+            ],
+            [
+              10.628124304,
+              4.525754921
+            ],
+            [
+              10.283651917,
+              4.370660643
+            ],
+            [
+              10.189451799,
+              4.367146316
+            ],
+            [
+              10.733246053,
+              4.649232575
+            ],
+            [
+              10.424161288,
+              4.426852613
+            ]
+          ],
+          "julia_stage_seconds": [
+            [
+              6.487103226,
+              1.222117056
+            ],
+            [
+              6.360469022,
+              1.114131464
+            ],
+            [
+              6.558169065,
+              1.070261329
+            ],
+            [
+              6.609182491,
+              1.079874933
+            ],
+            [
+              6.640086618,
+              1.095673909
+            ],
+            [
+              6.556172285,
+              1.092588643
+            ],
+            [
+              6.665045318,
+              1.148654371
+            ],
+            [
+              6.597821971,
+              1.045260451
+            ],
+            [
+              6.805720918,
+              1.151740507
+            ],
+            [
+              6.595767562,
+              1.106399009
+            ],
+            [
+              6.496744631,
+              1.087286938
+            ],
+            [
+              6.751608728,
+              1.107463491
+            ],
+            [
+              6.5600808,
+              1.07642115
+            ]
+          ],
+          "cantera_stage_points": [
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ],
+            [
+              169,
+              169
+            ]
+          ],
+          "julia_stage_points": [
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ],
+            [
+              164,
+              164
+            ]
+          ],
+          "cantera_seconds": [
+            14.948300085,
+            15.113908211,
+            14.907991874,
+            14.915832361,
+            14.595981897000001,
+            14.848466809000001,
+            14.722900091,
+            14.953410518,
+            15.153879225,
+            14.654312560000001,
+            14.556598115,
+            15.382478628000001,
+            14.851013901000002
+          ],
+          "julia_seconds": [
+            7.709220282,
+            7.474600486,
+            7.6284303940000004,
+            7.6890574240000005,
+            7.735760527,
+            7.648760928,
+            7.813699689,
+            7.643082422,
+            7.957461425,
+            7.702166570999999,
+            7.584031569,
+            7.859072219,
+            7.6365019499999995
+          ],
+          "julia_automatic_gc_seconds": [
+            1.68343771,
+            0.562600539,
+            0.720603483,
+            0.699974458,
+            0.723413028,
+            0.727099016,
+            0.717148298,
+            0.693710462,
+            0.749970282,
+            0.699771468,
+            0.709585945,
+            0.73339521,
+            0.711372132
+          ],
+          "julia_warmup_gc_seconds": 0.187392274,
+          "cantera_warmup_gc_seconds": 0.010598829,
+          "accuracy": {
+            "passed": true,
+            "cases": {
+              "burner-frozen": {
+                "passed": true,
+                "gates": {
+                  "T": true,
+                  "Y": true,
+                  "X": true,
+                  "E": true,
+                  "velocity": true,
+                  "rho": true,
+                  "qdot": true,
+                  "elements": true,
+                  "normalization": true,
+                  "continuity": true,
+                  "gauss": true,
+                  "finite": true,
+                  "positive_density": true,
+                  "rho_eos": true,
+                  "reference_uncertainty": true
+                },
+                "profile_errors": {
+                  "T": 0.00046077784468421005,
+                  "Y": 0.016238013798287397,
+                  "X": 0.016347928986816827,
+                  "E": 0.0,
+                  "velocity": 0.0003983862195481441,
+                  "rho": 0.00023548468528148924,
+                  "qdot": 0.000681812755187043
+                },
+                "reference_extrapolation_change": {
+                  "T": 0.000187759140918024,
+                  "Y": 0.006357473225049244,
+                  "X": 0.006402559294612817,
+                  "E": 0.0,
+                  "velocity": 0.00016869403117015982,
+                  "rho": 0.00014430002266987112,
+                  "qdot": 0.0008964333466443447
+                },
+                "elements": {
+                  "O": {
+                    "inlet": 0.22014123768662783,
+                    "outlet": 0.22014123760504867,
+                    "abs_error": 8.157916009388089e-11,
+                    "pass": true
+                  },
+                  "H": {
+                    "inlet": 0.013869764834559713,
+                    "outlet": 0.013869764829100892,
+                    "abs_error": 5.458820895309913e-12,
+                    "pass": true
+                  },
+                  "C": {
+                    "inlet": 0.04131690114779184,
+                    "outlet": 0.04131690112488089,
+                    "abs_error": 2.2910943975329445e-11,
+                    "pass": true
+                  },
+                  "N": {
+                    "inlet": 0.7246720963310207,
+                    "outlet": 0.7246720964407526,
+                    "abs_error": 1.0973189024099383e-10,
+                    "pass": true
+                  },
+                  "Ar": {
+                    "inlet": 0.0,
+                    "outlet": -9.593213194610424e-117,
+                    "abs_error": 9.593213194610424e-117,
+                    "pass": true
+                  },
+                  "E": {
+                    "inlet": 0.0,
+                    "outlet": -1.6481240802119288e-22,
+                    "abs_error": 1.6481240802119288e-22,
+                    "pass": true
+                  }
+                },
+                "speed_error": 2.26644440813215e-06,
+                "speed_reference_uncertainty": 6.976599775838415e-07,
+                "gauss_scaled_defect": 0.0,
+                "continuity_relative_error": 1.1448125212173964e-12,
+                "native_points": 164,
+                "reference_points": [
+                  169,
+                  337,
+                  673
+                ]
+              },
+              "burner-field": {
+                "passed": true,
+                "gates": {
+                  "T": true,
+                  "Y": true,
+                  "X": true,
+                  "E": true,
+                  "velocity": true,
+                  "rho": true,
+                  "qdot": true,
+                  "elements": true,
+                  "normalization": true,
+                  "continuity": true,
+                  "gauss": true,
+                  "finite": true,
+                  "positive_density": true,
+                  "rho_eos": true,
+                  "reference_uncertainty": true
+                },
+                "profile_errors": {
+                  "T": 0.0004607907041761039,
+                  "Y": 0.016238120094392815,
+                  "X": 0.016348040124246215,
+                  "E": 0.03046870830468638,
+                  "velocity": 0.0003984184155646819,
+                  "rho": 0.00023552627705821286,
+                  "qdot": 0.0006817268454357266
+                },
+                "reference_extrapolation_change": {
+                  "T": 0.00018775038443957995,
+                  "Y": 0.006357398814163807,
+                  "X": 0.006402481174983829,
+                  "E": 0.005272415840118226,
+                  "velocity": 0.00016866838823822067,
+                  "rho": 0.00014426122576029186,
+                  "qdot": 0.0008965997096737771
+                },
+                "elements": {
+                  "O": {
+                    "inlet": 0.22014123768662783,
+                    "outlet": 0.22014123776912564,
+                    "abs_error": 8.249781413560697e-11,
+                    "pass": true
+                  },
+                  "H": {
+                    "inlet": 0.013869764834559713,
+                    "outlet": 0.013869764850177655,
+                    "abs_error": 1.5617942702994547e-11,
+                    "pass": true
+                  },
+                  "C": {
+                    "inlet": 0.04131690114779184,
+                    "outlet": 0.041316901147754805,
+                    "abs_error": 3.703287676515288e-14,
+                    "pass": true
+                  },
+                  "N": {
+                    "inlet": 0.7246720963310207,
+                    "outlet": 0.7246720962329416,
+                    "abs_error": 9.807910039683065e-11,
+                    "pass": true
+                  },
+                  "Ar": {
+                    "inlet": 0.0,
+                    "outlet": 2.0973856957205875e-55,
+                    "abs_error": 2.0973856957205875e-55,
+                    "pass": true
+                  },
+                  "E": {
+                    "inlet": 0.0,
+                    "outlet": 2.2512414730981573e-19,
+                    "abs_error": 2.2512414730981573e-19,
+                    "pass": true
+                  }
+                },
+                "speed_error": 2.278212661020787e-06,
+                "speed_reference_uncertainty": 6.877991479786695e-07,
+                "gauss_scaled_defect": 7.673066170915896e-15,
+                "continuity_relative_error": 1.9780777904404147e-15,
+                "native_points": 164,
+                "reference_points": [
+                  169,
+                  337,
+                  673
+                ]
+              }
+            },
+            "limits": {
+              "T": 0.01,
+              "Y": 0.05,
+              "X": 0.05,
+              "E": 0.05,
+              "velocity": 0.01,
+              "rho": 0.01,
+              "qdot": 0.05
+            },
+            "element_absolute_limit": 1e-06,
+            "charged_profile_floor": "20*source state atol; 1e-20 electron /1e-16 ion",
+            "reference": "first-order extrapolation of independently solved whole-grid bisections; previous extrapolation bounds uncertainty",
+            "reference_uncertainty_fraction": 0.2
+          },
+          "cantera_replay": {
+            "passed": true,
+            "checked_stages": 26,
+            "relative_tolerance": 1e-12,
+            "absolute_tolerance": 1e-14,
+            "records": [
+              {
+                "repetition": 0,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 0,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 1,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 1,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 2,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 2,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 3,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 3,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 4,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 4,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 5,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 5,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 6,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 6,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 7,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 7,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 8,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 8,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 9,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 9,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 10,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 10,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 11,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 11,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 12,
+                "mode": "frozen",
+                "sha256": "e88117cbe2abfc6e006cd0f8b232c02354eb7bea5b61188ac8fe55bbed35ca29",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              },
+              {
+                "repetition": 12,
+                "mode": "field",
+                "sha256": "adf214cabf68a0f75b1a7aafb3ffa25a09c152cb6322f1d1a3c1eca0c547698f",
+                "max_abs": {
+                  "E": 0.0,
+                  "P": 0.0,
+                  "T": 0.0,
+                  "X": 0.0,
+                  "Y": 0.0,
+                  "grid": 0.0,
+                  "inlet_Y": 0.0,
+                  "qdot": 0.0,
+                  "rho": 0.0,
+                  "velocity": 0.0
+                }
+              }
+            ]
+          },
+          "julia_replay": {
+            "passed": true,
+            "checked_stages": 26,
+            "relative_tolerance": 1e-12,
+            "absolute_tolerance": 1e-14,
+            "hashes": [
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b",
+              "d770a8c9b921417ab841e0d94c759a9e3b93ef22046dafd6704fdb8bd4f25351",
+              "bd40d0ceea4f352775bf1abca6a2a2440c69ca5f970dbb87df930abf1bf44e4b"
+            ],
+            "fields": [
+              "grid",
+              "T",
+              "Y",
+              "X",
+              "E",
+              "velocity",
+              "rho",
+              "qdot",
+              "inlet_Y",
+              "state",
+              "P"
+            ],
+            "max_abs": [
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ]
+            ]
+          },
+          "input_and_source_bytes_unchanged": true,
+          "warmup_gc_policy": "One explicit collection after the excluded first complete sequence on each runtime; automatic GC remains enabled and timed during measured calculations.",
+          "raw_report_sha256": "b7b489721def50d77ee5a6bcddd8f97e6751d20c049c3c988feb4676b746aad9",
+          "batch_review_sha256": "e889b186825f27a84be3e9a7895666327f011850d5c816ae71feb9c3b57fcbbd",
+          "performance_pass": true,
+          "reported_individual_median_pass": true,
+          "batch_review": {
+            "checks": {
+              "case_matches": true,
+              "public_report_passed": true,
+              "formal": true,
+              "accuracy_passed": true,
+              "cantera_replay": true,
+              "julia_replay": true,
+              "input_and_source_bytes_unchanged": true,
+              "noise_passed": true,
+              "median_ratio_passed": true,
+              "conservative_ratio_passed": true
+            },
+            "means": {
+              "julia": {
+                "batch_means": [
+                  7.63196220775,
+                  7.765751116,
+                  7.695443077249999
+                ],
+                "median": 7.695443077249999
+              },
+              "cantera": {
+                "batch_means": [
+                  14.88342858575,
+                  14.919664160750001,
+                  14.861100801000001
+                ],
+                "median": 14.88342858575
+              }
+            },
+            "ratio": 1.9340573942713977,
+            "conservative_ratio": 1.9136720426670961,
+            "noise": {
+              "julia": {
+                "spread": 0.01738547175347436,
+                "passed": true
+              },
+              "cantera": {
+                "spread": 0.003934803020190582,
+                "passed": true
+              }
+            },
+            "qualification_before_ci": true
+          }
+        }
+      }
+    }
+  },
+  "clock_verification": {
+    "python": {
+      "raw_over_host": 0.9998523294352182,
+      "passed": true
+    },
+    "julia": {
+      "raw_over_host": 0.9997929716702092,
+      "passed": true
+    }
+  }
+}

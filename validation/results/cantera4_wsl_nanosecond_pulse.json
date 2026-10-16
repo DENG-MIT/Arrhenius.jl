@@ -1,0 +1,3707 @@
+{
+  "schema_version": 1,
+  "case": "reactors/nanosecond_pulse_discharge",
+  "scope": "Complete native methane pulse at all901 original output times,91 delayed field/EEDF updates and93 initial/chunk/terminal snapshots",
+  "passed": true,
+  "cantera_version": "4.0.0a2",
+  "cantera_source_commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+  "julia_version": "1.12.7",
+  "native_source_commit": "d8c77a95a0bdc4b593c72b1218b5a1c7f63e263a",
+  "source_file": "example/reactors/nanosecond_pulse_discharge.jl",
+  "source_sha256": "7047b5bac54e11de78f664083ea95a1ed785432a92ac624bf35a7b47e4fa346e",
+  "validated_implementation_prefix": {
+    "bytes": 6141,
+    "sha256": "3cab4cfe2e63b0fb3c14a5ff129e7e44983aa2fc8700d8cafdfaed42b65998b2"
+  },
+  "output_count": 901,
+  "chunks": 91,
+  "snapshot_count": 93,
+  "species": [
+    "H2",
+    "H",
+    "O",
+    "O2",
+    "OH",
+    "H2O",
+    "HO2",
+    "H2O2",
+    "C",
+    "CH",
+    "CH2",
+    "CH2(S)",
+    "CH3",
+    "CH4",
+    "CO",
+    "CO2",
+    "HCO",
+    "CH2O",
+    "CH2OH",
+    "CH3O",
+    "CH3OH",
+    "C2H",
+    "C2H2",
+    "C2H3",
+    "C2H4",
+    "C2H5",
+    "C2H6",
+    "HCCO",
+    "CH2CO",
+    "HCCOH",
+    "N",
+    "NH",
+    "NH2",
+    "NH3",
+    "NNH",
+    "NO",
+    "NO2",
+    "N2O",
+    "HNO",
+    "CN",
+    "HCN",
+    "H2CN",
+    "HCNN",
+    "HCNO",
+    "HOCN",
+    "HNCO",
+    "NCO",
+    "N2",
+    "AR",
+    "C3H7",
+    "C3H8",
+    "CH2CHO",
+    "CH3CHO",
+    "e",
+    "N2(v1)",
+    "N2(v2)",
+    "N2(v3)",
+    "N2(v4)",
+    "N2(v5)",
+    "N2(v6)",
+    "N2(v7)",
+    "N2(v8)",
+    "N2(A)",
+    "N2(B)",
+    "N2(a')",
+    "N2(C)",
+    "CH4+",
+    "O2+",
+    "N2+",
+    "CO2+",
+    "H2O+"
+  ],
+  "molecular_weights": [
+    2.016,
+    1.008,
+    15.999,
+    31.998,
+    17.007,
+    18.015,
+    33.006,
+    34.014,
+    12.011,
+    13.018999999999998,
+    14.027,
+    14.027,
+    15.035,
+    16.043,
+    28.009999999999998,
+    44.009,
+    29.018,
+    30.026,
+    31.034,
+    31.034,
+    32.042,
+    25.029999999999998,
+    26.037999999999997,
+    27.046,
+    28.054,
+    29.061999999999998,
+    30.07,
+    41.028999999999996,
+    42.037,
+    42.037,
+    14.007,
+    15.015,
+    16.023,
+    17.031,
+    29.022,
+    30.006,
+    46.005,
+    44.013,
+    31.014000000000003,
+    26.018,
+    27.026,
+    28.034,
+    41.033,
+    43.025,
+    43.025,
+    43.025,
+    42.017,
+    28.014,
+    39.95,
+    43.089,
+    44.097,
+    43.045,
+    44.053,
+    0.0005485799088728283,
+    28.014,
+    28.014,
+    28.014,
+    28.014,
+    28.014,
+    28.014,
+    28.014,
+    28.014,
+    28.014,
+    28.014,
+    28.014,
+    28.014,
+    16.042451420091126,
+    31.997451420091128,
+    28.013451420091126,
+    44.00845142009113,
+    18.014451420091127
+  ],
+  "elements": [
+    "O",
+    "H",
+    "C",
+    "N",
+    "Ar",
+    "E"
+  ],
+  "state_layout": [
+    "mass_kg",
+    "total_enthalpy_J",
+    "mass_fractions_in_species_order"
+  ],
+  "settings": {
+    "initial_T_K": 300.0,
+    "initial_P_Pa": 101325.0,
+    "initial_X": {
+      "CH4": 0.095,
+      "O2": 0.19,
+      "N2": 0.715,
+      "e": 1e-11
+    },
+    "peak_EN_V_m2": 1.9e-19,
+    "pulse_center_s": 2.4e-08,
+    "pulse_standard_deviation_s": 3e-09,
+    "nominal_duration_s": 9e-08,
+    "output_increment_s": 1e-10,
+    "nominal_field_interval_s": 1e-09,
+    "reltol": 1e-11,
+    "abstol": 1e-23,
+    "reference_reltol": 1e-11,
+    "reference_abstol": 1e-23
+  },
+  "reference_convergence": {
+    "passed": true,
+    "checks": 79,
+    "relative_tolerance": 1e-11,
+    "absolute_tolerance_pair": [
+      1e-21,
+      1e-23
+    ]
+  },
+  "initial": {
+    "label": "initial",
+    "T": 300.0,
+    "P": 101325.00000000001,
+    "h_mass": -254430.99457593422,
+    "mu": 0.524940828779533,
+    "nominal_time": 0.0,
+    "mass": 1.1225364367953652,
+    "Te": 0.0009999999999999998,
+    "EN": 2.4061914543278922e-33,
+    "E": 5.8862981373786726e-08,
+    "rho": 1.1225364367953654,
+    "volume": 0.9999999999999998,
+    "actual_time": 0.0
+  },
+  "terminal": {
+    "label": "terminal",
+    "T": 300.0001572917361,
+    "P": 101325.00000000001,
+    "h_mass": -254430.75670716073,
+    "mu": 0.5249411032915292,
+    "nominal_time": 9e-08,
+    "mass": 1.1225364367968111,
+    "Te": 0.0009999999999999998,
+    "EN": 1.5117813394715824e-124,
+    "E": 3.698288846035915e-99,
+    "rho": 1.1225358447603322,
+    "volume": 1.0000005274098656,
+    "actual_time": 9.00999999999986e-08
+  },
+  "solver_statistics": {
+    "nnonlinconvfail": 0,
+    "njacs": 90,
+    "ncondition": 0,
+    "nf2": 0,
+    "nreject": 222,
+    "nsolve": 8740,
+    "nfpiter": 0,
+    "nf": 9010,
+    "maxeig": 0.0,
+    "naccept": 6781,
+    "nw": 2046,
+    "nnonliniter": 8740,
+    "nfpconvfail": 0
+  },
+  "independent_checks": [
+    {
+      "name": "reference-qualified",
+      "passed": true
+    },
+    {
+      "name": "native-complete",
+      "passed": true,
+      "outputs": 901,
+      "chunks": 91,
+      "error": {}
+    },
+    {
+      "name": "native-settings",
+      "passed": true
+    },
+    {
+      "name": "species-metadata",
+      "passed": true
+    },
+    {
+      "name": "molecular-weights",
+      "passed": true,
+      "max_abs_error": 7.105427357601002e-15,
+      "max_gate_ratio": 0.01691083932122951
+    },
+    {
+      "name": "elemental-matrix",
+      "passed": true
+    },
+    {
+      "name": "exact-901-times",
+      "passed": true
+    },
+    {
+      "name": "exact-chunk-assignments",
+      "passed": true
+    },
+    {
+      "name": "all-finite",
+      "passed": true
+    },
+    {
+      "name": "all-trajectory-shapes",
+      "passed": true
+    },
+    {
+      "name": "initial/u",
+      "passed": true,
+      "max_abs_error": 5.820766091346741e-11,
+      "max_gate_ratio": 2.038025763533716e-06
+    },
+    {
+      "name": "initial/Y",
+      "passed": true,
+      "max_abs_error": 1.1102230246251565e-16,
+      "max_gate_ratio": 1.510837297437297e-06
+    },
+    {
+      "name": "initial/X",
+      "passed": true,
+      "max_abs_error": 1.6155871338926322e-27,
+      "max_gate_ratio": 1.615587132277045e-15
+    },
+    {
+      "name": "initial/rho",
+      "passed": true,
+      "max_abs_error": 4.440892098500626e-16,
+      "max_gate_ratio": 3.9211913667578e-06
+    },
+    {
+      "name": "initial/mass",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 1.9605956833789e-06
+    },
+    {
+      "name": "initial/h_mass",
+      "passed": true,
+      "max_abs_error": 5.820766091346741e-11,
+      "max_gate_ratio": 2.2877581688789612e-06
+    },
+    {
+      "name": "Te-roundtrip",
+      "passed": true
+    },
+    {
+      "name": "temperature",
+      "passed": true,
+      "max_abs_error": 2.859792402887251e-10,
+      "max_gate_ratio": 3.574739827496532e-08
+    },
+    {
+      "name": "temperature-rise",
+      "passed": true,
+      "max_abs_error": 2.859792402887251e-10,
+      "max_gate_ratio": 0.00024839487920995466
+    },
+    {
+      "name": "total-enthalpy-rise",
+      "passed": true,
+      "max_abs_error": 3.6280835047364235e-07,
+      "max_gate_ratio": 0.08367711647523766
+    },
+    {
+      "name": "rho",
+      "passed": true,
+      "max_abs_error": 1.4439560658274786e-12,
+      "max_gate_ratio": 1.2863328719789928e-06
+    },
+    {
+      "name": "X/H2",
+      "passed": true,
+      "max_abs_error": 5.838312484266189e-23,
+      "max_gate_ratio": 5.838020229148755e-09
+    },
+    {
+      "name": "X/H",
+      "passed": true,
+      "max_abs_error": 7.365367113954434e-17,
+      "max_gate_ratio": 5.968318635656683e-05
+    },
+    {
+      "name": "X/O",
+      "passed": true,
+      "max_abs_error": 2.7645995856597686e-16,
+      "max_gate_ratio": 6.079092123238993e-05
+    },
+    {
+      "name": "X/O2",
+      "passed": true,
+      "max_abs_error": 2.7602919949742954e-13,
+      "max_gate_ratio": 1.4527852856490817e-09
+    },
+    {
+      "name": "X/OH",
+      "passed": true,
+      "max_abs_error": 1.9526020612890956e-22,
+      "max_gate_ratio": 1.95197760287423e-08
+    },
+    {
+      "name": "X/H2O",
+      "passed": true,
+      "max_abs_error": 1.8572271853349228e-25,
+      "max_gate_ratio": 1.8572266926975048e-11
+    },
+    {
+      "name": "X/HO2",
+      "passed": true,
+      "max_abs_error": 2.7330113819996192e-17,
+      "max_gate_ratio": 6.126213120530753e-05
+    },
+    {
+      "name": "X/H2O2",
+      "passed": true,
+      "max_abs_error": 6.944633340008045e-26,
+      "max_gate_ratio": 6.9446330824052e-12
+    },
+    {
+      "name": "X/C",
+      "passed": true,
+      "max_abs_error": 1.9148088882781485e-34,
+      "max_gate_ratio": 1.9148088882781486e-20
+    },
+    {
+      "name": "X/CH",
+      "passed": true,
+      "max_abs_error": 1.8016142972857809e-32,
+      "max_gate_ratio": 1.8016142972857807e-18
+    },
+    {
+      "name": "X/CH2",
+      "passed": true,
+      "max_abs_error": 2.9792497130347752e-30,
+      "max_gate_ratio": 2.979249712962128e-16
+    },
+    {
+      "name": "X/CH2(S)",
+      "passed": true,
+      "max_abs_error": 8.892914764822614e-31,
+      "max_gate_ratio": 8.89291476481609e-17
+    },
+    {
+      "name": "X/CH3",
+      "passed": true,
+      "max_abs_error": 7.635627306680031e-17,
+      "max_gate_ratio": 5.970387259994886e-05
+    },
+    {
+      "name": "X/CH4",
+      "passed": true,
+      "max_abs_error": 1.6486811915683575e-14,
+      "max_gate_ratio": 1.7354539143971377e-10
+    },
+    {
+      "name": "X/CO",
+      "passed": true,
+      "max_abs_error": 5.656944743850489e-23,
+      "max_gate_ratio": 5.656676787033399e-09
+    },
+    {
+      "name": "X/CO2",
+      "passed": true,
+      "max_abs_error": 6.237706817447766e-31,
+      "max_gate_ratio": 6.237706817405232e-17
+    },
+    {
+      "name": "X/HCO",
+      "passed": true,
+      "max_abs_error": 8.094588261871267e-30,
+      "max_gate_ratio": 8.094588261850872e-16
+    },
+    {
+      "name": "X/CH2O",
+      "passed": true,
+      "max_abs_error": 8.493867038805054e-23,
+      "max_gate_ratio": 8.493262948699997e-09
+    },
+    {
+      "name": "X/CH2OH",
+      "passed": true,
+      "max_abs_error": 1.1421197243972907e-33,
+      "max_gate_ratio": 1.1421197243972899e-19
+    },
+    {
+      "name": "X/CH3O",
+      "passed": true,
+      "max_abs_error": 3.2547640191683475e-24,
+      "max_gate_ratio": 3.25475446850554e-10
+    },
+    {
+      "name": "X/CH3OH",
+      "passed": true,
+      "max_abs_error": 4.0100564185773435e-29,
+      "max_gate_ratio": 4.010056418446976e-15
+    },
+    {
+      "name": "X/C2H",
+      "passed": true,
+      "max_abs_error": 2.0207377753540237e-34,
+      "max_gate_ratio": 2.0207377753540236e-20
+    },
+    {
+      "name": "X/C2H2",
+      "passed": true,
+      "max_abs_error": 8.315961764548591e-35,
+      "max_gate_ratio": 8.315961764548591e-21
+    },
+    {
+      "name": "X/C2H3",
+      "passed": true,
+      "max_abs_error": 8.597622427485504e-38,
+      "max_gate_ratio": 8.597622427485504e-24
+    },
+    {
+      "name": "X/C2H4",
+      "passed": true,
+      "max_abs_error": 5.284211510194937e-33,
+      "max_gate_ratio": 5.284211510172241e-19
+    },
+    {
+      "name": "X/C2H5",
+      "passed": true,
+      "max_abs_error": 1.1409706419351635e-31,
+      "max_gate_ratio": 1.1409706419350554e-17
+    },
+    {
+      "name": "X/C2H6",
+      "passed": true,
+      "max_abs_error": 1.3234230818495695e-23,
+      "max_gate_ratio": 1.3234085283196688e-09
+    },
+    {
+      "name": "X/HCCO",
+      "passed": true,
+      "max_abs_error": 2.0869753673429361e-44,
+      "max_gate_ratio": 2.086975367342936e-30
+    },
+    {
+      "name": "X/CH2CO",
+      "passed": true,
+      "max_abs_error": 3.250492727949756e-44,
+      "max_gate_ratio": 3.250492727949756e-30
+    },
+    {
+      "name": "X/HCCOH",
+      "passed": true,
+      "max_abs_error": 5.87064659594132e-36,
+      "max_gate_ratio": 5.87064659594132e-22
+    },
+    {
+      "name": "X/N",
+      "passed": true,
+      "max_abs_error": 2.8824171368657863e-40,
+      "max_gate_ratio": 2.8824171368657865e-26
+    },
+    {
+      "name": "X/NH",
+      "passed": true,
+      "max_abs_error": 1.0463598219819801e-32,
+      "max_gate_ratio": 1.0463598219819711e-18
+    },
+    {
+      "name": "X/NH2",
+      "passed": true,
+      "max_abs_error": 1.606933758658666e-49,
+      "max_gate_ratio": 1.6069337586586662e-35
+    },
+    {
+      "name": "X/NH3",
+      "passed": true,
+      "max_abs_error": 1.4636160035216264e-35,
+      "max_gate_ratio": 1.4636160035216263e-21
+    },
+    {
+      "name": "X/NNH",
+      "passed": true,
+      "max_abs_error": 1.352176342433004e-26,
+      "max_gate_ratio": 1.3521763253768419e-12
+    },
+    {
+      "name": "X/NO",
+      "passed": true,
+      "max_abs_error": 1.0490420452470547e-32,
+      "max_gate_ratio": 1.0490420452470455e-18
+    },
+    {
+      "name": "X/NO2",
+      "passed": true,
+      "max_abs_error": 1.777493689466064e-40,
+      "max_gate_ratio": 1.777493689466064e-26
+    },
+    {
+      "name": "X/N2O",
+      "passed": true,
+      "max_abs_error": 2.894643993127787e-32,
+      "max_gate_ratio": 2.8946439931276453e-18
+    },
+    {
+      "name": "X/HNO",
+      "passed": true,
+      "max_abs_error": 1.8621650325142976e-39,
+      "max_gate_ratio": 1.8621650325142975e-25
+    },
+    {
+      "name": "X/CN",
+      "passed": true,
+      "max_abs_error": 1.4808891070160553e-59,
+      "max_gate_ratio": 1.4808891070160553e-45
+    },
+    {
+      "name": "X/HCN",
+      "passed": true,
+      "max_abs_error": 6.540928751512297e-39,
+      "max_gate_ratio": 6.540928751512296e-25
+    },
+    {
+      "name": "X/H2CN",
+      "passed": true,
+      "max_abs_error": 4.2339482942859797e-47,
+      "max_gate_ratio": 4.23394829428598e-33
+    },
+    {
+      "name": "X/HCNN",
+      "passed": true,
+      "max_abs_error": 1.5113048344883415e-30,
+      "max_gate_ratio": 1.5113048344882448e-16
+    },
+    {
+      "name": "X/HCNO",
+      "passed": true,
+      "max_abs_error": 5.428179348552504e-54,
+      "max_gate_ratio": 5.428179348552504e-40
+    },
+    {
+      "name": "X/HOCN",
+      "passed": true,
+      "max_abs_error": 1.1289951472565679e-34,
+      "max_gate_ratio": 1.1289951472565678e-20
+    },
+    {
+      "name": "X/HNCO",
+      "passed": true,
+      "max_abs_error": 1.809576895019254e-44,
+      "max_gate_ratio": 1.8095768950192538e-30
+    },
+    {
+      "name": "X/NCO",
+      "passed": true,
+      "max_abs_error": 4.12625438403731e-52,
+      "max_gate_ratio": 4.1262543840373105e-38
+    },
+    {
+      "name": "X/N2",
+      "passed": true,
+      "max_abs_error": 2.885469641000782e-13,
+      "max_gate_ratio": 4.0356218894361657e-10
+    },
+    {
+      "name": "X/AR",
+      "passed": true,
+      "max_abs_error": 4.915096960530008e-34,
+      "max_gate_ratio": 4.915096960530008e-20
+    },
+    {
+      "name": "X/C3H7",
+      "passed": true,
+      "max_abs_error": 8.325644521042025e-36,
+      "max_gate_ratio": 8.325644521042025e-22
+    },
+    {
+      "name": "X/C3H8",
+      "passed": true,
+      "max_abs_error": 3.248175374383908e-39,
+      "max_gate_ratio": 3.2481753743839078e-25
+    },
+    {
+      "name": "X/CH2CHO",
+      "passed": true,
+      "max_abs_error": 1.6597046339475286e-38,
+      "max_gate_ratio": 1.6597046339475285e-24
+    },
+    {
+      "name": "X/CH3CHO",
+      "passed": true,
+      "max_abs_error": 1.086677175360848e-37,
+      "max_gate_ratio": 1.086677175360848e-23
+    },
+    {
+      "name": "X/e",
+      "passed": true,
+      "max_abs_error": 6.055254666718111e-19,
+      "max_gate_ratio": 3.0276272465926475e-05
+    },
+    {
+      "name": "X/N2(v1)",
+      "passed": true,
+      "max_abs_error": 9.752202796081397e-21,
+      "max_gate_ratio": 9.596680263695774e-07
+    },
+    {
+      "name": "X/N2(v2)",
+      "passed": true,
+      "max_abs_error": 4.5359573489451756e-21,
+      "max_gate_ratio": 4.502023289799157e-07
+    },
+    {
+      "name": "X/N2(v3)",
+      "passed": true,
+      "max_abs_error": 2.1696840876380402e-21,
+      "max_gate_ratio": 2.161889571639509e-07
+    },
+    {
+      "name": "X/N2(v4)",
+      "passed": true,
+      "max_abs_error": 1.1632268889665003e-21,
+      "max_gate_ratio": 1.1609826254237654e-07
+    },
+    {
+      "name": "X/N2(v5)",
+      "passed": true,
+      "max_abs_error": 8.674456698099803e-22,
+      "max_gate_ratio": 8.661970142235992e-08
+    },
+    {
+      "name": "X/N2(v6)",
+      "passed": true,
+      "max_abs_error": 6.724989502994879e-22,
+      "max_gate_ratio": 6.717482236419899e-08
+    },
+    {
+      "name": "X/N2(v7)",
+      "passed": true,
+      "max_abs_error": 2.4227171347113035e-22,
+      "max_gate_ratio": 2.421742112960475e-08
+    },
+    {
+      "name": "X/N2(v8)",
+      "passed": true,
+      "max_abs_error": 2.366249816361032e-22,
+      "max_gate_ratio": 2.3653197067300573e-08
+    },
+    {
+      "name": "X/N2(A)",
+      "passed": true,
+      "max_abs_error": 2.9547576592736496e-17,
+      "max_gate_ratio": 5.8968591754430134e-05
+    },
+    {
+      "name": "X/N2(B)",
+      "passed": true,
+      "max_abs_error": 4.9091809159902426e-18,
+      "max_gate_ratio": 5.365296486286463e-05
+    },
+    {
+      "name": "X/N2(a')",
+      "passed": true,
+      "max_abs_error": 4.5753863969612465e-18,
+      "max_gate_ratio": 5.316651162243245e-05
+    },
+    {
+      "name": "X/N2(C)",
+      "passed": true,
+      "max_abs_error": 2.8998689807886847e-18,
+      "max_gate_ratio": 4.9869727822115266e-05
+    },
+    {
+      "name": "X/CH4+",
+      "passed": true,
+      "max_abs_error": 2.820239388419361e-32,
+      "max_gate_ratio": 2.8202393884192286e-18
+    },
+    {
+      "name": "X/O2+",
+      "passed": true,
+      "max_abs_error": 2.1682349438971194e-32,
+      "max_gate_ratio": 2.1682349438970413e-18
+    },
+    {
+      "name": "X/N2+",
+      "passed": true,
+      "max_abs_error": 4.4769765897947825e-32,
+      "max_gate_ratio": 4.476976589794449e-18
+    },
+    {
+      "name": "X/CO2+",
+      "passed": true,
+      "max_abs_error": 2.45359248750588e-55,
+      "max_gate_ratio": 2.45359248750588e-41
+    },
+    {
+      "name": "X/H2O+",
+      "passed": true,
+      "max_abs_error": 4.664796086433226e-53,
+      "max_gate_ratio": 4.664796086433226e-39
+    },
+    {
+      "name": "cached/E",
+      "passed": true,
+      "max_abs_error": 1.7071142792701721e-06,
+      "max_gate_ratio": 9.451089640428966e-07
+    },
+    {
+      "name": "cached/mu",
+      "passed": true,
+      "max_abs_error": 4.856115509710435e-13,
+      "max_gate_ratio": 1.809155421583e-09
+    },
+    {
+      "name": "plot-E/N",
+      "passed": true,
+      "max_abs_error": 4.81482486096809e-35,
+      "max_gate_ratio": 0.08534519246669636
+    },
+    {
+      "name": "positive-thermo",
+      "passed": true
+    },
+    {
+      "name": "normalized-Y",
+      "passed": true,
+      "max_abs_drift": 3.951283744640932e-13
+    },
+    {
+      "name": "closed-mass",
+      "passed": true,
+      "max_rel_drift": 1.347144618080165e-12
+    },
+    {
+      "name": "constant-pressure",
+      "passed": true
+    },
+    {
+      "name": "nonnegative-X-with-roundoff",
+      "passed": true,
+      "min_X": -1.7192381458874707e-27
+    },
+    {
+      "name": "stored-Te-stable",
+      "passed": true
+    },
+    {
+      "name": "signed-charge-inventory",
+      "passed": true,
+      "initial": 3.618767871058958e-13,
+      "max_abs_drift": 1.2722748679404478e-25,
+      "gate": 3.7187678710589574e-17
+    },
+    {
+      "name": "all93-snapshots",
+      "passed": true
+    },
+    {
+      "name": "initial/exact-times",
+      "passed": true
+    },
+    {
+      "name": "initial/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "initial/EEDF",
+      "passed": true,
+      "max_abs_error": 6.162975822039155e-33,
+      "max_gate_ratio": 6.162975614482774e-21
+    },
+    {
+      "name": "initial/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "initial/E",
+      "passed": true,
+      "max_abs_error": 4.1028158382630173e-22,
+      "max_gate_ratio": 6.970112186825352e-09
+    },
+    {
+      "name": "initial/mu",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-000/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-000/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-000/EEDF",
+      "passed": true,
+      "max_abs_error": 6.162975822039155e-33,
+      "max_gate_ratio": 6.162975614482774e-21
+    },
+    {
+      "name": "chunk-000/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-000/E",
+      "passed": true,
+      "max_abs_error": 4.1028158382630173e-22,
+      "max_gate_ratio": 6.970112186825352e-09
+    },
+    {
+      "name": "chunk-000/mu",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-001/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-001/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-001/EEDF",
+      "passed": true,
+      "max_abs_error": 1.0875803433152496e-28,
+      "max_gate_ratio": 1.0875803066877752e-16
+    },
+    {
+      "name": "chunk-001/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-001/E",
+      "passed": true,
+      "max_abs_error": 4.493245087388046e-21,
+      "max_gate_ratio": 7.633397056216797e-08
+    },
+    {
+      "name": "chunk-001/mu",
+      "passed": true,
+      "max_abs_error": 4.785061236134425e-14,
+      "max_gate_ratio": 9.115429710704875e-11
+    },
+    {
+      "name": "chunk-002/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-002/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-002/EEDF",
+      "passed": true,
+      "max_abs_error": 1.7300705727628315e-28,
+      "max_gate_ratio": 1.7300705144976043e-16
+    },
+    {
+      "name": "chunk-002/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-002/E",
+      "passed": true,
+      "max_abs_error": 1.0333801956502464e-19,
+      "max_gate_ratio": 1.2895159905219716e-07
+    },
+    {
+      "name": "chunk-002/mu",
+      "passed": true,
+      "max_abs_error": 7.382983113757291e-14,
+      "max_gate_ratio": 1.4064410110484318e-10
+    },
+    {
+      "name": "chunk-003/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-003/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-003/EEDF",
+      "passed": true,
+      "max_abs_error": 1.6940787939621229e-28,
+      "max_gate_ratio": 1.694078736909025e-16
+    },
+    {
+      "name": "chunk-003/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-003/E",
+      "passed": true,
+      "max_abs_error": 1.2671612890924333e-18,
+      "max_gate_ratio": 1.2979629326885708e-07
+    },
+    {
+      "name": "chunk-003/mu",
+      "passed": true,
+      "max_abs_error": 7.227551890309769e-14,
+      "max_gate_ratio": 1.376831726605307e-10
+    },
+    {
+      "name": "chunk-004/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-004/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-004/EEDF",
+      "passed": true,
+      "max_abs_error": 1.6894565620955935e-28,
+      "max_gate_ratio": 1.6894565051981628e-16
+    },
+    {
+      "name": "chunk-004/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-004/E",
+      "passed": true,
+      "max_abs_error": 1.3769367590565906e-17,
+      "max_gate_ratio": 1.293788018109728e-07
+    },
+    {
+      "name": "chunk-004/mu",
+      "passed": true,
+      "max_abs_error": 7.216449660063518e-14,
+      "max_gate_ratio": 1.3747167777165123e-10
+    },
+    {
+      "name": "chunk-005/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-005/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-005/EEDF",
+      "passed": true,
+      "max_abs_error": 1.690627527501781e-28,
+      "max_gate_ratio": 1.6906274705649146e-16
+    },
+    {
+      "name": "chunk-005/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-005/E",
+      "passed": true,
+      "max_abs_error": 1.3465790982269965e-16,
+      "max_gate_ratio": 1.297043912625244e-07
+    },
+    {
+      "name": "chunk-005/mu",
+      "passed": true,
+      "max_abs_error": 7.227551890309769e-14,
+      "max_gate_ratio": 1.376831726605307e-10
+    },
+    {
+      "name": "chunk-006/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-006/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-006/EEDF",
+      "passed": true,
+      "max_abs_error": 1.690627527501781e-28,
+      "max_gate_ratio": 1.6906274705649146e-16
+    },
+    {
+      "name": "chunk-006/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-006/E",
+      "passed": true,
+      "max_abs_error": 1.2073675392798577e-15,
+      "max_gate_ratio": 1.332265951197645e-07
+    },
+    {
+      "name": "chunk-006/mu",
+      "passed": true,
+      "max_abs_error": 7.227551890309769e-14,
+      "max_gate_ratio": 1.376831726605307e-10
+    },
+    {
+      "name": "chunk-007/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-007/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-007/EEDF",
+      "passed": true,
+      "max_abs_error": 1.690627527501781e-28,
+      "max_gate_ratio": 1.6906274705649146e-16
+    },
+    {
+      "name": "chunk-007/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-007/E",
+      "passed": true,
+      "max_abs_error": 9.423017921506016e-15,
+      "max_gate_ratio": 1.331143927726569e-07
+    },
+    {
+      "name": "chunk-007/mu",
+      "passed": true,
+      "max_abs_error": 7.227551890309769e-14,
+      "max_gate_ratio": 1.376831726605307e-10
+    },
+    {
+      "name": "chunk-008/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-008/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-008/EEDF",
+      "passed": true,
+      "max_abs_error": 1.690627527501781e-28,
+      "max_gate_ratio": 1.6906274705649146e-16
+    },
+    {
+      "name": "chunk-008/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-008/E",
+      "passed": true,
+      "max_abs_error": 6.59472476627343e-14,
+      "max_gate_ratio": 1.3328159473232102e-07
+    },
+    {
+      "name": "chunk-008/mu",
+      "passed": true,
+      "max_abs_error": 7.227551890309769e-14,
+      "max_gate_ratio": 1.376831726605307e-10
+    },
+    {
+      "name": "chunk-009/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-009/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-009/EEDF",
+      "passed": true,
+      "max_abs_error": 1.690627527501781e-28,
+      "max_gate_ratio": 1.6906274705649146e-16
+    },
+    {
+      "name": "chunk-009/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-009/E",
+      "passed": true,
+      "max_abs_error": 4.1255887595070817e-13,
+      "max_gate_ratio": 1.3330698026110569e-07
+    },
+    {
+      "name": "chunk-009/mu",
+      "passed": true,
+      "max_abs_error": 7.227551890309769e-14,
+      "max_gate_ratio": 1.376831726605307e-10
+    },
+    {
+      "name": "chunk-010/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-010/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-010/EEDF",
+      "passed": true,
+      "max_abs_error": 1.690627527501781e-28,
+      "max_gate_ratio": 1.6906274705649146e-16
+    },
+    {
+      "name": "chunk-010/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-010/E",
+      "passed": true,
+      "max_abs_error": 2.277289468111121e-12,
+      "max_gate_ratio": 1.3147209561157854e-07
+    },
+    {
+      "name": "chunk-010/mu",
+      "passed": true,
+      "max_abs_error": 7.227551890309769e-14,
+      "max_gate_ratio": 1.376831726605307e-10
+    },
+    {
+      "name": "chunk-011/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-011/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-011/EEDF",
+      "passed": true,
+      "max_abs_error": 1.6940787939621229e-28,
+      "max_gate_ratio": 1.694078736909025e-16
+    },
+    {
+      "name": "chunk-011/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-011/E",
+      "passed": true,
+      "max_abs_error": 1.1127099242003169e-11,
+      "max_gate_ratio": 1.2826277862727216e-07
+    },
+    {
+      "name": "chunk-011/mu",
+      "passed": true,
+      "max_abs_error": 7.227551890309769e-14,
+      "max_gate_ratio": 1.376831726605307e-10
+    },
+    {
+      "name": "chunk-012/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-012/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-012/EEDF",
+      "passed": true,
+      "max_abs_error": 1.6929078285559354e-28,
+      "max_gate_ratio": 1.6929077715422732e-16
+    },
+    {
+      "name": "chunk-012/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-012/E",
+      "passed": true,
+      "max_abs_error": 4.973799150320701e-11,
+      "max_gate_ratio": 1.2792788017452142e-07
+    },
+    {
+      "name": "chunk-012/mu",
+      "passed": true,
+      "max_abs_error": 7.216449660063518e-14,
+      "max_gate_ratio": 1.374716777716512e-10
+    },
+    {
+      "name": "chunk-013/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-013/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-013/EEDF",
+      "passed": true,
+      "max_abs_error": 1.584069675538724e-28,
+      "max_gate_ratio": 1.5840696221905074e-16
+    },
+    {
+      "name": "chunk-013/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-013/E",
+      "passed": true,
+      "max_abs_error": 1.894022716442123e-10,
+      "max_gate_ratio": 1.214717708416006e-07
+    },
+    {
+      "name": "chunk-013/mu",
+      "passed": true,
+      "max_abs_error": 6.794564910705958e-14,
+      "max_gate_ratio": 1.2943487199423055e-10
+    },
+    {
+      "name": "chunk-014/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-014/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-014/EEDF",
+      "passed": true,
+      "max_abs_error": 1.0864093779090622e-28,
+      "max_gate_ratio": 1.0864093413210234e-16
+    },
+    {
+      "name": "chunk-014/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-014/E",
+      "passed": true,
+      "max_abs_error": 4.656612873077393e-10,
+      "max_gate_ratio": 8.322014644183312e-08
+    },
+    {
+      "name": "chunk-014/mu",
+      "passed": true,
+      "max_abs_error": 4.796163466380676e-14,
+      "max_gate_ratio": 9.136579199591483e-11
+    },
+    {
+      "name": "chunk-015/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-015/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-015/EEDF",
+      "passed": true,
+      "max_abs_error": 5.359323774845249e-29,
+      "max_gate_ratio": 5.35932359435422e-17
+    },
+    {
+      "name": "chunk-015/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-015/E",
+      "passed": true,
+      "max_abs_error": 7.057678885757923e-10,
+      "max_gate_ratio": 3.9277455062152324e-08
+    },
+    {
+      "name": "chunk-015/mu",
+      "passed": true,
+      "max_abs_error": 2.5757174171303632e-14,
+      "max_gate_ratio": 4.906681421994122e-11
+    },
+    {
+      "name": "chunk-016/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-016/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-016/EEDF",
+      "passed": true,
+      "max_abs_error": 4.488747292807289e-23,
+      "max_gate_ratio": 4.246544096652809e-11
+    },
+    {
+      "name": "chunk-016/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-016/E",
+      "passed": true,
+      "max_abs_error": 2.1100277081131935e-09,
+      "max_gate_ratio": 4.0864637516759325e-08
+    },
+    {
+      "name": "chunk-016/mu",
+      "passed": true,
+      "max_abs_error": 1.6764367671839864e-14,
+      "max_gate_ratio": 3.1935728226573227e-11
+    },
+    {
+      "name": "chunk-017/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-017/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-017/EEDF",
+      "passed": true,
+      "max_abs_error": 1.316606837388403e-19,
+      "max_gate_ratio": 3.9242059811521506e-10
+    },
+    {
+      "name": "chunk-017/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-017/E",
+      "passed": true,
+      "max_abs_error": 7.53789208829403e-09,
+      "max_gate_ratio": 5.6773072420480414e-08
+    },
+    {
+      "name": "chunk-017/mu",
+      "passed": true,
+      "max_abs_error": 2.6201263381153694e-14,
+      "max_gate_ratio": 4.9912852618845524e-11
+    },
+    {
+      "name": "chunk-018/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-018/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-018/EEDF",
+      "passed": true,
+      "max_abs_error": 2.6645352591003757e-15,
+      "max_gate_ratio": 1.182869016192448e-10
+    },
+    {
+      "name": "chunk-018/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-018/E",
+      "passed": true,
+      "max_abs_error": 2.7532223612070084e-08,
+      "max_gate_ratio": 9.012010775362074e-08
+    },
+    {
+      "name": "chunk-018/mu",
+      "passed": true,
+      "max_abs_error": 4.3076653355456074e-14,
+      "max_gate_ratio": 8.541724161587829e-11
+    },
+    {
+      "name": "chunk-019/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-019/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-019/EEDF",
+      "passed": true,
+      "max_abs_error": 5.773159728050814e-15,
+      "max_gate_ratio": 2.6075356672131106e-11
+    },
+    {
+      "name": "chunk-019/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-019/E",
+      "passed": true,
+      "max_abs_error": 6.100162863731384e-08,
+      "max_gate_ratio": 9.697610136658594e-08
+    },
+    {
+      "name": "chunk-019/mu",
+      "passed": true,
+      "max_abs_error": 3.3362201889985954e-14,
+      "max_gate_ratio": 8.904285863773264e-11
+    },
+    {
+      "name": "chunk-020/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-020/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-020/EEDF",
+      "passed": true,
+      "max_abs_error": 1.7319479184152442e-13,
+      "max_gate_ratio": 1.0996622837590846e-10
+    },
+    {
+      "name": "chunk-020/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-020/E",
+      "passed": true,
+      "max_abs_error": 1.4691613614559174e-07,
+      "max_gate_ratio": 1.267624464076567e-07
+    },
+    {
+      "name": "chunk-020/mu",
+      "passed": true,
+      "max_abs_error": 1.915134717478395e-15,
+      "max_gate_ratio": 1.0946233630725416e-11
+    },
+    {
+      "name": "chunk-021/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-021/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-021/EEDF",
+      "passed": true,
+      "max_abs_error": 1.587618925213974e-14,
+      "max_gate_ratio": 7.17278661990257e-11
+    },
+    {
+      "name": "chunk-021/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-021/E",
+      "passed": true,
+      "max_abs_error": 2.0838342607021332e-07,
+      "max_gate_ratio": 1.090528592927544e-07
+    },
+    {
+      "name": "chunk-021/mu",
+      "passed": true,
+      "max_abs_error": 7.202571872255703e-15,
+      "max_gate_ratio": 7.960027830737677e-11
+    },
+    {
+      "name": "chunk-022/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-022/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-022/EEDF",
+      "passed": true,
+      "max_abs_error": 1.5920598173124745e-13,
+      "max_gate_ratio": 3.345178005895692e-10
+    },
+    {
+      "name": "chunk-022/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-022/E",
+      "passed": true,
+      "max_abs_error": 3.320164978504181e-07,
+      "max_gate_ratio": 1.1777178624453391e-07
+    },
+    {
+      "name": "chunk-022/mu",
+      "passed": true,
+      "max_abs_error": 1.7694179454963432e-14,
+      "max_gate_ratio": 2.811919595007291e-10
+    },
+    {
+      "name": "chunk-023/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-023/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-023/EEDF",
+      "passed": true,
+      "max_abs_error": 7.527312106958561e-14,
+      "max_gate_ratio": 2.4378819195521053e-10
+    },
+    {
+      "name": "chunk-023/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-023/E",
+      "passed": true,
+      "max_abs_error": 4.847534000873566e-07,
+      "max_gate_ratio": 1.3024621796617401e-07
+    },
+    {
+      "name": "chunk-023/mu",
+      "passed": true,
+      "max_abs_error": 7.237266341775239e-15,
+      "max_gate_ratio": 1.3865515559910633e-10
+    },
+    {
+      "name": "chunk-024/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-024/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-024/EEDF",
+      "passed": true,
+      "max_abs_error": 5.155875726359227e-13,
+      "max_gate_ratio": 2.1872339159417603e-09
+    },
+    {
+      "name": "chunk-024/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-024/E",
+      "passed": true,
+      "max_abs_error": 7.199123501777649e-07,
+      "max_gate_ratio": 1.637349856798135e-07
+    },
+    {
+      "name": "chunk-024/mu",
+      "passed": true,
+      "max_abs_error": 6.929873341832149e-14,
+      "max_gate_ratio": 1.4530118448991774e-09
+    },
+    {
+      "name": "chunk-025/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-025/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-025/EEDF",
+      "passed": true,
+      "max_abs_error": 6.752931547282515e-13,
+      "max_gate_ratio": 3.135869504524984e-09
+    },
+    {
+      "name": "chunk-025/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-025/E",
+      "passed": true,
+      "max_abs_error": 7.366761565208435e-07,
+      "max_gate_ratio": 1.584933432631975e-07
+    },
+    {
+      "name": "chunk-025/mu",
+      "passed": true,
+      "max_abs_error": 8.397449402508528e-14,
+      "max_gate_ratio": 1.809155421583e-09
+    },
+    {
+      "name": "chunk-026/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-026/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-026/EEDF",
+      "passed": true,
+      "max_abs_error": 2.692845946228317e-13,
+      "max_gate_ratio": 1.1423721037359607e-09
+    },
+    {
+      "name": "chunk-026/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-026/E",
+      "passed": true,
+      "max_abs_error": 7.543712854385376e-07,
+      "max_gate_ratio": 1.7157225434029124e-07
+    },
+    {
+      "name": "chunk-026/mu",
+      "passed": true,
+      "max_abs_error": 4.878736303837172e-14,
+      "max_gate_ratio": 1.0229447115908084e-09
+    },
+    {
+      "name": "chunk-027/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-027/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-027/EEDF",
+      "passed": true,
+      "max_abs_error": 2.219335826225688e-13,
+      "max_gate_ratio": 7.187829047795552e-10
+    },
+    {
+      "name": "chunk-027/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-027/E",
+      "passed": true,
+      "max_abs_error": 6.468035280704498e-07,
+      "max_gate_ratio": 1.737867761427361e-07
+    },
+    {
+      "name": "chunk-027/mu",
+      "passed": true,
+      "max_abs_error": 2.9858060468512804e-14,
+      "max_gate_ratio": 5.720364106932764e-10
+    },
+    {
+      "name": "chunk-028/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-028/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-028/EEDF",
+      "passed": true,
+      "max_abs_error": 1.6930901125533637e-14,
+      "max_gate_ratio": 1.9261503135901803e-10
+    },
+    {
+      "name": "chunk-028/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-028/E",
+      "passed": true,
+      "max_abs_error": 1.7071142792701721e-06,
+      "max_gate_ratio": 6.055420683760998e-07
+    },
+    {
+      "name": "chunk-028/mu",
+      "passed": true,
+      "max_abs_error": 3.5360603334311236e-14,
+      "max_gate_ratio": 5.619434528867562e-10
+    },
+    {
+      "name": "chunk-029/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-029/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-029/EEDF",
+      "passed": true,
+      "max_abs_error": 5.140332604014475e-14,
+      "max_gate_ratio": 1.2118370831896e-10
+    },
+    {
+      "name": "chunk-029/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-029/E",
+      "passed": true,
+      "max_abs_error": 1.1997763067483902e-06,
+      "max_gate_ratio": 6.278766373008839e-07
+    },
+    {
+      "name": "chunk-029/mu",
+      "passed": true,
+      "max_abs_error": 6.158962229108056e-14,
+      "max_gate_ratio": 6.806683756040914e-10
+    },
+    {
+      "name": "chunk-030/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-030/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-030/EEDF",
+      "passed": true,
+      "max_abs_error": 8.060219158778636e-14,
+      "max_gate_ratio": 1.2819555919877678e-10
+    },
+    {
+      "name": "chunk-030/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-030/E",
+      "passed": true,
+      "max_abs_error": 7.48317688703537e-07,
+      "max_gate_ratio": 6.456650966040043e-07
+    },
+    {
+      "name": "chunk-030/mu",
+      "passed": true,
+      "max_abs_error": 1.2045919817182948e-13,
+      "max_gate_ratio": 6.885039480739744e-10
+    },
+    {
+      "name": "chunk-031/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-031/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-031/EEDF",
+      "passed": true,
+      "max_abs_error": 6.750155989720952e-14,
+      "max_gate_ratio": 2.3633079006791784e-10
+    },
+    {
+      "name": "chunk-031/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-031/E",
+      "passed": true,
+      "max_abs_error": 4.207249730825424e-07,
+      "max_gate_ratio": 6.68839302104042e-07
+    },
+    {
+      "name": "chunk-031/mu",
+      "passed": true,
+      "max_abs_error": 2.546851618490109e-13,
+      "max_gate_ratio": 6.797487601013801e-10
+    },
+    {
+      "name": "chunk-032/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-032/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-032/EEDF",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-14,
+      "max_gate_ratio": 3.6079209378258486e-10
+    },
+    {
+      "name": "chunk-032/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-032/E",
+      "passed": true,
+      "max_abs_error": 1.9784783944487572e-07,
+      "max_gate_ratio": 6.476076031048599e-07
+    },
+    {
+      "name": "chunk-032/mu",
+      "passed": true,
+      "max_abs_error": 3.2096547641913276e-13,
+      "max_gate_ratio": 6.364416549814108e-10
+    },
+    {
+      "name": "chunk-033/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-033/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-033/EEDF",
+      "passed": true,
+      "max_abs_error": 2.6645352591003757e-15,
+      "max_gate_ratio": 3.555101077390631e-10
+    },
+    {
+      "name": "chunk-033/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-033/E",
+      "passed": true,
+      "max_abs_error": 8.527422323822975e-08,
+      "max_gate_ratio": 6.42259400674334e-07
+    },
+    {
+      "name": "chunk-033/mu",
+      "passed": true,
+      "max_abs_error": 3.2596148002994596e-13,
+      "max_gate_ratio": 6.224611909416935e-10
+    },
+    {
+      "name": "chunk-034/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-034/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-034/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.455020092686236e-10
+    },
+    {
+      "name": "chunk-034/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-034/E",
+      "passed": true,
+      "max_abs_error": 3.2036041375249624e-08,
+      "max_gate_ratio": 6.204382366490674e-07
+    },
+    {
+      "name": "chunk-034/mu",
+      "passed": true,
+      "max_abs_error": 3.1308289294429414e-13,
+      "max_gate_ratio": 5.964708509522123e-10
+    },
+    {
+      "name": "chunk-035/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-035/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-035/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-035/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-035/E",
+      "passed": true,
+      "max_abs_error": 1.1183146852999926e-08,
+      "max_gate_ratio": 6.223657582875588e-07
+    },
+    {
+      "name": "chunk-035/mu",
+      "passed": true,
+      "max_abs_error": 3.1463720517876936e-13,
+      "max_gate_ratio": 5.993762167438578e-10
+    },
+    {
+      "name": "chunk-036/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-036/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-036/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-036/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-036/E",
+      "passed": true,
+      "max_abs_error": 3.4915501601062715e-09,
+      "max_gate_ratio": 6.239888707088276e-07
+    },
+    {
+      "name": "chunk-036/mu",
+      "passed": true,
+      "max_abs_error": 3.134159598516817e-13,
+      "max_gate_ratio": 5.970497737600997e-10
+    },
+    {
+      "name": "chunk-037/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-037/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-037/EEDF",
+      "passed": true,
+      "max_abs_error": 7.936495374347362e-28,
+      "max_gate_ratio": 7.936495107057311e-16
+    },
+    {
+      "name": "chunk-037/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-037/E",
+      "passed": true,
+      "max_abs_error": 9.531504474580288e-10,
+      "max_gate_ratio": 6.11296420250728e-07
+    },
+    {
+      "name": "chunk-037/mu",
+      "passed": true,
+      "max_abs_error": 3.063105324940807e-13,
+      "max_gate_ratio": 5.835141072748595e-10
+    },
+    {
+      "name": "chunk-038/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-038/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-038/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-038/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-038/E",
+      "passed": true,
+      "max_abs_error": 2.689262146304827e-10,
+      "max_gate_ratio": 6.916881190695071e-07
+    },
+    {
+      "name": "chunk-038/mu",
+      "passed": true,
+      "max_abs_error": 3.5060843117662444e-13,
+      "max_gate_ratio": 6.679005254461682e-10
+    },
+    {
+      "name": "chunk-039/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-039/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-039/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-039/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-039/E",
+      "passed": true,
+      "max_abs_error": 5.95576921114116e-11,
+      "max_gate_ratio": 6.865256382197668e-07
+    },
+    {
+      "name": "chunk-039/mu",
+      "passed": true,
+      "max_abs_error": 3.467226505904364e-13,
+      "max_gate_ratio": 6.604982076541711e-10
+    },
+    {
+      "name": "chunk-040/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-040/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-040/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-040/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-040/E",
+      "passed": true,
+      "max_abs_error": 1.2569500995596172e-11,
+      "max_gate_ratio": 7.256606985029069e-07
+    },
+    {
+      "name": "chunk-040/mu",
+      "passed": true,
+      "max_abs_error": 3.72257780156815e-13,
+      "max_gate_ratio": 7.091420073668969e-10
+    },
+    {
+      "name": "chunk-041/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-041/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-041/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-041/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-041/E",
+      "passed": true,
+      "max_abs_error": 2.355005079834882e-12,
+      "max_gate_ratio": 7.609550823939115e-07
+    },
+    {
+      "name": "chunk-041/mu",
+      "passed": true,
+      "max_abs_error": 3.850253449400043e-13,
+      "max_gate_ratio": 7.334639069984672e-10
+    },
+    {
+      "name": "chunk-042/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-042/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-042/EEDF",
+      "passed": true,
+      "max_abs_error": 1.0912164990502527e-27,
+      "max_gate_ratio": 1.091216462299605e-15
+    },
+    {
+      "name": "chunk-042/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-042/E",
+      "passed": true,
+      "max_abs_error": 4.145017662438022e-13,
+      "max_gate_ratio": 8.377223640586844e-07
+    },
+    {
+      "name": "chunk-042/mu",
+      "passed": true,
+      "max_abs_error": 4.2388315080188477e-13,
+      "max_gate_ratio": 8.074870805541117e-10
+    },
+    {
+      "name": "chunk-043/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-043/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-043/EEDF",
+      "passed": true,
+      "max_abs_error": 1.088104196260123e-27,
+      "max_gate_ratio": 1.0881041596142925e-15
+    },
+    {
+      "name": "chunk-043/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-043/E",
+      "passed": true,
+      "max_abs_error": 5.935529845402243e-14,
+      "max_gate_ratio": 8.384838653927718e-07
+    },
+    {
+      "name": "chunk-043/mu",
+      "passed": true,
+      "max_abs_error": 4.2521541843143495e-13,
+      "max_gate_ratio": 8.100250175008714e-10
+    },
+    {
+      "name": "chunk-044/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-044/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-044/EEDF",
+      "passed": true,
+      "max_abs_error": 1.1009108600183203e-27,
+      "max_gate_ratio": 1.1009108229411784e-15
+    },
+    {
+      "name": "chunk-044/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-044/E",
+      "passed": true,
+      "max_abs_error": 7.721254191572768e-15,
+      "max_gate_ratio": 8.519998187241616e-07
+    },
+    {
+      "name": "chunk-044/mu",
+      "passed": true,
+      "max_abs_error": 4.3010039973978564e-13,
+      "max_gate_ratio": 8.193307874900194e-10
+    },
+    {
+      "name": "chunk-045/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-045/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-045/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-045/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-045/E",
+      "passed": true,
+      "max_abs_error": 9.812029660993815e-16,
+      "max_gate_ratio": 9.451089640428966e-07
+    },
+    {
+      "name": "chunk-045/mu",
+      "passed": true,
+      "max_abs_error": 4.856115509710435e-13,
+      "max_gate_ratio": 9.250781782514698e-10
+    },
+    {
+      "name": "chunk-046/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-046/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-046/EEDF",
+      "passed": true,
+      "max_abs_error": 1.1530681244002377e-27,
+      "max_gate_ratio": 1.1530680855665102e-15
+    },
+    {
+      "name": "chunk-046/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-046/E",
+      "passed": true,
+      "max_abs_error": 9.383769802862041e-17,
+      "max_gate_ratio": 8.817118861512958e-07
+    },
+    {
+      "name": "chunk-046/mu",
+      "passed": true,
+      "max_abs_error": 4.516387264175137e-13,
+      "max_gate_ratio": 8.60360774374772e-10
+    },
+    {
+      "name": "chunk-047/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-047/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-047/EEDF",
+      "passed": true,
+      "max_abs_error": 1.1049660981092221e-27,
+      "max_gate_ratio": 1.104966060895503e-15
+    },
+    {
+      "name": "chunk-047/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-047/E",
+      "passed": true,
+      "max_abs_error": 8.312781344353704e-18,
+      "max_gate_ratio": 8.514849374231695e-07
+    },
+    {
+      "name": "chunk-047/mu",
+      "passed": true,
+      "max_abs_error": 4.297673328323981e-13,
+      "max_gate_ratio": 8.186963018294387e-10
+    },
+    {
+      "name": "chunk-048/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-048/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-048/EEDF",
+      "passed": true,
+      "max_abs_error": 1.049086396330793e-27,
+      "max_gate_ratio": 1.0490863609990238e-15
+    },
+    {
+      "name": "chunk-048/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-048/E",
+      "passed": true,
+      "max_abs_error": 6.480860837679465e-19,
+      "max_gate_ratio": 8.087224768597324e-07
+    },
+    {
+      "name": "chunk-048/mu",
+      "passed": true,
+      "max_abs_error": 4.0334402484631937e-13,
+      "max_gate_ratio": 7.683605432673655e-10
+    },
+    {
+      "name": "chunk-049/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-049/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-049/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-049/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-049/E",
+      "passed": true,
+      "max_abs_error": 4.246414392602223e-20,
+      "max_gate_ratio": 7.214069769493944e-07
+    },
+    {
+      "name": "chunk-049/mu",
+      "passed": true,
+      "max_abs_error": 3.5482727867020003e-13,
+      "max_gate_ratio": 6.759373231513109e-10
+    },
+    {
+      "name": "chunk-050/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-050/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-050/EEDF",
+      "passed": true,
+      "max_abs_error": 9.224988729461088e-28,
+      "max_gate_ratio": 9.224988418776299e-16
+    },
+    {
+      "name": "chunk-050/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-050/E",
+      "passed": true,
+      "max_abs_error": 2.7660919683773245e-21,
+      "max_gate_ratio": 7.149417689413525e-07
+    },
+    {
+      "name": "chunk-050/mu",
+      "passed": true,
+      "max_abs_error": 3.538280779480374e-13,
+      "max_gate_ratio": 6.740338697675118e-10
+    },
+    {
+      "name": "chunk-051/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-051/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-051/EEDF",
+      "passed": true,
+      "max_abs_error": 1.1149008151343492e-27,
+      "max_gate_ratio": 1.1149007775860396e-15
+    },
+    {
+      "name": "chunk-051/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-051/E",
+      "passed": true,
+      "max_abs_error": 1.962744497223481e-22,
+      "max_gate_ratio": 8.625193672109092e-07
+    },
+    {
+      "name": "chunk-051/mu",
+      "passed": true,
+      "max_abs_error": 4.313216450668733e-13,
+      "max_gate_ratio": 8.21657227083605e-10
+    },
+    {
+      "name": "chunk-052/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-052/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-052/EEDF",
+      "passed": true,
+      "max_abs_error": 1.1537891925714163e-27,
+      "max_gate_ratio": 1.1537891537133995e-15
+    },
+    {
+      "name": "chunk-052/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-052/E",
+      "passed": true,
+      "max_abs_error": 1.0517472241641035e-23,
+      "max_gate_ratio": 8.781575435367246e-07
+    },
+    {
+      "name": "chunk-052/mu",
+      "passed": true,
+      "max_abs_error": 4.4775294583132563e-13,
+      "max_gate_ratio": 8.529584543526994e-10
+    },
+    {
+      "name": "chunk-053/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-053/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-053/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-053/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-053/E",
+      "passed": true,
+      "max_abs_error": 4.903306951364139e-25,
+      "max_gate_ratio": 8.692827474863369e-07
+    },
+    {
+      "name": "chunk-053/mu",
+      "passed": true,
+      "max_abs_error": 4.3853809472693683e-13,
+      "max_gate_ratio": 8.35404387060305e-10
+    },
+    {
+      "name": "chunk-054/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-054/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-054/EEDF",
+      "passed": true,
+      "max_abs_error": 9.96201900801875e-28,
+      "max_gate_ratio": 9.962018672511782e-16
+    },
+    {
+      "name": "chunk-054/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-054/E",
+      "passed": true,
+      "max_abs_error": 1.8175355256292112e-26,
+      "max_gate_ratio": 7.645761505829457e-07
+    },
+    {
+      "name": "chunk-054/mu",
+      "passed": true,
+      "max_abs_error": 3.8347103270552907e-13,
+      "max_gate_ratio": 7.30502975058912e-10
+    },
+    {
+      "name": "chunk-055/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-055/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-055/EEDF",
+      "passed": true,
+      "max_abs_error": 9.0252466830688e-28,
+      "max_gate_ratio": 9.025246379111015e-16
+    },
+    {
+      "name": "chunk-055/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-055/E",
+      "passed": true,
+      "max_abs_error": 6.340469525713882e-28,
+      "max_gate_ratio": 7.072615689979179e-07
+    },
+    {
+      "name": "chunk-055/mu",
+      "passed": true,
+      "max_abs_error": 3.439470930288735e-13,
+      "max_gate_ratio": 6.552108325498251e-10
+    },
+    {
+      "name": "chunk-056/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-056/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-056/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-056/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-056/E",
+      "passed": true,
+      "max_abs_error": 1.9277788371338476e-29,
+      "max_gate_ratio": 6.372232208203737e-07
+    },
+    {
+      "name": "chunk-056/mu",
+      "passed": true,
+      "max_abs_error": 3.207434318142077e-13,
+      "max_gate_ratio": 6.110084229570858e-10
+    },
+    {
+      "name": "chunk-057/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-057/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-057/EEDF",
+      "passed": true,
+      "max_abs_error": 7.037871869735833e-28,
+      "max_gate_ratio": 7.037871632710066e-16
+    },
+    {
+      "name": "chunk-057/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-057/E",
+      "passed": true,
+      "max_abs_error": 4.999714135629264e-31,
+      "max_gate_ratio": 5.472808421140363e-07
+    },
+    {
+      "name": "chunk-057/mu",
+      "passed": true,
+      "max_abs_error": 2.6278978992877455e-13,
+      "max_gate_ratio": 5.006081469183036e-10
+    },
+    {
+      "name": "chunk-058/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-058/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-058/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849347e-13
+    },
+    {
+      "name": "chunk-058/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-058/E",
+      "passed": true,
+      "max_abs_error": 1.317155526028583e-32,
+      "max_gate_ratio": 5.335655231748053e-07
+    },
+    {
+      "name": "chunk-058/mu",
+      "passed": true,
+      "max_abs_error": 2.5346391652192324e-13,
+      "max_gate_ratio": 4.828425850750863e-10
+    },
+    {
+      "name": "chunk-059/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-059/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-059/EEDF",
+      "passed": true,
+      "max_abs_error": 6.068682291961956e-28,
+      "max_gate_ratio": 6.068682087577142e-16
+    },
+    {
+      "name": "chunk-059/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-059/E",
+      "passed": true,
+      "max_abs_error": 2.8635042386030924e-34,
+      "max_gate_ratio": 4.797214119410809e-07
+    },
+    {
+      "name": "chunk-059/mu",
+      "passed": true,
+      "max_abs_error": 2.199351811782435e-13,
+      "max_gate_ratio": 4.189711610095657e-10
+    },
+    {
+      "name": "chunk-060/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-060/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-060/EEDF",
+      "passed": true,
+      "max_abs_error": 2.91823068149376e-28,
+      "max_gate_ratio": 2.9182305832117913e-16
+    },
+    {
+      "name": "chunk-060/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-060/E",
+      "passed": true,
+      "max_abs_error": 2.8858386312687158e-36,
+      "max_gate_ratio": 2.2343892328864888e-07
+    },
+    {
+      "name": "chunk-060/mu",
+      "passed": true,
+      "max_abs_error": 9.237055564881302e-14,
+      "max_gate_ratio": 1.7596365764663636e-10
+    },
+    {
+      "name": "chunk-061/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-061/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-061/EEDF",
+      "passed": true,
+      "max_abs_error": 3.278518248050169e-28,
+      "max_gate_ratio": 3.278518137634212e-16
+    },
+    {
+      "name": "chunk-061/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-061/E",
+      "passed": true,
+      "max_abs_error": 5.941756601422031e-38,
+      "max_gate_ratio": 2.376030991787052e-07
+    },
+    {
+      "name": "chunk-061/mu",
+      "passed": true,
+      "max_abs_error": 1.0746958878371515e-13,
+      "max_gate_ratio": 2.0472694774469093e-10
+    },
+    {
+      "name": "chunk-062/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-062/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-062/EEDF",
+      "passed": true,
+      "max_abs_error": 2.2973724971815357e-28,
+      "max_gate_ratio": 2.297372419809208e-16
+    },
+    {
+      "name": "chunk-062/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-062/E",
+      "passed": true,
+      "max_abs_error": 7.031155174596202e-40,
+      "max_gate_ratio": 1.622816166420836e-07
+    },
+    {
+      "name": "chunk-062/mu",
+      "passed": true,
+      "max_abs_error": 6.494804694057166e-14,
+      "max_gate_ratio": 1.2372444666951726e-10
+    },
+    {
+      "name": "chunk-063/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-063/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-063/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849347e-13
+    },
+    {
+      "name": "chunk-063/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-063/E",
+      "passed": true,
+      "max_abs_error": 1.394572231696058e-41,
+      "max_gate_ratio": 2.0760795838342563e-07
+    },
+    {
+      "name": "chunk-063/mu",
+      "passed": true,
+      "max_abs_error": 8.992806499463768e-14,
+      "max_gate_ratio": 1.7131077223438285e-10
+    },
+    {
+      "name": "chunk-064/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-064/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-064/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849347e-13
+    },
+    {
+      "name": "chunk-064/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-064/E",
+      "passed": true,
+      "max_abs_error": 2.0844314656831654e-43,
+      "max_gate_ratio": 2.236690476349548e-07
+    },
+    {
+      "name": "chunk-064/mu",
+      "passed": true,
+      "max_abs_error": 9.126033262418787e-14,
+      "max_gate_ratio": 1.7384870952319373e-10
+    },
+    {
+      "name": "chunk-065/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-065/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-065/EEDF",
+      "passed": true,
+      "max_abs_error": 3.03310855081657e-28,
+      "max_gate_ratio": 3.033108448665665e-16
+    },
+    {
+      "name": "chunk-065/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-065/E",
+      "passed": true,
+      "max_abs_error": 2.6985943082505266e-45,
+      "max_gate_ratio": 2.332523857290942e-07
+    },
+    {
+      "name": "chunk-065/mu",
+      "passed": true,
+      "max_abs_error": 9.625633623500107e-14,
+      "max_gate_ratio": 1.8336597456201305e-10
+    },
+    {
+      "name": "chunk-066/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-066/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-066/EEDF",
+      "passed": true,
+      "max_abs_error": 2.352346241514125e-28,
+      "max_gate_ratio": 2.3523461622903517e-16
+    },
+    {
+      "name": "chunk-066/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-066/E",
+      "passed": true,
+      "max_abs_error": 2.6920086160048595e-47,
+      "max_gate_ratio": 2.0945469937643204e-07
+    },
+    {
+      "name": "chunk-066/mu",
+      "passed": true,
+      "max_abs_error": 6.761258219967203e-14,
+      "max_gate_ratio": 1.288003211701563e-10
+    },
+    {
+      "name": "chunk-067/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-067/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-067/EEDF",
+      "passed": true,
+      "max_abs_error": 2.9194016468999476e-28,
+      "max_gate_ratio": 2.91940154857853e-16
+    },
+    {
+      "name": "chunk-067/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-067/E",
+      "passed": true,
+      "max_abs_error": 3.0536336812803335e-49,
+      "max_gate_ratio": 2.3900705001895915e-07
+    },
+    {
+      "name": "chunk-067/mu",
+      "passed": true,
+      "max_abs_error": 9.00390872971002e-14,
+      "max_gate_ratio": 1.7152226670570073e-10
+    },
+    {
+      "name": "chunk-068/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-068/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-068/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-068/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-068/E",
+      "passed": true,
+      "max_abs_error": 1.2150116919413253e-51,
+      "max_gate_ratio": 1.0690777356415095e-07
+    },
+    {
+      "name": "chunk-068/mu",
+      "passed": true,
+      "max_abs_error": 1.0880185641326534e-14,
+      "max_gate_ratio": 2.0726488446304564e-11
+    },
+    {
+      "name": "chunk-069/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-069/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-069/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-069/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-069/E",
+      "passed": true,
+      "max_abs_error": 1.8760250345495758e-54,
+      "max_gate_ratio": 2.073755035353158e-08
+    },
+    {
+      "name": "chunk-069/mu",
+      "passed": true,
+      "max_abs_error": 5.873079800267078e-14,
+      "max_gate_ratio": 1.1188073860654496e-10
+    },
+    {
+      "name": "chunk-070/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-070/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-070/EEDF",
+      "passed": true,
+      "max_abs_error": 6.855694304436356e-29,
+      "max_gate_ratio": 6.855694073546023e-17
+    },
+    {
+      "name": "chunk-070/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-070/E",
+      "passed": true,
+      "max_abs_error": 2.4613270026996388e-56,
+      "max_gate_ratio": 3.819733634101893e-08
+    },
+    {
+      "name": "chunk-070/mu",
+      "passed": true,
+      "max_abs_error": 6.072919944699606e-14,
+      "max_gate_ratio": 1.1568764459746924e-10
+    },
+    {
+      "name": "chunk-071/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-071/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-071/EEDF",
+      "passed": true,
+      "max_abs_error": 9.177287296598505e-29,
+      "max_gate_ratio": 9.177286987520118e-17
+    },
+    {
+      "name": "chunk-071/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-071/E",
+      "passed": true,
+      "max_abs_error": 2.3025156528086224e-58,
+      "max_gate_ratio": 5.6061696342219375e-08
+    },
+    {
+      "name": "chunk-071/mu",
+      "passed": true,
+      "max_abs_error": 7.061018436615996e-14,
+      "max_gate_ratio": 1.3451067995132442e-10
+    },
+    {
+      "name": "chunk-072/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-072/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-072/EEDF",
+      "passed": true,
+      "max_abs_error": 9.046632209171275e-29,
+      "max_gate_ratio": 9.046631904493165e-17
+    },
+    {
+      "name": "chunk-072/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-072/E",
+      "passed": true,
+      "max_abs_error": 9.528992144224873e-61,
+      "max_gate_ratio": 4.067854735357164e-08
+    },
+    {
+      "name": "chunk-072/mu",
+      "passed": true,
+      "max_abs_error": 7.027711745877241e-14,
+      "max_gate_ratio": 1.338761955567739e-10
+    },
+    {
+      "name": "chunk-073/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-073/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-073/EEDF",
+      "passed": true,
+      "max_abs_error": 8.73416933499389e-29,
+      "max_gate_ratio": 8.734169040839095e-17
+    },
+    {
+      "name": "chunk-073/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-073/E",
+      "passed": true,
+      "max_abs_error": 7.957285770946711e-63,
+      "max_gate_ratio": 6.655691563606168e-08
+    },
+    {
+      "name": "chunk-073/mu",
+      "passed": true,
+      "max_abs_error": 6.894484982922222e-14,
+      "max_gate_ratio": 1.3133825814666869e-10
+    },
+    {
+      "name": "chunk-074/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-074/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-074/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-074/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-074/E",
+      "passed": true,
+      "max_abs_error": 1.3353142142474717e-65,
+      "max_gate_ratio": 2.4455492470674134e-08
+    },
+    {
+      "name": "chunk-074/mu",
+      "passed": true,
+      "max_abs_error": 4.5075054799781356e-14,
+      "max_gate_ratio": 8.586688049276778e-11
+    },
+    {
+      "name": "chunk-075/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-075/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-075/EEDF",
+      "passed": true,
+      "max_abs_error": 5.456082495251264e-29,
+      "max_gate_ratio": 5.456082311497913e-17
+    },
+    {
+      "name": "chunk-075/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-075/E",
+      "passed": true,
+      "max_abs_error": 2.897817305224548e-68,
+      "max_gate_ratio": 1.2986245029358296e-08
+    },
+    {
+      "name": "chunk-075/mu",
+      "passed": true,
+      "max_abs_error": 5.440092820663267e-14,
+      "max_gate_ratio": 1.0363244193258215e-10
+    },
+    {
+      "name": "chunk-076/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-076/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-076/EEDF",
+      "passed": true,
+      "max_abs_error": 1.2659984933632832e-28,
+      "max_gate_ratio": 1.2659984507261956e-16
+    },
+    {
+      "name": "chunk-076/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-076/E",
+      "passed": true,
+      "max_abs_error": 5.557923034629895e-70,
+      "max_gate_ratio": 6.810824865719905e-08
+    },
+    {
+      "name": "chunk-076/mu",
+      "passed": true,
+      "max_abs_error": 8.837375276016246e-14,
+      "max_gate_ratio": 1.6834984437891307e-10
+    },
+    {
+      "name": "chunk-077/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-077/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-077/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-077/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-077/E",
+      "passed": true,
+      "max_abs_error": 1.5608665599735495e-72,
+      "max_gate_ratio": 5.8449728256895296e-08
+    },
+    {
+      "name": "chunk-077/mu",
+      "passed": true,
+      "max_abs_error": 8.248957072964913e-14,
+      "max_gate_ratio": 1.5714062101065846e-10
+    },
+    {
+      "name": "chunk-078/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-078/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-078/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849347e-13
+    },
+    {
+      "name": "chunk-078/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-078/E",
+      "passed": true,
+      "max_abs_error": 4.611714008420433e-75,
+      "max_gate_ratio": 5.8974404601412e-08
+    },
+    {
+      "name": "chunk-078/mu",
+      "passed": true,
+      "max_abs_error": 8.304468224196171e-14,
+      "max_gate_ratio": 1.581980948456726e-10
+    },
+    {
+      "name": "chunk-079/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-079/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-079/EEDF",
+      "passed": true,
+      "max_abs_error": 2.704930088292985e-29,
+      "max_gate_ratio": 2.7049299971946562e-17
+    },
+    {
+      "name": "chunk-079/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-079/E",
+      "passed": true,
+      "max_abs_error": 1.6867516709168837e-78,
+      "max_gate_ratio": 8.231742323919176e-09
+    },
+    {
+      "name": "chunk-079/mu",
+      "passed": true,
+      "max_abs_error": 4.6851411639181606e-14,
+      "max_gate_ratio": 8.925079679038441e-11
+    },
+    {
+      "name": "chunk-080/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-080/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-080/EEDF",
+      "passed": true,
+      "max_abs_error": 1.1583313057522591e-28,
+      "max_gate_ratio": 1.1583312667412518e-16
+    },
+    {
+      "name": "chunk-080/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-080/E",
+      "passed": true,
+      "max_abs_error": 5.64007589962833e-80,
+      "max_gate_ratio": 1.1738697994686411e-07
+    },
+    {
+      "name": "chunk-080/mu",
+      "passed": true,
+      "max_abs_error": 9.2148511043888e-15,
+      "max_gate_ratio": 1.755406666062055e-11
+    },
+    {
+      "name": "chunk-081/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-081/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-081/EEDF",
+      "passed": true,
+      "max_abs_error": 5.432046889545311e-29,
+      "max_gate_ratio": 5.43204670660143e-17
+    },
+    {
+      "name": "chunk-081/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-081/E",
+      "passed": true,
+      "max_abs_error": 4.1695216474691034e-83,
+      "max_gate_ratio": 4.135904663616951e-08
+    },
+    {
+      "name": "chunk-081/mu",
+      "passed": true,
+      "max_abs_error": 6.195044477408373e-14,
+      "max_gate_ratio": 1.1801408666185506e-10
+    },
+    {
+      "name": "chunk-082/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-082/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-082/EEDF",
+      "passed": true,
+      "max_abs_error": 4.9759866787144135e-29,
+      "max_gate_ratio": 4.975986511130012e-17
+    },
+    {
+      "name": "chunk-082/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-082/E",
+      "passed": true,
+      "max_abs_error": 7.389560211443362e-86,
+      "max_gate_ratio": 3.903975883765353e-08
+    },
+    {
+      "name": "chunk-082/mu",
+      "passed": true,
+      "max_abs_error": 2.1094237467877974e-14,
+      "max_gate_ratio": 4.018400798814169e-11
+    },
+    {
+      "name": "chunk-083/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-083/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-083/EEDF",
+      "passed": true,
+      "max_abs_error": 4.7504217636277805e-29,
+      "max_gate_ratio": 4.750421603640093e-17
+    },
+    {
+      "name": "chunk-083/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-083/E",
+      "passed": true,
+      "max_abs_error": 1.1732733382061566e-88,
+      "max_gate_ratio": 3.6893250942302096e-08
+    },
+    {
+      "name": "chunk-083/mu",
+      "passed": true,
+      "max_abs_error": 2.2093438190040615e-14,
+      "max_gate_ratio": 4.208746098255082e-11
+    },
+    {
+      "name": "chunk-084/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-084/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-084/EEDF",
+      "passed": true,
+      "max_abs_error": 4.6185340810361426e-29,
+      "max_gate_ratio": 4.6185339254902496e-17
+    },
+    {
+      "name": "chunk-084/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-084/E",
+      "passed": true,
+      "max_abs_error": 1.697088951870503e-91,
+      "max_gate_ratio": 3.5494941344729796e-08
+    },
+    {
+      "name": "chunk-084/mu",
+      "passed": true,
+      "max_abs_error": 2.3425705819590803e-14,
+      "max_gate_ratio": 4.462539831190029e-11
+    },
+    {
+      "name": "chunk-085/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-085/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-085/EEDF",
+      "passed": true,
+      "max_abs_error": 4.631476330262425e-29,
+      "max_gate_ratio": 4.631476174280652e-17
+    },
+    {
+      "name": "chunk-085/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-085/E",
+      "passed": true,
+      "max_abs_error": 2.312748119217946e-94,
+      "max_gate_ratio": 3.5954997927977397e-08
+    },
+    {
+      "name": "chunk-085/mu",
+      "passed": true,
+      "max_abs_error": 2.3203661214665772e-14,
+      "max_gate_ratio": 4.4202408738422595e-11
+    },
+    {
+      "name": "chunk-086/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-086/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-086/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849347e-13
+    },
+    {
+      "name": "chunk-086/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-086/E",
+      "passed": true,
+      "max_abs_error": 2.74316973907746e-99,
+      "max_gate_ratio": 3.542481821216279e-10
+    },
+    {
+      "name": "chunk-086/mu",
+      "passed": true,
+      "max_abs_error": 3.0753177782116836e-14,
+      "max_gate_ratio": 5.858405366578576e-11
+    },
+    {
+      "name": "chunk-087/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-087/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-087/EEDF",
+      "passed": true,
+      "max_abs_error": 1.359305947308956e-28,
+      "max_gate_ratio": 1.359305901529394e-16
+    },
+    {
+      "name": "chunk-087/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-087/E",
+      "passed": true,
+      "max_abs_error": 8.697419680538561e-100,
+      "max_gate_ratio": 1.0426158806657864e-07
+    },
+    {
+      "name": "chunk-087/mu",
+      "passed": true,
+      "max_abs_error": 9.880984919163893e-15,
+      "max_gate_ratio": 1.882303528665038e-11
+    },
+    {
+      "name": "chunk-088/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-088/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-088/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849342e-13
+    },
+    {
+      "name": "chunk-088/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-088/E",
+      "passed": true,
+      "max_abs_error": 1.7091791434579918e-103,
+      "max_gate_ratio": 2.1254720370876153e-08
+    },
+    {
+      "name": "chunk-088/mu",
+      "passed": true,
+      "max_abs_error": 1.9206858326015208e-14,
+      "max_gate_ratio": 3.658859666791764e-11
+    },
+    {
+      "name": "chunk-089/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-089/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-089/EEDF",
+      "passed": true,
+      "max_abs_error": 8.881784197001252e-16,
+      "max_gate_ratio": 2.0934566110849347e-13
+    },
+    {
+      "name": "chunk-089/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-089/E",
+      "passed": true,
+      "max_abs_error": 6.174041768011819e-106,
+      "max_gate_ratio": 8.900742130744493e-08
+    },
+    {
+      "name": "chunk-089/mu",
+      "passed": true,
+      "max_abs_error": 1.1435297153639112e-14,
+      "max_gate_ratio": 2.1783962170418355e-11
+    },
+    {
+      "name": "chunk-090/exact-times",
+      "passed": true
+    },
+    {
+      "name": "chunk-090/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "chunk-090/EEDF",
+      "passed": true,
+      "max_abs_error": 1.7444919361864031e-28,
+      "max_gate_ratio": 1.7444918774343025e-16
+    },
+    {
+      "name": "chunk-090/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "chunk-090/E",
+      "passed": true,
+      "max_abs_error": 8.715511547516684e-109,
+      "max_gate_ratio": 1.627771069813984e-07
+    },
+    {
+      "name": "chunk-090/mu",
+      "passed": true,
+      "max_abs_error": 2.1094237467877974e-14,
+      "max_gate_ratio": 4.018400787331432e-11
+    },
+    {
+      "name": "terminal/exact-times",
+      "passed": true
+    },
+    {
+      "name": "terminal/stored-Te",
+      "passed": true
+    },
+    {
+      "name": "terminal/EEDF",
+      "passed": true,
+      "max_abs_error": 1.7444919361864031e-28,
+      "max_gate_ratio": 1.7444918774343025e-16
+    },
+    {
+      "name": "terminal/energy-grid",
+      "passed": true
+    },
+    {
+      "name": "terminal/E",
+      "passed": true,
+      "max_abs_error": 6.017967684642867e-112,
+      "max_gate_ratio": 1.6272303043863987e-07
+    },
+    {
+      "name": "terminal/mu",
+      "passed": true,
+      "max_abs_error": 2.1094237467877974e-14,
+      "max_gate_ratio": 4.018400787331432e-11
+    },
+    {
+      "name": "terminal/X",
+      "passed": true,
+      "max_abs_error": 2.786659791809143e-13,
+      "max_gate_ratio": 6.092004427899334e-05
+    },
+    {
+      "name": "terminal/temperature-rise",
+      "passed": true,
+      "max_abs_error": 4.0245140553452075e-11,
+      "max_gate_ratio": 3.477527566989035e-05
+    },
+    {
+      "name": "fixed-inputs-unchanged",
+      "passed": true
+    }
+  ],
+  "cli_validation": {
+    "passed": true,
+    "returncode": 0,
+    "values": {
+      "saved_points": 901.0,
+      "time_s": 9.00999999999986e-08,
+      "temperature_K": 300.0001572917361,
+      "electron_mole_fraction": 9.999999968870973e-12
+    },
+    "source_unchanged": true,
+    "completed": true,
+    "finite": true
+  },
+  "local_ci": {
+    "existing_behavior_files_verified_unchanged": 160,
+    "core_passed_assertions": 2893,
+    "optional_passed_assertions": 166,
+    "previous_verified_commit": "cdbdbf4fb2382154d1911c174f3956dc1b8ebdda",
+    "new_example_validation": "Full native trajectory and independent664-check comparison, plus executable CLI"
+  },
+  "full_example_calculation_validated": true,
+  "performance_validated": false,
+  "repeated_run_speed_ratio": null,
+  "numerical_scope": [
+    "The native calculation starts from physical initial conditions and integrates its own states; source snapshots are used only by the independent comparison.",
+    "All71 mole-fraction trajectories, gas-temperature and total-enthalpy rises, density, cached field/mobility and93 EEDF snapshots are compared.",
+    "Floating-point accumulation produces901 outputs through90.1ns and an empty final field interval; the delayed source update and final post-update snapshot are retained.",
+    "Electron temperature remains an independently stored0.001K value, with only the bounded binary64 energy/temperature roundtrip.",
+    "Signed mass fractions are retained; species production uses native net stoichiometry and the E-inventory gate is checked on unnormalized reactor states.",
+    "Solver statistics and timings from the initial cold validation are not repeated-workload performance qualification."
+  ],
+  "evidence_sha256": {
+    "native_trajectory": "b972937f6385d416d2f7fa30a1d2c75ff045dece376d655a969fa56c2916a30d",
+    "native_summary": "377197e19a5ed031c975b40bc254fd9edab1c4fca88378a859374ad474188cf3",
+    "reference_trajectory": "3405efbad009a43e13edcf1e0940b2d68d768db7945a2ec435bf6987c3d89402",
+    "reference_summary": "29bb05bf8bb80ddee41c0c37e2054369afe20e78117f1d5fc859b5948b59e03f",
+    "independent_review": "f0d20b77a546c3f61230de908bdb83898ca1d23bd67b40c44cc48c101ca1e131",
+    "reviewer": "ae7ccd081f4ac782fd1ca0f29462e915fa1cd3aa250e8c934cd4d07a11f1599f",
+    "cli": "1adf8b94a32e7e1cb3c9f2f3180fd40c9349188d4466b6df2d490e5529fc4d24"
+  },
+  "accuracy_gates": {
+    "temperature": "abs(delta)<=0.005K+1e-5*abs(referenceT)",
+    "mole_fractions": "Every species: abs(delta)<=1e-14+1e-3*abs(referenceX)",
+    "temperature_rise": "abs(delta)<=1e-6K+1e-3*abs(reference rise)",
+    "total_enthalpy_rise": "abs(delta)<=1e-6J+1e-3*abs(reference rise)",
+    "density": "abs(delta)<=1e-12+1e-6*abs(reference rho)",
+    "mass_and_pressure": "relative drift<=1e-10",
+    "mass_fraction_sum": "absolute drift<=1e-10",
+    "mole_fraction_nonnegativity": "minimum X>=-1e-13",
+    "charge_inventory": "abs(drift)<=1e-18+1e-4*abs(initial signed E inventory)",
+    "stored_electron_temperature": "initial roundtrip<=8eps(Float64)*0.001K; exact stability thereafter",
+    "cached_field": "abs(delta)<=1e-120+1e-6*abs(reference E)",
+    "mobility_and_EEDF": "abs(delta)<=1e-12+1e-3*abs(reference value)",
+    "times_and_energy_grids": "exact equality",
+    "initial_state": "u,Y,X,rho,mass,h_mass: abs(delta)<=1e-12+1e-10*abs(reference)"
+  }
+}

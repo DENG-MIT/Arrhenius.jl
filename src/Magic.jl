@@ -5,11 +5,36 @@ end
 Y2X(gas, Y, mean_MW) = Y2X(gas, Y)
 export Y2X
 
+function Y2X!(X, gas, Y, mean_MW)
+    @inbounds for i in eachindex(Y)
+        X[i] = Y[i] * mean_MW / gas.MW[i]
+    end
+    return X
+end
+
+function Y2X!(X, gas, Y)
+    inverse_mean_MW = zero(eltype(Y))
+    @inbounds for i in eachindex(Y)
+        inverse_mean_MW += Y[i] / gas.MW[i]
+    end
+    mean_MW = one(inverse_mean_MW) / inverse_mean_MW
+    return Y2X!(X, gas, Y, mean_MW)
+end
+export Y2X!
+
 "get concentration (C) from mass fraction (Y)"
 function Y2C(gas, Y, ρ_mass)
     return Y * ρ_mass ./ gas.MW
 end
 export Y2C
+
+function Y2C!(C, gas, Y, ρ_mass)
+    @inbounds for i in eachindex(Y)
+        C[i] = Y[i] * ρ_mass / gas.MW[i]
+    end
+    return C
+end
+export Y2C!
 
 "get mole fraction (X) from concentration (C)"
 function C2X(gas, C)

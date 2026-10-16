@@ -1,0 +1,351 @@
+{
+  "example": "thermo/equations_of_state",
+  "cantera_version": "4.0.0a2",
+  "cantera_source_sha": "726522be4e2a13454d8415b7ef799d621f665cf3",
+  "coolprop_version": "8.0.0",
+  "coolprop_extension_sha256": "05d85591871524e83bb23170e22ee149e1167fb3ef5deaf81b9d248283089be5",
+  "coolprop_loaded_libraries_sha256": {
+    "CoolProp.abi3.so": "05d85591871524e83bb23170e22ee149e1167fb3ef5deaf81b9d248283089be5"
+  },
+  "published_source_sha256": "5a80d530ec9908e10ae45ea3653caa816a8e26047da73c856b9460ae1e968cd0",
+  "source_url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/thermo/equations_of_state.py",
+  "cantera_build_record_sha256": "fd95180063b52d8b4b5a0effe4cb95addd52b7a996c37d34f68a6a931570686c",
+  "loaded_libraries_match_build_record": true,
+  "cantera_shared_libraries_sha256": {
+    "libcantera_shared.so.4.0.0": "1edb2105be995bea941fad7b942651788835d13737fe3b15dff342c0e64571f6"
+  },
+  "cantera_extension_sha256": "cb6f63a9170b57a6e8f3a0ba1eeb92ecfb43becf64f92fcae867a9f2a5e4f6ac",
+  "libraries_unchanged_after_measurement": true,
+  "harness_sha256": "f7e0cb0fd7b0d5c307ff0ac6257a2e9f1ef9a81bb6d186de2ccda6b2fa310547",
+  "paired_julia_harness": "equations_of_state_timing.jl",
+  "native_harness_sha256": "ab5f33847cd6a5296057eff5409adffe31577ade08f2184258804cadf501cb93",
+  "native_harness_verified": true,
+  "environment_helper_sha256": "bac1f8782fa6a0c09c4a12616bc65540b996a82f9599f593aacd7295ad564a22",
+  "native_metadata": {
+    "first_call_scope": "Outer invokelatest call includes specialization and complete first calculation; process startup, imports and model preparation excluded.",
+    "harness_sha256": "ab5f33847cd6a5296057eff5409adffe31577ade08f2184258804cadf501cb93",
+    "kernel_release": "6.6.87.2-microsoft-standard-WSL2",
+    "thread_helper_sha256": "cf5d06c932bf294f03cd56a503ec87d3b96a1f101310c1878b161b2d93440ef9",
+    "core_source_paths": "Arrhenius.jl\nBlowersMasel.jl\nCatalyticFlames.jl\nCondensedEquilibrium.jl\nConstants.jl\nCounterflowFlames.jl\nCoverageDependentThermo.jl\nCriticalProperties.jl\nDataStructure.jl\nDustyGasTransport.jl\nEquilibrium.jl\nFlameDerivatives.jl\nFlameIO.jl\nFlames.jl\nIdealGasMixing.jl\nIdealGasStates.jl\nKinetics.jl\nMagic.jl\nMovingWallReactors.jl\nMulticomponentTransport.jl\nPrecision.jl\nPremixedCounterflowFlames.jl\nPureWater.jl\nReactorNetworks.jl\nReactors.jl\nRealGasReactors.jl\nRealGasThermo.jl\nSolution.jl\nSurfaceFlowReactors.jl\nSurfaceKinetics.jl\nThermo.jl\nThermo/IdealGasThermo.jl\nTransport.jl\n_Arrhenius_dev.jl\n_transport_test.jl",
+    "mechanism_sha256": "b7cdc6ba3a08245a7eb669b48e2cb6f18f37ac0af04e8ddc92c38df75f77e51b",
+    "core_source_sha256": "ce9bb812b602bd3775a44cac0f652bd22fc7c4d707e3a3843927385ea35bd6d0\n6e2266794056367d648a68a9160f15d839fde8d9bab923a4f350fbafec7cb95d\n8e8fab0b4eea80daf99d73e1e587b188f6ff0810a11c0667efdeba966e0d3222\n7017f51d280908bff54593f46d6241f2f471b4be34c3d4b774c1d2f3dd469026\n2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83\n7a0ca9c3cdea0bd58c23a5d9e453b3a52400b1aaf50f6d5eb469d802213ea1c1\ncf3e8f5adde603343c58717b7deefe54694284475cb8833b923fa584823eb4df\n90cc6911489ffe90748b15965e5da14dbde9232a0beea03312fc4ec31e5f63ba\n07acaddb93237a04d978e9a73fdc136cde20ff4d922a00db790e9c4a67e85f1e\nb87c8a982bff05c3976c4cad27578a05098124d32fc31dce6f4756d4db0701a4\nce2091af79c5b2ce4340735fd3936659ba269091c3f619451fef304699c7d9a2\nc9ead3f2c74d4c51c7b686e82c5d2ecca9f704b569d913a332f6bd5dee647562\ne78b0366d1c680d744d95b14f1d5591bcd9efa8c2ac20b2d0bd1598b1f0e8021\n070c23a6b6ac5d577b6ca1317ebbb62691ec044af2ee715771f445c9eed1d07b\n5ab4e26a5912a1b3a154777cbf886ddf66f48a5e26cd41af9006206d6eb87046\n46b90818b147c9c55cfe6c6caafaf3b8f194b8eaf14b2a2828d3d26c80ec3000\n54aef1c23fc012ee7f7d45eda7534d2d44cec8a283412aed9c4b51f2a9716bbd\n9386419d03e7f481a134f2d56a2b59c4b340f1ba276bbc6ce52861597805c8e0\nc14ee93fa7c0a3e5e10b1e3c6b51764ff52f32929f79cf71372b21a1881f9d00\nb798c622769beb0cda757abce23a05501938e7d1bba3553afab2f4ced267206a\n970165da7f441088adacc1a5c8fa14dbcbc699df73b57d5681d9d05ab52949fd\nb9cda647f2cf6d6dfff79f7da558dd14f425f4ece8709024c2c7205f12114991\n234a75cf5ea3a06886c9003ce19f0a8d6f7492e38022b3af23604d1b3a512955\ne9b9410cb69d72fe92b737d958e4c5cac51be277faa7457ccf9bcbe40e5bee9b\n6753e519f66fd240f85622a7ea993beff2eb41050d8d61140c090a8558dd5994\n4c62099789aa1f7a19c5728f3519714ad68c4a684e9e8dcaa575e54596c79e50\n83d8015787f947b9e8dc84ab71f6131191530f13b57cb29914f706488398833a\n7e3dbc589eebb3e9904d22a3f9bd1fd8f88ddc36712ef3a248d334770b6339c4\nc7f39a9f1ae4ac6b63548d104dbd4895ae8674fc69df592e101ac58b674f4909\nd55b05829c4bdeee4f56a79d78ae676750600187c9a543ce72deed690ac8409e\ne09107c74cc4fa0379204e92ba43517df81fa01f19785fa4c5956ee02a6492c3\ne85feaf3272a8da51792935207ad7fbf2ab8a2b00f7c67dd0a6fae58a5b0cf31\nc75b8b87274d08e1c1df6c9d40e39746980fc0098040fe9be6ca87518bf844a3\n6b08d913208a17d66dda42345ecb14d164c53dcfda9292cda5f68e60e7056eed\n8e2ad5c75074bce96ee9cb7a72cbdfb041cc6c9c3b0cc7983b3f370327ee4ee3",
+    "timestamp_utc": "2026-09-11T19:44:30.444",
+    "sidecar_sha256": "0a06564c7cbd852d71b3027471d90a6afc14900a9fbd584ff5cd0953128a347a",
+    "qualification": "controlled",
+    "system": "Linux",
+    "example_sha256": "e8f6554c1305eb8dd07f674ffa61566908b4f3ed57b6f38f5af35a06cfa94bbe",
+    "cpu": "Intel(R) Core(TM) Ultra 7 155H",
+    "parameter_sha256": "106d09a0ee43cd74b96f749c08d0e664cd0f70869e6b2009625e059756eacf00",
+    "numerical_thread_names": "blas_threads\njulia_threads",
+    "julia_version": "1.12.7",
+    "clapeyron_version": "0.6.28"
+  },
+  "native_artifact_sha256": "d7f935bd2c5381ca97b96ab262f8d373ad1151aaa59c7be0187038186a268fe9",
+  "native_flags": {
+    "native_checks_pass": true,
+    "strict_replay_checked": true
+  },
+  "core_source_files_verified": 35,
+  "julia_version": "1.12.7",
+  "clapeyron_version": "0.6.28",
+  "expected_clapeyron_version": "0.6.28",
+  "hardware": {
+    "cpu": "Intel(R) Core(TM) Ultra 7 155H",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "kernel_release": "6.6.87.2-microsoft-standard-WSL2",
+    "system": "Linux",
+    "machine": "x86_64",
+    "logical_cpus": 18
+  },
+  "benchmark_target": "wsl",
+  "numerical_threads": {
+    "threadpools": [
+      {
+        "file": "libgomp.so.1.0.0",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.34.so",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ]
+  },
+  "numerical_threads_after": {
+    "threadpools": [
+      {
+        "file": "libgomp.so.1.0.0",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.34.so",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ]
+  },
+  "native_numerical_threads": {
+    "blas_threads": 1,
+    "julia_threads": 1
+  },
+  "timestamp_utc": "2026-09-11T19:44:37Z",
+  "scope": "complete pinned source sweep: original get_thermo_Cantera on CO2-Ideal and CO2-RK plus original get_thermo_CoolProp over all 1000 pressures at 300 K, returning the unmodified (h, u, s, cp, cv) tuples per equation of state; imports, model loading, state restore, plotting and all comparisons excluded",
+  "first_call_scope": {
+    "cantera": "cold complete three-EOS source calculation after model preparation; per-call SolutionArray construction and CoolProp initialization inside the original functions included; imports, model loading and pristine state restore excluded",
+    "julia": "Outer invokelatest call includes specialization and complete first calculation; process startup, imports and model preparation excluded."
+  },
+  "equations_of_state": [
+    "ideal",
+    "rk",
+    "helmholtz"
+  ],
+  "property_names": [
+    "relative_enthalpy",
+    "relative_internal_energy",
+    "relative_entropy",
+    "cp",
+    "cv"
+  ],
+  "property_units": [
+    "kJ/kg",
+    "kJ/kg",
+    "kJ/kg/K",
+    "kJ/kg/K",
+    "kJ/kg/K"
+  ],
+  "temperature_kelvin": 300.0,
+  "pressure_points": 1000,
+  "input_files": {
+    "mechanism": "co2-thermo.yaml",
+    "sidecar": "co2-thermo.yaml.npz",
+    "parameters": "carbon-dioxide.json"
+  },
+  "mechanism_sha256": "b7cdc6ba3a08245a7eb669b48e2cb6f18f37ac0af04e8ddc92c38df75f77e51b",
+  "sidecar_sha256": "0a06564c7cbd852d71b3027471d90a6afc14900a9fbd584ff5cd0953128a347a",
+  "parameter_json_sha256": "106d09a0ee43cd74b96f749c08d0e664cd0f70869e6b2009625e059756eacf00",
+  "parameters_match_coolprop_export": true,
+  "checks": {
+    "ideal": {
+      "pass": true,
+      "relative_tolerance": 1e-07,
+      "absolute_tolerance": 1e-07,
+      "property_names": [
+        "relative_enthalpy",
+        "relative_internal_energy",
+        "relative_entropy",
+        "cp",
+        "cv"
+      ],
+      "property_units": [
+        "kJ/kg",
+        "kJ/kg",
+        "kJ/kg/K",
+        "kJ/kg/K",
+        "kJ/kg/K"
+      ],
+      "maximum_absolute_error": 1.7763568394002505e-15,
+      "maximum_absolute_error_by_property": [
+        0.0,
+        0.0,
+        1.7763568394002505e-15,
+        0.0,
+        0.0
+      ]
+    },
+    "rk": {
+      "pass": true,
+      "relative_tolerance": 1e-07,
+      "absolute_tolerance": 1e-07,
+      "property_names": [
+        "relative_enthalpy",
+        "relative_internal_energy",
+        "relative_entropy",
+        "cp",
+        "cv"
+      ],
+      "property_units": [
+        "kJ/kg",
+        "kJ/kg",
+        "kJ/kg/K",
+        "kJ/kg/K",
+        "kJ/kg/K"
+      ],
+      "maximum_absolute_error": 7.530616130679846e-10,
+      "maximum_absolute_error_by_property": [
+        6.766640581190586e-10,
+        7.530616130679846e-10,
+        2.680966559864828e-12,
+        9.656542232505672e-11,
+        1.4017675908917226e-12
+      ]
+    },
+    "helmholtz": {
+      "pass": true,
+      "relative_tolerance": 1e-07,
+      "absolute_tolerance": 1e-07,
+      "property_names": [
+        "relative_enthalpy",
+        "relative_internal_energy",
+        "relative_entropy",
+        "cp",
+        "cv"
+      ],
+      "property_units": [
+        "kJ/kg",
+        "kJ/kg",
+        "kJ/kg/K",
+        "kJ/kg/K",
+        "kJ/kg/K"
+      ],
+      "maximum_absolute_error": 1.1027176611833056e-06,
+      "maximum_absolute_error_by_property": [
+        1.0217792834055217e-06,
+        1.1027176611833056e-06,
+        2.1853479026390232e-09,
+        3.984195133810431e-07,
+        9.084960783667384e-09
+      ]
+    },
+    "T": {
+      "pass": true,
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-08,
+      "maximum_absolute_error": 0.0
+    },
+    "pressure": {
+      "pass": true,
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-08,
+      "maximum_absolute_error": 1.862645149230957e-09
+    },
+    "ideal_density": {
+      "pass": true,
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-08,
+      "maximum_absolute_error": 5.684341886080802e-14
+    },
+    "rk_density": {
+      "pass": true,
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-08,
+      "maximum_absolute_error": 3.4042386687360704e-09
+    },
+    "helmholtz_density": {
+      "pass": true,
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-08,
+      "maximum_absolute_error": 1.879470801213756e-09
+    },
+    "saturation_pressure": {
+      "pass": true,
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-08,
+      "maximum_absolute_error": 6.51925802230835e-09
+    },
+    "rk_pressure": {
+      "pass": true,
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-08,
+      "maximum_absolute_error": 3.3993273973464966e-07
+    },
+    "helmholtz_pressure": {
+      "pass": true,
+      "relative_tolerance": 1e-08,
+      "absolute_tolerance": 1e-08,
+      "maximum_absolute_error": 1.5236437320709229e-06
+    },
+    "helmholtz_phase": {
+      "pass": true,
+      "relative_tolerance": 0,
+      "absolute_tolerance": 0,
+      "phase_encoding": {
+        "gas": 1,
+        "liquid": 2
+      },
+      "coolprop_phase_labels": [
+        "gas",
+        "liquid",
+        "supercritical_liquid"
+      ],
+      "maximum_absolute_error": 0.0
+    }
+  },
+  "native_diagnostics": {
+    "ideal": {
+      "reference_point_exact_zero": true,
+      "enthalpy_internal_energy_identity": {
+        "pass": true,
+        "relative_tolerance": 1e-09,
+        "absolute_tolerance": 1e-09,
+        "maximum_absolute_error": 2.1316282072803006e-14,
+        "definition": "h - u equals p/density, first pressure point referenced, kJ/kg"
+      }
+    },
+    "rk": {
+      "reference_point_exact_zero": true,
+      "enthalpy_internal_energy_identity": {
+        "pass": true,
+        "relative_tolerance": 1e-09,
+        "absolute_tolerance": 1e-09,
+        "maximum_absolute_error": 4.874323167314287e-12,
+        "definition": "h - u equals p/density, first pressure point referenced, kJ/kg"
+      }
+    },
+    "helmholtz": {
+      "reference_point_exact_zero": true,
+      "enthalpy_internal_energy_identity": {
+        "pass": true,
+        "relative_tolerance": 1e-09,
+        "absolute_tolerance": 1e-09,
+        "maximum_absolute_error": 1.3500311979441904e-13,
+        "definition": "h - u equals p/density, first pressure point referenced, kJ/kg"
+      }
+    },
+    "phase_saturation_consistency": {
+      "pass": true,
+      "definition": "native phase flags reproduce the native p < psat(300 K) split, 1 gas / 2 liquid"
+    }
+  },
+  "correctness_pass": true,
+  "cantera_import_seconds": 1.901051937136799,
+  "cantera_model_preparation_seconds": 0.010730983223766088,
+  "cantera_first_invocation_seconds": 0.3670633779838681,
+  "julia_import_seconds": 1.722345916,
+  "julia_preparation_seconds": 11.0849797,
+  "julia_first_invocation_seconds": 6.009965106,
+  "cantera_warm_seconds": [
+    0.35285466769710183,
+    0.3767786738462746,
+    0.3755148281343281,
+    0.4428427340462804,
+    0.3923233742825687,
+    0.37817730801180005,
+    0.39190559182316065,
+    0.3895398541353643,
+    0.3816774617880583
+  ],
+  "julia_warm_seconds": [
+    0.0147123275,
+    0.014131685500000001,
+    0.0149444925,
+    0.0148550735,
+    0.014637292,
+    0.016438921000000002,
+    0.0143525735,
+    0.0145263765,
+    0.014482568500000001
+  ],
+  "sample_definition": "mean timed seconds per complete three-EOS source calculation within each warm batch; state restore and checks excluded",
+  "batch_policy": "ceil(0.020 / warmup seconds), clamped to 1..1000 complete calculations",
+  "cantera_batch_size": 1,
+  "julia_batch_size": 2,
+  "warm_outputs_checked": 9,
+  "native_warm_outputs_checked": 18,
+  "speed_ratio": 26.07568816609372,
+  "minimum_speed_ratio": 0.95,
+  "requested_qualification": "controlled",
+  "qualification": "controlled",
+  "performance_pass": true
+}

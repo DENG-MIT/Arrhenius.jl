@@ -4,22 +4,27 @@ using Documenter
 using Arrhenius
 
 makedocs(
-    format=Documenter.HTML(),
+    repo=Documenter.Remotes.GitHub("DENG-MIT", "Arrhenius.jl"),
+    format=Documenter.HTML(
+        repolink="https://github.com/DENG-MIT/Arrhenius.jl",
+        size_threshold=300 * 1024,
+        size_threshold_warn=250 * 1024,
+    ),
     sitename="Arrhenius.jl",
     modules=[Arrhenius],
+    checkdocs=:exports,
     pages=[
-        ##############################################
-        ## MAKE SURE TO SYNC WITH docs/src/index.md ##
-        ##############################################
-        "Basics" => [
+        "Overview" => [
             "index.md",
             "install.md",
-            "get_started.md",
-            "concepts.md"
-           ],
-        "tutorial.md",
-        "faq.md",
-        "api.md"
+            "mechanisms.md",
+            "concepts.md",
+        ],
+        "reactors.md",
+        "Flames" => ["flames.md", "solver_options.md"],
+        "examples.md",
+        "validation.md",
+        "api.md",
     ],
 )
 

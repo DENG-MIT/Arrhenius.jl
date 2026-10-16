@@ -1,0 +1,193 @@
+{
+  "passed": true,
+  "owned_files_sha256": {
+    "example/flames/adiabatic_flame.jl": "d5e3eaaf731f0c4e610a73bb961bbbd112bff364df797894159c34b9f5a46bf2",
+    "example/flames/burner_flame.jl": "2d225e359492cb26fc0dd1b42c77f4ed3363242bcad810f8b806c709df5d233c",
+    "example/flames/flame_fixed_T.jl": "3ad2fe9047bb78e332d04676d4f4ca5dc470b34ec0b7dae4446d971823985226",
+    "example/flames/source_flame_sequence.jl": "441654ce840cb9f583154baa1f5c2149f7b18a2cc73f142c597f727041848ccc",
+    "validation/conservative_source_bench.py": "743956a92da8b6b5daabe7616b20af4fdbfdda9f9dd91c82cc9aab5f5de91bbd",
+    "validation/conservative_source_bench.jl": "985a199f528f8b4f99838483a705b0b16435ddf05de3e35ac1e0457b7b6e7e88",
+    "validation/test_conservative_source_bench.py": "2364fecffeaf7f9010a6ac7aa51bbf7684ff5c830a429ded503a25ab9fbe3b7c"
+  },
+  "hosts": {
+    "mac": [
+      {
+        "case": "free",
+        "physical": true,
+        "qualified": false,
+        "ratio": 0.7007710377106174,
+        "native_stage_medians": [
+          0.114389292,
+          0.007007917,
+          0.044006708,
+          0.036135167
+        ],
+        "cantera_stage_medians": [
+          0.09428254200611264,
+          0.01577350008301437,
+          0.016120125073939562,
+          0.015137791982851923
+        ],
+        "errors": {
+          "mass": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "mass-soret": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "multi": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "multi-soret": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          }
+        },
+        "report_sha256": "544f4101ddd1b1de47ddf02d01c4bfe28d1161d297f990e9da3a038ba9d96116"
+      },
+      {
+        "case": "burner",
+        "physical": true,
+        "qualified": true,
+        "ratio": 1.5144544784344043,
+        "native_stage_medians": [
+          0.02401975,
+          0.071027917
+        ],
+        "cantera_stage_medians": [
+          0.11728450004011393,
+          0.026648874976672232
+        ],
+        "errors": {
+          "mole": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "multi": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          }
+        },
+        "report_sha256": "563b94aa80c372eadca09d1c08f0a712159c34c9b64caf2d23a06436920374b7"
+      },
+      {
+        "case": "fixed",
+        "physical": true,
+        "qualified": false,
+        "ratio": 0.09316376788404859,
+        "native_stage_medians": [
+          5.348602042,
+          1.107287667
+        ],
+        "cantera_stage_medians": [
+          0.18918862496502697,
+          0.41246554197277874
+        ],
+        "errors": {
+          "mole": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "multi": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          }
+        },
+        "report_sha256": "7279b4c5b89c77c384f1a551829a16280152dcb027fbf6372d019222c8f8a3d3"
+      }
+    ],
+    "wsl": [
+      {
+        "case": "free",
+        "physical": true,
+        "qualified": false,
+        "ratio": 0.7290298277724587,
+        "native_stage_medians": [
+          0.19370888,
+          0.014890307,
+          0.064366768,
+          0.043579256
+        ],
+        "cantera_stage_medians": [
+          0.146977623924613,
+          0.02690506912767887,
+          0.02965755108743906,
+          0.02894965000450611
+        ],
+        "errors": {
+          "mass": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "mass-soret": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "multi": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "multi-soret": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          }
+        },
+        "report_sha256": "618d7754e341195a562aa4a8b6cb96705e213e5a919b317155c7b114baa9c97f"
+      },
+      {
+        "case": "burner",
+        "physical": true,
+        "qualified": true,
+        "ratio": 1.8487399257535007,
+        "native_stage_medians": [
+          0.037081797,
+          0.099358839
+        ],
+        "cantera_stage_medians": [
+          0.19470242178067565,
+          0.0535659808665514
+        ],
+        "errors": {
+          "mole": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "multi": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          }
+        },
+        "report_sha256": "8664b4e674b69fc4dd34585970af514a380b928007f1c843c74d658a18a8253a"
+      },
+      {
+        "case": "fixed",
+        "physical": true,
+        "qualified": false,
+        "ratio": 0.08799935377460931,
+        "native_stage_medians": [
+          9.116296892,
+          1.619596826
+        ],
+        "cantera_stage_medians": [
+          0.2763648172840476,
+          0.6617989670485258
+        ],
+        "errors": {
+          "mole": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          },
+          "multi": {
+            "public_vs_shared_max_state_error": 0.0,
+            "shared_vs_prior_max_state_error": 0.0
+          }
+        },
+        "report_sha256": "19dea02843ce868d5cad6582265096ab4e6ec4e6b03d03a43de71cfa7d482910"
+      }
+    ]
+  },
+  "raw_proof_sha256": "7dcc4183fc26cceffa4a004c53d9ffeafc2efff1adcb68f7471a57ce2da182bc"
+}

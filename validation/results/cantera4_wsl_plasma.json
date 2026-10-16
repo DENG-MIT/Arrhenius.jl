@@ -1,0 +1,200 @@
+{
+  "case": "reactors/plasma",
+  "platform": "WSL",
+  "calculation_validated": true,
+  "performance_validated": true,
+  "passed": true,
+  "source_url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/reactors/plasma.py",
+  "julia_example": "example/reactors/plasma.jl",
+  "runtime": {
+    "julia": "1.12.7",
+    "cantera": "4.0.0a2",
+    "cantera_commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+    "arrhenius_commit": "9e85cab67bcb1862fd20fb13984b7c0534031a31",
+    "native_solver": "OrdinaryDiffEqBDF QNDF with prepared ForwardDiff Jacobian",
+    "reference_solver": "SciPy VODE BDF",
+    "numerical_threads": {
+      "blas_threads": 1,
+      "julia_threads": 1,
+      "mkl_threads:libmkl_rt.so": 1
+    }
+  },
+  "conditions": {
+    "mechanism": "oxygen-plasma-itikawa.yaml",
+    "species": 6,
+    "reactions": 12,
+    "initial_temperature_K": 300.0,
+    "nominal_pressure_Pa": 1013.25,
+    "initial_mole_ratio": {
+      "O2": 1.0,
+      "e": 0.005,
+      "O2+": 0.005
+    },
+    "initial_mean_electron_energy_eV": 5.0,
+    "mean_electron_energy_after_density_preserving_setter_eV": 10.0,
+    "reactor_pressure_Pa": 1409.224702755905,
+    "electron_temperature_K": 77363.4541436672,
+    "eedf": "isotropic, shape factor2, energy grid0:1:24eV; analytic distribution without finite-grid renormalization",
+    "constraint": "constant pressure, fixed gas and electron temperatures"
+  },
+  "scope": "Complete original oxygen glow-discharge calculation. Native YAML and imported species reading; no Cantera calls or prepared rate metadata in Julia. Coupled energy evolution and nanosecond-pulse EEDF updates are outside this isothermal reactor model.",
+  "timing_contract": "One loaded mechanism per language, fresh physical initialization/reactor/solver/workspaces per call. Includes setup, solve and required time/electron-mole-fraction outputs. Excludes one-time loading, imports/JIT, explicit GC, diagnostics and I/O.",
+  "repetitions": {
+    "native_warmups": 1,
+    "native_measured_runs": 96,
+    "native_batches": 3,
+    "native_runs_per_batch": 32,
+    "reference_warmups": 1,
+    "reference_measured_runs": 3,
+    "identical_native_arrays_and_solver_work": true,
+    "fresh_native_workspaces": true,
+    "mechanism_loads_per_language": 1
+  },
+  "timing": {
+    "native_batch_means_s": [
+      0.000922343125,
+      0.000868342375,
+      0.0008879290624999999
+    ],
+    "native_median_s": 0.0008879290624999999,
+    "native_relative_spread": 0.06081651370657771,
+    "reference_complete_times_s": [
+      0.012899137000204064,
+      0.013712680000026012,
+      0.013617989001431852
+    ],
+    "reference_median_s": 0.013617989001431852,
+    "reference_relative_spread": 0.059740318466728726,
+    "complete_speed_ratio": 15.336798373385658,
+    "minimum_speed_ratio": 0.95,
+    "maximum_relative_spread": 0.15
+  },
+  "outputs": {
+    "saved_points": 1002,
+    "requested_end_time_s": 1e-06,
+    "output_step_s": 1e-09,
+    "actual_end_time_s": 1.0009999999999935e-06,
+    "time_schedule": "Successive Float64 additions, matching the original loop and final overshoot exactly.",
+    "required": [
+      "time",
+      "electron_mole_fraction"
+    ],
+    "independent_validation": [
+      "all species Y and X",
+      "T and Te",
+      "output and reactor pressure/density",
+      "EEDF and rates",
+      "signed-state RHS/Jacobian",
+      "mass, oxygen and charge conservation"
+    ],
+    "output_pressure": "Initial pressure follows the electron-energy setter; later diagnostic output states use1013.25Pa. The reactor retains its initialized pressure."
+  },
+  "accuracy": {
+    "reference_rtol": 1e-12,
+    "reference_atol": 1e-18,
+    "native_rtol": 1e-09,
+    "native_atol": 1e-15,
+    "reference_refinement_Y_max_abs": 3.450106866864644e-10,
+    "maximum_Y_error": 2.587099146023064e-09,
+    "maximum_electron_X_error": 2.2387761089426306e-10,
+    "mass_sum_drift": 7.894795928109488e-13,
+    "oxygen_inventory_drift_kmol_per_kg": 4.9335535656780394e-14,
+    "charge_inventory_drift_kmol_per_kg": 6.675974877079494e-17,
+    "maximum_complex_step_jacobian_scaled_error": 7.055192455759701e-16
+  },
+  "accuracy_limits": {
+    "Y_abs": 2e-06,
+    "X_abs": 2e-05,
+    "electron_X_abs": 2e-06,
+    "electron_X_relative_above_1e_minus3": 0.0002,
+    "thermodynamic_relative": 5e-12,
+    "mass_sum_drift": 5e-10,
+    "element_and_charge_inventory_drift_kmol_per_kg": 5e-11,
+    "minimum_Y": -1e-12,
+    "jacobian_scaled_error": 5e-11
+  },
+  "solver_work": {
+    "naccept": 383,
+    "ncondition": 0,
+    "nf": 1245,
+    "nf2": 0,
+    "nfpconvfail": 0,
+    "nfpiter": 0,
+    "njacs": 1,
+    "nnonlinconvfail": 0,
+    "nnonliniter": 1242,
+    "nreject": 4,
+    "nsolve": 1242,
+    "nw": 49
+  },
+  "checks": {
+    "independent_validation_passed": 3247,
+    "independent_validation_failed": 0,
+    "local_core_assertions": 2768,
+    "local_optional_assertions": 142,
+    "inputs_and_runtime_unchanged": true
+  },
+  "input_sha256": {
+    "model": "6efc8e82782b49dcc3041729a38c5aa1a24c1f38c06adca00e7ec0a0f4ee4f13",
+    "nasa_gas": "4de6199d65d2d3db782e30573720c723130953707336add59713b02d8667e4db",
+    "source_example": "9efb07575e4d974cc18306388609d98572838ee8210e1be43178b95042d3ccd2",
+    "public_example": "fd59f71a76834cc99600aa062b99965ad44be8d2bf4d35fac3e516713f9ffaae",
+    "public_adapter": "5b67234c81ca303f3f59f6f226fc3f612a8a715899d530ab8dc125d3d76376e5"
+  },
+  "source_sha256": {
+    "Project.toml": "ab1ced84e5d498fabb6857b34c6acb5aef8809d660c0bf1ee1a44109f4ef7cc8",
+    "Manifest.toml": "150cf2bad5cf0d789207cac9b63cc5ee949e3e762d60a3b909e61f19186d509d",
+    "src/Arrhenius.jl": "0e4a4195445a6d7bc4da9fbb4382730e2224e5d67402466e8face5899a4a2aa6",
+    "src/BlowersMasel.jl": "984f41457a3773bd5344d598c4c13dea39b44f163248eac3410bc4606c35b4e1",
+    "src/CatalyticFlames.jl": "556a56ffaba0efab9cfee3a8bf9446d9e878bf645ce358177476ae866c161ef1",
+    "src/CondensedEquilibrium.jl": "cc87745498cbf3a39cf31f9ff02039da3ee82fc5681fb9fd3965b53011617b6f",
+    "src/Constants.jl": "bfb9adcaca09a62fd066c192be0ef6b78d5c9ff3ba14dd0d15fa22f1a63b2f85",
+    "src/CounterflowFlames.jl": "2968bd0aa9148b1594adb913728289340fbb2afccf31b425c561597021a9e904",
+    "src/CoverageDependentThermo.jl": "a85d5a7b350d1027a1df8bb5fd3083696c892f2699a109e6ebd4b0d8cc0072d1",
+    "src/CriticalProperties.jl": "2e35232ae55571b659c6e0f9fa841a6687afb27cf8a5c71ad158d7b70ef65787",
+    "src/DataStructure.jl": "871144111ab1fcde069f9a305e4cc86b00873afd43c140cd11a9a08dd452fa39",
+    "src/DustyGasTransport.jl": "038c18a8a2f8896fe8df1b89a64f55c77e040c09d7490a7744615c5059caa702",
+    "src/Equilibrium.jl": "b18b1187cd32bcb1d7cf2d787e4a78eb2a5e5ff17ac1f1c296652bbe347cd3b2",
+    "src/FlameDerivatives.jl": "f99160db20ef5ef46d66dd26bed53a62dd6ab8529602d35717169cce9deffb68",
+    "src/FlameIO.jl": "c1a31d6aa550294ac6c2dc4b72f3a83a444314deb996141e939f3e235f94ff5b",
+    "src/Flames.jl": "ec6c8209c865fac2fddeebff3a48e514279f4aed07afec2141ddac00da887077",
+    "src/IdealGasMixing.jl": "b20393e4b2b585b4d6b425f9a234aa969ed3d19b006a0d43a6f2743668af9059",
+    "src/IdealGasStates.jl": "ff25fb32c0b3d0236e4056b7425e10009ed5ff3f624f6e6f7112e4b93cb6d793",
+    "src/Kinetics.jl": "93429db6a18ceb3ed06677368dccc06b218795a0223a1d98d7e0536cafcb3561",
+    "src/Magic.jl": "2668705b59a8c165e3ef83e7b2819e38e2621e556bb4dcd52ab9da5071547d05",
+    "src/MovingWallReactors.jl": "797eef9d601f6267c1c86230ca56f4b52a0cf0167b447ca8d5ebb3964f4e8042",
+    "src/MulticomponentTransport.jl": "be6c79094a461cacd89d4b32d071981d97dac155320e39773055476ff46a6f66",
+    "src/PlasmaEEDF.jl": "d9abdf2797c82512397c95ee2be16949c533db4cae9edb83e5e6938b1ee0fad9",
+    "src/PlasmaEEDFIO.jl": "9b29714c5bf9bad491ff762904260f39b1db75ad79cf7942a33427430a5e39a6",
+    "src/PlasmaEEDFTypes.jl": "4de3339a4b3c200de4b93ce7ecfdb06f491022d837c7024f0b4a8b1e69f771a8",
+    "src/PlasmaIO.jl": "f256d84844a17bbd0d680ffcf22c414d479f0bb8557ee748f89bccc4689a5d25",
+    "src/PlasmaKinetics.jl": "97f84346d0214cd1c813640c9eb83166efdd9ad3105b9c1628d6ed785e73b61e",
+    "src/Precision.jl": "6479d7e824bb9202afdb35c451b8b2fd390e2f8aa6da7242fa89c9482b9661d4",
+    "src/PremixedCounterflowFlames.jl": "6fa806b11f9e1b3fa0093a4899cfd73c026e7ec1178e0d94e1a513e8746f6a22",
+    "src/PureWater.jl": "0a7c0cac82ecd2a4ec03ec39244a3bb3ea8f9c24dd17515f411801a481fccbac",
+    "src/ReactorNetworks.jl": "2280b2d488e7951666211689faaad6a32bfe1cf49c1934527f9eb88d926651a3",
+    "src/Reactors.jl": "fbf200fb0d9437c351f9765304f33e3f896b342adb962f16b6e2cae3691a4452",
+    "src/RealGasReactors.jl": "4eff53bd105b96d5fae54b104d1fc7a52c07013dce5b1b007de8dcfe5593be0e",
+    "src/RealGasThermo.jl": "f6d766ef9309436d20865b0935098d5a4639250a0d86e9327b2e640c7dc9e1c4",
+    "src/Solution.jl": "9d81a9db797edef3eaa39c33f42a005efc2400d3279f976e09a989c5ace87498",
+    "src/SurfaceFlowReactors.jl": "ea0c99c30548f8bd6c88d7d3ee11bb0dabaa82298afbdba1f20cdd28afa485f9",
+    "src/SurfaceKinetics.jl": "5e09d9431acafaefac61620793d978a106636a41850f262f4c6c5ca620f1e45d",
+    "src/Thermo/IdealGasThermo.jl": "da7b665352be8eef480c7e4af4ee0056a48aeb3971c711e58f0eec6e44383df2",
+    "src/Thermo.jl": "c62484dab57278889893e23484e94d4e97dd40ea9afd3c13d8e78a67433e31bd",
+    "src/Transport.jl": "89720c2d0ad3ba0f197f2a45ba27684b8ee3def7222684b42e20e80a7af76ee3",
+    "src/_Arrhenius_dev.jl": "d1dc25ca8db181fc3c9210e62fd6f1f96de0cea1311f7cf7d0764680cead3c68",
+    "src/_transport_test.jl": "c05ea401d9a45a591f4158c01a267d2719c7926003645551a1a3245a52c8bd51",
+    "example/reactors/plasma.jl": "fd59f71a76834cc99600aa062b99965ad44be8d2bf4d35fac3e516713f9ffaae",
+    "example/reactors/ode_solver.jl": "5b67234c81ca303f3f59f6f226fc3f612a8a715899d530ab8dc125d3d76376e5",
+    "test/plasma_native.jl": "ac0183a8b7115be3245eb7e70fcf52344196ba6e6a68249baa4311d3f47629d7",
+    "test/runtests.jl": "aacea360baef8317777b55990fb5737709c4f3f628fb9bee61e0c9d93f2ae1a0"
+  },
+  "validation_sha256": {
+    "native_driver": "c86d78b0c6a95fda0dbbdf7fe7e788103f43b868fd846b813e464cdeb1633908",
+    "independent_evaluator": "5e73bd6a4370873a0ae44e6a583e1ef5874208200aa580ac2c2f94670f934a36",
+    "independent_review": "79f06a99b86d6c36b520e6ecd57617e689ca283354d9f500243e8dc8a3722257",
+    "native_trajectory": "e14d204008277d9f3c54be8cdd7cc7443240a1f421343ce9899c4e24f824ed4d",
+    "tight_reference_trajectory": "a7e6c6c79b0920c277ad026fbdf4865b69a7b8ac83192f7adc83cb6e78c53317",
+    "reference_summary": "b9bdd9ec1a2f9c0615e1d277d579b5ee99e24fa4e82abe017bba724c1813de46"
+  }
+}

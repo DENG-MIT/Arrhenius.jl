@@ -2,3 +2,5 @@ Manifest.toml
 
 mechanism/*.npz
 docs/build
+__pycache__/
+*.pyc

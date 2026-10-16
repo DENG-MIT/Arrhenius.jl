@@ -1,0 +1,212 @@
+{
+  "case": "onedim/diffusion_flame_continuation",
+  "calculation_validated": true,
+  "performance_status": "below_target",
+  "scope": "Complete fresh H2/O2 two-point controlled counterflow continuation through both branches to the source termination condition. All 133 native profiles are validated against independently solved Cantera flames at matching control points. Adaptive paths differ: 132 native rows and 134 stock Cantera rows.",
+  "cantera_version": "4.0.0a2",
+  "cantera_commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+  "source_example_sha256": "2e334fe086a0b420075cfb0eb3c2c3bd17c2be1c7e42059a7eca4c967178abea",
+  "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+  "julia_version": "1.12.7",
+  "native_commit": "d512dbc852d469f317add448fa26aed1cbdeea91",
+  "native_helper": "validation/counterflow_continuation.jl",
+  "native_helper_sha256": "fde16cd5cf951e09bd4ef394c17de5c3f0f4a259e28709855f676a235fc3f907",
+  "native_source_sha256": {
+    "src/Arrhenius.jl": "66955aeaae9949841416b45b99be7430e27591c9c57c406f58d3b03b48a0d4b6",
+    "src/BlowersMasel.jl": "984f41457a3773bd5344d598c4c13dea39b44f163248eac3410bc4606c35b4e1",
+    "src/CatalyticFlames.jl": "556a56ffaba0efab9cfee3a8bf9446d9e878bf645ce358177476ae866c161ef1",
+    "src/CondensedEquilibrium.jl": "cc87745498cbf3a39cf31f9ff02039da3ee82fc5681fb9fd3965b53011617b6f",
+    "src/Constants.jl": "bfb9adcaca09a62fd066c192be0ef6b78d5c9ff3ba14dd0d15fa22f1a63b2f85",
+    "src/CounterflowFlames.jl": "93f359523f7642a66cc446a5b10c7293ad48486183137f970466c1b282faa074",
+    "src/CoverageDependentThermo.jl": "a85d5a7b350d1027a1df8bb5fd3083696c892f2699a109e6ebd4b0d8cc0072d1",
+    "src/CriticalProperties.jl": "2e35232ae55571b659c6e0f9fa841a6687afb27cf8a5c71ad158d7b70ef65787",
+    "src/DataStructure.jl": "73f89edb49e0c640e316333e3d1750a31ef941041cd75154f2674790c71954c0",
+    "src/DustyGasTransport.jl": "038c18a8a2f8896fe8df1b89a64f55c77e040c09d7490a7744615c5059caa702",
+    "src/Equilibrium.jl": "0583534a1cebf593abf256ab6b378ee3b3ea59cf091a98bbe2d1df56b88ad09e",
+    "src/FlameDerivatives.jl": "f99160db20ef5ef46d66dd26bed53a62dd6ab8529602d35717169cce9deffb68",
+    "src/FlameIO.jl": "c1a31d6aa550294ac6c2dc4b72f3a83a444314deb996141e939f3e235f94ff5b",
+    "src/Flames.jl": "ee0546b758f2dd59f725d2d2f355fceb10ebd874f3308d125c9647d3fa15e8a7",
+    "src/IdealGasMixing.jl": "b20393e4b2b585b4d6b425f9a234aa969ed3d19b006a0d43a6f2743668af9059",
+    "src/IdealGasStates.jl": "ff25fb32c0b3d0236e4056b7425e10009ed5ff3f624f6e6f7112e4b93cb6d793",
+    "src/IonConservativeFlames.jl": "b1e629f2361be4b0bc047f016a5eed828b3b221ad94c7d0bf061d34c07243b4c",
+    "src/IonFlameProperties.jl": "34c31366408bf6db630768f23e21ffa8a22892a99c55d5d034f7ec00a5b9ed63",
+    "src/IonFlameResidual.jl": "26d7049290a3b3e8f7a3a1c4e4c75bc5ff76bbf3a068302b638b4791b4017e1e",
+    "src/IonTransport.jl": "09c7e3e50d874672dba9090eeb879081330225f213c4b00fb22a4303e7dceacf",
+    "src/IonizedFlames.jl": "52cefd824a798ef52f412b93116c81352ac62b276348a816a08ecf1a56dbe5f8",
+    "src/Kinetics.jl": "93429db6a18ceb3ed06677368dccc06b218795a0223a1d98d7e0536cafcb3561",
+    "src/Magic.jl": "2668705b59a8c165e3ef83e7b2819e38e2621e556bb4dcd52ab9da5071547d05",
+    "src/MovingWallReactors.jl": "797eef9d601f6267c1c86230ca56f4b52a0cf0167b447ca8d5ebb3964f4e8042",
+    "src/MulticomponentTransport.jl": "be6c79094a461cacd89d4b32d071981d97dac155320e39773055476ff46a6f66",
+    "src/PlasmaEEDF.jl": "eb97e918a78001462e3ce77011dd184d216c29af4f3e8a5c27cab7affc416895",
+    "src/PlasmaEEDFIO.jl": "3c330ce787bbd60e91a1ac9646603400260693b489013d389d078729423d6975",
+    "src/PlasmaEEDFTypes.jl": "4de3339a4b3c200de4b93ce7ecfdb06f491022d837c7024f0b4a8b1e69f771a8",
+    "src/PlasmaEnergyReactor.jl": "08f3b01c2930779bf3b7d58d93ea2ea0b9f2a48e17662936c20596f37b3c1fbd",
+    "src/PlasmaIO.jl": "b1677e34adb4755050178ac289b0fb22c1c73feb0554731a1b412f9341ba458b",
+    "src/PlasmaKinetics.jl": "68a5fd1a48064112e03cdc279bf1a3f8a5fb8d3ed8bf80c4a9fcd230edf3efe5",
+    "src/PlasmaRateIO.jl": "4847d5647fcc02fca0bb06237cbd99eb3e8a5ddc641844de59051f24bfb5cf9f",
+    "src/PlasmaThermochemistry.jl": "0f55d45ea941eae4ebef35a5dd1886bfc17d40d4bf300c496e322a6ccef10830",
+    "src/Precision.jl": "f4bf7b2306a132cff9a1666bc2bf91f9966082c54de98cd20966902f146a13f8",
+    "src/PremixedCounterflowFlames.jl": "555d23fb98988e00bcb4ddada61d583a813afcc2aaf9baf5e1d387d75ebe7f92",
+    "src/PureWater.jl": "0a7c0cac82ecd2a4ec03ec39244a3bb3ea8f9c24dd17515f411801a481fccbac",
+    "src/ReactorNetworks.jl": "2280b2d488e7951666211689faaad6a32bfe1cf49c1934527f9eb88d926651a3",
+    "src/Reactors.jl": "fbf200fb0d9437c351f9765304f33e3f896b342adb962f16b6e2cae3691a4452",
+    "src/RealGasReactors.jl": "4eff53bd105b96d5fae54b104d1fc7a52c07013dce5b1b007de8dcfe5593be0e",
+    "src/RealGasThermo.jl": "f6d766ef9309436d20865b0935098d5a4639250a0d86e9327b2e640c7dc9e1c4",
+    "src/SignedEquilibrium.jl": "f370f8741bbb95aed2432fbc102d6c978e999524265cd49ee457e5f9702aa4c0",
+    "src/Solution.jl": "72f250fbe5613adc9a7b57ef90caf2cdf60e4279b09b8da095fd84735b2c5c98",
+    "src/SurfaceFlowReactors.jl": "ea0c99c30548f8bd6c88d7d3ee11bb0dabaa82298afbdba1f20cdd28afa485f9",
+    "src/SurfaceKinetics.jl": "5e09d9431acafaefac61620793d978a106636a41850f262f4c6c5ca620f1e45d",
+    "src/Thermo/IdealGasThermo.jl": "da7b665352be8eef480c7e4af4ee0056a48aeb3971c711e58f0eec6e44383df2",
+    "src/Thermo.jl": "c62484dab57278889893e23484e94d4e97dd40ea9afd3c13d8e78a67433e31bd",
+    "src/Transport.jl": "9ac83a8621e29d0915c7b3516517ee920e3c6c3b523674dcf7656f621c093246",
+    "src/_Arrhenius_dev.jl": "d1dc25ca8db181fc3c9210e62fd6f1f96de0cea1311f7cf7d0764680cead3c68",
+    "src/_transport_test.jl": "c05ea401d9a45a591f4158c01a267d2719c7926003645551a1a3245a52c8bd51"
+  },
+  "inputs": {
+    "fuel": "H2:1",
+    "oxidizer": "O2:1",
+    "fuel_temperature_K": 300.0,
+    "oxidizer_temperature_K": 500.0,
+    "pressure_Pa": 100000.0,
+    "width_m": 0.018,
+    "initial_fuel_mass_flux_kg_m2_s": 0.5,
+    "initial_oxidizer_mass_flux_kg_m2_s": 3.0,
+    "native_refinement": {
+      "ratio": 4.0,
+      "slope": 0.0125,
+      "curve": 0.025,
+      "prune": 0.0125,
+      "initial_slope": 0.00625,
+      "initial_curve": 0.0125,
+      "initial_prune": 0.00625,
+      "max_points": 5000
+    },
+    "cantera_source_refinement": {
+      "ratio": 4.0,
+      "slope": 0.1,
+      "curve": 0.2,
+      "prune": 0.05
+    }
+  },
+  "accuracy": {
+    "passed": true,
+    "states": 133,
+    "temperature_and_species_profiles_passed": true,
+    "all_physical_output_gates_passed": true,
+    "all_reference_refinement_gates_passed": true,
+    "limits": {
+      "scalar_relative": 0.01,
+      "flame_width_relative": 0.03,
+      "field_relative": 0.03,
+      "reference_output_refinement_change": 0.01,
+      "mass_and_discrete_element_defect": 1e-06
+    },
+    "maximum_errors": {
+      "scalar_errors": {
+        "Tmax": 0.0007308906425771529,
+        "strain": 0.003307743121744493,
+        "integrated_heat_release": 0.0011629332205299785,
+        "flame_width": 0.004160887656033175,
+        "fuel": 0.0034017069206663795,
+        "oxidizer": 0.0033594904080204227
+      },
+      "scalar_change": {
+        "Tmax": 0.0007308917212491726,
+        "strain": 0.0033073885549909964,
+        "integrated_heat_release": 0.001162760381040332,
+        "flame_width": 0.004160887656033175,
+        "fuel": 0.0034015079443616572,
+        "oxidizer": 0.003359282573179233
+      },
+      "field_errors": {
+        "velocity": 0.0034017069206653664,
+        "spread_rate": 0.003550726128465978,
+        "Lambda": 0.00677280703877246
+      },
+      "field_change": {
+        "velocity": 0.0034015079443615406,
+        "spread_rate": 0.003550608660481062,
+        "Lambda": 0.00677239850965035
+      }
+    },
+    "native_output_self_checks": {
+      "passed": true,
+      "maximum_relative_errors": {
+        "Tmax": 0.0,
+        "strain": 0.0,
+        "ratio": 0.0,
+        "npoints": 0.0,
+        "fuel": 3.9705119544240226e-16,
+        "oxidizer": 4.2352329925665477e-16,
+        "integrated_heat_release": 1.7010672767715492e-08,
+        "flame_width": 0.0
+      },
+      "states": 133,
+      "rows": 132
+    },
+    "convergence": {
+      "all_states_passed": true,
+      "maximum_fresh_weighted_correction": 0.15072123361497675,
+      "maximum_backward_error": 9.606563294215648e-09,
+      "maximum_constraint_error": 7.331219659123533e-11,
+      "maximum_species_normalization_error": 2.421685074693869e-11,
+      "maximum_control_error_K": 5.866240826435387e-11,
+      "minimum_mass_fraction": -4.3389333550964117e-13
+    },
+    "conservation": {
+      "states": 133,
+      "max_mass_defect": 1.4598732898520295e-11,
+      "max_discrete_element_defect": 7.475961698669347e-11,
+      "max_continuous_element_defect": 2.3070289352539983e-05
+    },
+    "reference_method": "Independent matched-control Cantera solves with finite-difference banded Jacobians and both steady tolerances scaled by 1/sqrt(state dimension). Whole-grid bisections bound reference changes; no failed state is used as a seed."
+  },
+  "replay": {
+    "passed": true,
+    "calculations_per_runtime": 3,
+    "native_profiles_per_calculation": 133,
+    "native_numeric_output_fields": 9,
+    "native_vs_accepted_absolute_tolerance": 1e-08,
+    "native_vs_accepted_relative_tolerance": 1e-08,
+    "warm_vs_cold_absolute_tolerance": 1e-14,
+    "warm_vs_cold_relative_tolerance": 1e-12,
+    "grid_and_control_equality": "exact",
+    "scope": "Native cold and both warm runs match every accepted profile and all numeric output rows. Both warm runs also match the cold run. Each native final state passes the shared convergence judge. The earlier fresh calculation supplies the independent physical and conservation checks for all 133 states. Cantera repeats replay all source numeric output rows."
+  },
+  "performance": {
+    "target": "WSL",
+    "minimum_speed_ratio": 0.95,
+    "speed_qualified": false,
+    "measurement_kind": "complete diagnostic warm cost",
+    "loaded_mechanism_reused": true,
+    "fresh_flame_each_calculation": true,
+    "threads": 1,
+    "clock": "CLOCK_MONOTONIC_RAW",
+    "julia_cold_seconds": 173.235424165,
+    "cantera_cold_seconds": 5.238976783,
+    "julia_warm_seconds": [
+      156.421136788,
+      152.814094479
+    ],
+    "cantera_warm_seconds": [
+      5.556321798,
+      5.506560879
+    ],
+    "median_speed_ratio": 0.03577497503008666,
+    "conservative_speed_ratio": 0.035203432170826936,
+    "julia_spread": 1.0236041205577127,
+    "cantera_spread": 1.0090366601029999,
+    "native_rows": 132,
+    "cantera_rows": 134,
+    "native_mean_points": 2353.6742424242425,
+    "native_max_points": 3044.0,
+    "cantera_mean_points": 194.0820895522388,
+    "cantera_max_points": 266.0,
+    "warm_spread_limit": 1.1,
+    "warm_spread_gate_passed": true,
+    "boundary": "Initialization, solver setup, solve, required numeric outputs and automatic GC are timed; mechanism loading, JIT, validation, file I/O and explicit collection after warmup are excluded. Native also captures every profile for replay; the pinned Cantera source extractor excludes save calls. These cost observations do not qualify final speed.",
+    "native_final_strain_fraction": 0.07144907324058196,
+    "cantera_final_strain_fraction": 0.04128593545159927,
+    "interpretation": "Observed cost is below target. Timings use different adaptive meshes and include additional native profile capture."
+  }
+}

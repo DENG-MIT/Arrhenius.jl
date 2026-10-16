@@ -1,0 +1,649 @@
+{
+  "example": "thermo/plasma-eedf",
+  "calculation_validated": true,
+  "performance_qualified": true,
+  "source": {
+    "url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/thermo/plasma-eedf.py",
+    "commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+    "cantera_version": "4.0.0a2",
+    "julia_version": "1.12.7",
+    "example_sha256": "199dcf79252790ce61bf6fa9ec9b1d2a5c6f1c4f6ebf891fc13e34c5fa20f4cd",
+    "extension_sha256": "b9dcc98aa66410e9d1896e2a5a6e398b0491af8adb7e82c6738ed9281db5a417",
+    "model_url": "https://github.com/Cantera/cantera-example-data/blob/622e02535961079bf4e55dd338294e244a31cffb/air-plasma-Phelps.yaml",
+    "model_sha256": "be36740e0db01d996668b2c3ff6cbf12a0f296155086a16b7335d26df43f3ce2",
+    "reference_sha256": "8282b42f1c715d77b8fa33e6cacb2622edc810aa2eb253b3cd45849ddb22d92c",
+    "native_file_sha256": {
+      "Manifest.toml": "150cf2bad5cf0d789207cac9b63cc5ee949e3e762d60a3b909e61f19186d509d",
+      "Project.toml": "ab1ced84e5d498fabb6857b34c6acb5aef8809d660c0bf1ee1a44109f4ef7cc8",
+      "example/thermodynamics/plasma_eedf.jl": "32ae4216b20f464c6bf811830ca3b5d86504c4b1b0afcd6024f7b2e9830eab35",
+      "src/Arrhenius.jl": "ab3829dd276f3a19424271f418f4ba180e54258c3366c4f01a773e6f221397a0",
+      "src/PlasmaEEDF.jl": "d9abdf2797c82512397c95ee2be16949c533db4cae9edb83e5e6938b1ee0fad9",
+      "src/PlasmaEEDFIO.jl": "9b29714c5bf9bad491ff762904260f39b1db75ad79cf7942a33427430a5e39a6",
+      "src/PlasmaEEDFTypes.jl": "4de3339a4b3c200de4b93ce7ecfdb06f491022d837c7024f0b4a8b1e69f771a8"
+    },
+    "timing_script_sha256": {
+      "ct_eedf_timing.py": "616030dc8d5ce902d7af25f75e95cb131d1229cd6258aa62f6bd1b23e250ceb5",
+      "native_eedf_timing.jl": "14f720f51b71cdf214fe4be405fef5d71b2c6e2a02cf93cf48d70ca86e687bb4"
+    }
+  },
+  "conditions": {
+    "temperature_K": 300.0,
+    "pressure_Pa": 101325.0,
+    "reduced_field_V_m2": 2e-19,
+    "mole_fractions": {
+      "Electron": 9.999999998e-11,
+      "N2": 0.789999999842,
+      "N2+": 9.999999998e-11,
+      "O2": 0.20999999995799998
+    },
+    "collision_target_molecular_weights_kg_kmol": {
+      "N2": 28.014,
+      "O2": 31.998
+    },
+    "collision_count": 43,
+    "collision_counts": {
+      "effective": 2,
+      "excitation": 36,
+      "ionization": 3,
+      "attachment": 2
+    },
+    "energy_edges_eV": [
+      0.0,
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0,
+      7.0,
+      8.0,
+      9.0,
+      10.0,
+      11.0,
+      12.0,
+      13.0,
+      14.0,
+      15.0,
+      16.0,
+      17.0,
+      18.0,
+      19.0,
+      20.0,
+      21.0,
+      22.0,
+      23.0,
+      24.0,
+      25.0,
+      26.0,
+      27.0,
+      28.0,
+      29.0,
+      30.0,
+      31.0,
+      32.0,
+      33.0,
+      34.0,
+      35.0,
+      36.0,
+      37.0,
+      38.0,
+      39.0,
+      40.0
+    ]
+  },
+  "solver": {
+    "method": "fixed-grid temporal two-term Boltzmann equation",
+    "iterations": 9,
+    "max_iterations": 200,
+    "rtol": 1e-05,
+    "delta0": 100000000000000.0,
+    "factor": 4.0,
+    "initial_kTe_eV": 2.0
+  },
+  "correctness": {
+    "gates": {
+      "edge_absolute": 1e-10,
+      "edge_relative": 0.0001,
+      "weighted_L1": 0.0001,
+      "mean_relative": 0.0001,
+      "center_normalization": 1e-12
+    },
+    "all_ten_complete_calls_checked": true,
+    "all_repetitions_have_identical_outputs": true,
+    "repetitions": [
+      {
+        "repetition": 0,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      },
+      {
+        "repetition": 1,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      },
+      {
+        "repetition": 2,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      },
+      {
+        "repetition": 3,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      },
+      {
+        "repetition": 4,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      },
+      {
+        "repetition": 5,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      },
+      {
+        "repetition": 6,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      },
+      {
+        "repetition": 7,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      },
+      {
+        "repetition": 8,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      },
+      {
+        "repetition": 9,
+        "native": {
+          "weighted_L1": 3.478156069811151e-13,
+          "pointwise_error_over_gate": 9.790762422925585e-09,
+          "edge_derived_mean_energy_eV": 5.309616450611085,
+          "mean_relative_error": 1.20570220474292e-13
+        },
+        "cantera": {
+          "weighted_L1": 1.551662258200776e-15,
+          "pointwise_error_over_gate": 3.507994045794637e-11,
+          "edge_derived_mean_energy_eV": 5.309616450610449,
+          "mean_relative_error": 8.881784197001252e-16
+        },
+        "center_normalization": 1.0000000000000002
+      }
+    ],
+    "reference_edge_eedf": [
+      0.1670014139987373,
+      0.15904705255697132,
+      0.10887488491013775,
+      0.057626160105307876,
+      0.04500983293418361,
+      0.03830666552858551,
+      0.03228992954679662,
+      0.026711337162590578,
+      0.02158334241355362,
+      0.01690203238501683,
+      0.012798670881759948,
+      0.00942810711967373,
+      0.00674543162042892,
+      0.004672203584238234,
+      0.003145081024059216,
+      0.0020832857787521785,
+      0.0013765721276010928,
+      0.0009074068641555769,
+      0.0005951545504220882,
+      0.0003881766778498779,
+      0.00025125504031192755,
+      0.00016132429979410107,
+      0.00010275566642779774,
+      6.495869497294793e-05,
+      4.078472632663922e-05,
+      2.5442084887852435e-05,
+      1.576487717724772e-05,
+      9.696003047363956e-06,
+      5.918750332310319e-06,
+      3.5877004885811167e-06,
+      2.1617225682682466e-06,
+      1.296225833704008e-06,
+      7.735252863132127e-07,
+      4.5946288803028064e-07,
+      2.7183993915791624e-07,
+      1.6050090623933254e-07,
+      9.499746663732488e-08,
+      5.702683000407987e-08,
+      3.578651830688536e-08,
+      2.5118662835221354e-08,
+      2.188157450235523e-08
+    ],
+    "cantera_edge_eedf": [
+      0.16700141399873739,
+      0.15904705255697119,
+      0.10887488491013748,
+      0.05762616010530783,
+      0.045009832934183674,
+      0.038306665528585554,
+      0.03228992954679666,
+      0.02671133716259062,
+      0.02158334241355366,
+      0.016902032385016863,
+      0.012798670881759976,
+      0.009428107119673752,
+      0.006745431620428934,
+      0.0046722035842382435,
+      0.0031450810240592226,
+      0.0020832857787521815,
+      0.0013765721276010952,
+      0.0009074068641555787,
+      0.0005951545504220896,
+      0.00038817667784987893,
+      0.0002512550403119282,
+      0.0001613242997941015,
+      0.00010275566642779801,
+      6.495869497294811e-05,
+      4.078472632663932e-05,
+      2.5442084887852483e-05,
+      1.576487717724775e-05,
+      9.696003047363982e-06,
+      5.91875033231034e-06,
+      3.587700488581133e-06,
+      2.1617225682682567e-06,
+      1.296225833704014e-06,
+      7.735252863132164e-07,
+      4.59462888030283e-07,
+      2.718399391579176e-07,
+      1.6050090623933336e-07,
+      9.49974666373254e-08,
+      5.702683000408019e-08,
+      3.5786518306885556e-08,
+      2.5118662835221496e-08,
+      2.1881574502355362e-08
+    ],
+    "native_output": {
+      "centers": [
+        0.5,
+        1.5,
+        2.5,
+        3.5,
+        4.5,
+        5.5,
+        6.5,
+        7.5,
+        8.5,
+        9.5,
+        10.5,
+        11.5,
+        12.5,
+        13.5,
+        14.5,
+        15.5,
+        16.5,
+        17.5,
+        18.5,
+        19.5,
+        20.5,
+        21.5,
+        22.5,
+        23.5,
+        24.5,
+        25.5,
+        26.5,
+        27.5,
+        28.5,
+        29.5,
+        30.5,
+        31.5,
+        32.5,
+        33.5,
+        34.5,
+        35.5,
+        36.5,
+        37.5,
+        38.5,
+        39.5
+      ],
+      "center_eedf": [
+        0.1670014139985738,
+        0.1510926911152431,
+        0.06665707870507902,
+        0.048595241505539406,
+        0.04142442436278249,
+        0.03518890669432975,
+        0.029390952399233335,
+        0.024031721925947214,
+        0.019134962901183564,
+        0.014669101868871043,
+        0.010928239894656515,
+        0.007927974344694697,
+        0.005562888896168591,
+        0.003781518272310114,
+        0.002508643775808665,
+        0.001657927781696119,
+        0.0010952164735065046,
+        0.00071959725480495,
+        0.0004707118460394114,
+        0.0003056415096604314,
+        0.0001968685709634562,
+        0.0001257800286247228,
+        7.973130423084975e-05,
+        5.018608571504359e-05,
+        3.138336693824007e-05,
+        1.9500802837474682e-05,
+        1.2028951517029174e-05,
+        7.363054577703664e-06,
+        4.474446086919204e-06,
+        2.700954890243867e-06,
+        1.6224902462927735e-06,
+        9.699614211151782e-07,
+        5.770891515112157e-07,
+        3.4183662454936114e-07,
+        2.0184325376649325e-07,
+        1.1915855871218746e-07,
+        7.083637456248133e-08,
+        4.321728544568379e-08,
+        2.8355751168086415e-08,
+        2.1881574502355872e-08
+      ],
+      "errors": [
+        0.42386631046999956,
+        0.078762426905813,
+        0.0192211059739147,
+        0.006101311090623408,
+        0.0021353917406168807,
+        0.0006677726341371106,
+        0.00016313050134253565,
+        3.2973750638616116e-05,
+        6.5534176188542556e-06
+      ],
+      "deltas": [
+        100000000000000.0,
+        100000000000000.0,
+        82371310811195.66,
+        80961917050185.14,
+        97809615881280.1,
+        129154125244974.61,
+        154023362574513.84,
+        151498606745393.8,
+        131358882692918.94
+      ],
+      "mobility": [
+        0.03765754922934995
+      ],
+      "edge_eedf": [
+        0.1670014139985738,
+        0.15904705255690843,
+        0.10887488491016106,
+        0.057626160105309215,
+        0.04500983293416095,
+        0.03830666552855612,
+        0.032289929546781546,
+        0.026711337162590276,
+        0.02158334241356539,
+        0.016902032385027303,
+        0.012798670881763778,
+        0.009428107119675606,
+        0.006745431620431644,
+        0.004672203584239353,
+        0.0031450810240593896,
+        0.0020832857787523923,
+        0.0013765721276013118,
+        0.0009074068641557274,
+        0.0005951545504221807,
+        0.00038817667784992143,
+        0.0002512550403119438,
+        0.0001613242997940895,
+        0.00010275566642778627,
+        6.495869497294667e-05,
+        4.0784726326641824e-05,
+        2.5442084887857375e-05,
+        1.576487717725193e-05,
+        9.69600304736642e-06,
+        5.9187503323114335e-06,
+        3.587700488581535e-06,
+        2.1617225682683202e-06,
+        1.2962258337039758e-06,
+        7.735252863131969e-07,
+        4.594628880302884e-07,
+        2.718399391579272e-07,
+        1.6050090623934035e-07,
+        9.499746663733439e-08,
+        5.702683000408256e-08,
+        3.5786518306885106e-08,
+        2.5118662835221145e-08,
+        2.1881574502355872e-08
+      ],
+      "edges": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0,
+        12.0,
+        13.0,
+        14.0,
+        15.0,
+        16.0,
+        17.0,
+        18.0,
+        19.0,
+        20.0,
+        21.0,
+        22.0,
+        23.0,
+        24.0,
+        25.0,
+        26.0,
+        27.0,
+        28.0,
+        29.0,
+        30.0,
+        31.0,
+        32.0,
+        33.0,
+        34.0,
+        35.0,
+        36.0,
+        37.0,
+        38.0,
+        39.0,
+        40.0
+      ]
+    },
+    "BOLOS_reference_comparison": {
+      "weighted_L1": 0.0499780196129968,
+      "interpretation": "Source coarse-grid reference differs from linearly interpolated published BOLOS data by about 5%; reproducing Cantera is an implementation consistency check, not a claim of that physical accuracy."
+    }
+  },
+  "timing": {
+    "host": "m4",
+    "minimum_speed_ratio": 0.95,
+    "speed_ratio_definition": "Cantera elapsed / Arrhenius elapsed",
+    "speed_ratio": 0.9805862340774717,
+    "scope": "Each call freshly reads the model, constructs model and gas state, completes the EEDF solve and returns arrays. Output serialization, comparison and plotting excluded on both sides.",
+    "statistic": "Median of repetitions 1 through 9 after separate first call; every sample retained, including GC pauses.",
+    "native_seconds": [
+      2.678457083,
+      0.007337958,
+      0.007134917,
+      0.007076167,
+      0.007016541,
+      0.007036541,
+      0.007090125,
+      0.0070775840000000005,
+      0.00700875,
+      0.007066542
+    ],
+    "cantera_seconds": [
+      0.03892579197417945,
+      0.006831125007010996,
+      0.006897874991409481,
+      0.006931958952918649,
+      0.006964458036236465,
+      0.006938791950233281,
+      0.006961666978895664,
+      0.006939458078704774,
+      0.0069463750114664435,
+      0.006886791903525591
+    ],
+    "native_warm_median_seconds": 0.007076167,
+    "cantera_warm_median_seconds": 0.006938791950233281,
+    "native_first_call_seconds": 2.678457083,
+    "cantera_first_call_seconds": 0.03892579197417945,
+    "native_script_start_to_first_result_seconds": 4.192886709000001,
+    "first_call_scope": "First calculation in a fresh process, excluding imports; Julia body compilation included. Script-to-first-result includes Julia imports but not process launch.",
+    "native_threads": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "cantera_thread_environment": {
+      "MKL_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    }
+  },
+  "validation": {
+    "local_ci": {
+      "wsl": {
+        "passed": true,
+        "passed_assertions": 2659
+      },
+      "apple_m4": {
+        "passed": true,
+        "passed_assertions": 2659
+      },
+      "windows": {
+        "passed": true,
+        "passed_assertions": 2659
+      }
+    },
+    "documentation_passed": true
+  },
+  "limitations": [
+    "Standalone air EEDF source case only; plasma reactor coupling, spatial EEDF and adaptive energy grids are outside this validation.",
+    "Single measured batch per host; warm median qualification does not imply uniform latency or first-call parity."
+  ],
+  "artifact_sha256": {
+    "native/native-1.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/native-6.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/native-2.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/native-9.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/native-3.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/native-8.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/native-0.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/native-4.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/native-7.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/receipt.toml": "50224902f4f6a4b3b9491a3c7340011d98e41858a6d9e98781fe90c6a81c02b1",
+    "native/native-5.npz": "7e7b93aaeb7b09950fab02c8b077b4b3419ca7731920c8b690a40708da05c654",
+    "native/timings.npz": "3f707435db4a6f90f481589d6cf072dcde2d9a236ecc39dc07c5c5415b50ab4c",
+    "cantera/receipt.json": "a9e8176788879cd5aa8fdcd78c9456afe620e180d060889e9d472320ccda6145",
+    "cantera/timings.npz": "494f2ce2a6a7a15a616a24989c7a0b194e8e9225e75664df91cfc9244f527ce8"
+  }
+}

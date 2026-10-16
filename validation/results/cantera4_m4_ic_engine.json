@@ -1,0 +1,443 @@
+{
+  "schema_version": 1,
+  "example": "reactors/ic_engine.py",
+  "native_status": "validated",
+  "native_example": "example/reactors/ic_engine.jl",
+  "native_entry": "example/reactors/ic_engine_qndf_solver.jl: solve_ic_engine_qndf",
+  "correctness_verified_hosts": [
+    "apple-m4"
+  ],
+  "performance_qualified": false,
+  "performance_status": "not measured for this public QNDF calculation",
+  "scope": {
+    "end_time_s": 0.16,
+    "revolutions": 8,
+    "four_stroke_cycles": 4,
+    "intervals": 25,
+    "species": 100,
+    "reactions": 553,
+    "thermo": "ideal gas",
+    "fuel": "n-dodecane",
+    "switching_angles_per_720_degrees": [
+      18,
+      198,
+      350,
+      365,
+      522,
+      702
+    ],
+    "final_crank_angle_degrees": 2880
+  },
+  "settings": {
+    "native_solver": "OrdinaryDiffEqBDF.QNDF",
+    "source_rtol": 1e-12,
+    "source_atol": 1e-16,
+    "native_rtol": 1e-12,
+    "native_temperature_atol_K": 1e-16,
+    "native_volume_atol_m3": 1e-16,
+    "native_species_mass_atol_kg": "1e-16 * m_ref",
+    "mass_reference": "half the interval-entry mass; while outlet is open, half the previous accepted mass",
+    "mass_reference_gate": "reject trial states with current mass below m_ref; update integrator abstol after acceptance",
+    "error_weight_mapping": "atol(m_k)/current_mass <= 1e-16; mass-coordinate and mass-fraction LTE norms are not identical",
+    "native_ledger_atols": {
+      "mass_kg": 1e-15,
+      "flow_energy_J": 1e-06,
+      "pressure_work_J": 1e-06
+    },
+    "coordinate_scales": {
+      "species_mass": "MW_k * clearance_volume",
+      "temperature_K": 1000,
+      "volume": "clearance_volume",
+      "mass_ledger": "interval-entry mass",
+      "energy_ledgers_J": 1000
+    },
+    "maximum_step_s": 5.555555555555556e-05,
+    "maximum_accepted_temperature_change_K": 20,
+    "initial_step_s": "min(1e-10, interval_duration/100)",
+    "maximum_iterations": 1000000,
+    "initial_reduced_coordinates": 8,
+    "full_coordinates": 105,
+    "rms_denominator": 105,
+    "full_coordinate_activation_degrees": 350,
+    "initial_reduced_intervals": 3,
+    "inactive_species_rule": "only species containing C or H, absent from original gas and all active pre-fuel feeds",
+    "accepted_state_projection": false,
+    "reference_rtol": 1e-13,
+    "reference_atol": 1e-24,
+    "reference_quadrature_max_step_s": 1.388888888888889e-05
+  },
+  "source": {
+    "url": "https://github.com/Cantera/cantera/blob/726522be4e2a13454d8415b7ef799d621f665cf3/samples/python/reactors/ic_engine.py",
+    "commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+    "source_example_sha256": "43acf803aa5e4589bb1e718a480cbcc7db4558e49cdb97bb5b7ff67d928a68bb",
+    "source_mechanism_sha256": "3d3b59ed91dec0d0bcbac2fa2ef2cba13fbd565bfff8f266ca847ed6aa92f7f1",
+    "cantera_version": "4.0.0a2",
+    "loaded_library_sha256": {
+      "libcantera_shared.4.0.0.dylib": "295943c1cd2c73ae85d1c9683a047ad42d0204d8e588878efac799b84e5a042b",
+      "_cantera.cpython-313-darwin.so": "b9dcc98aa66410e9d1896e2a5a6e398b0491af8adb7e82c6738ed9281db5a417"
+    }
+  },
+  "runtime": {
+    "platform": "macOS 26.6.2 arm64",
+    "cpu": "Apple M4",
+    "julia_version": "1.12.7",
+    "required_package_versions": {
+      "Arrhenius": "0.1.1",
+      "ForwardDiff": "0.10.39",
+      "OrdinaryDiffEqBDF": "1.26.0",
+      "SciMLBase": "2.155.2"
+    },
+    "actual_caller_direct_dependencies": [
+      "Arrhenius",
+      "ForwardDiff",
+      "NPZ",
+      "OrdinaryDiffEqBDF",
+      "OrdinaryDiffEqSDIRK",
+      "SciMLBase"
+    ],
+    "caller_project_sha256": "f47c5dce91dd65c8f3c51a63d7108f1d7a399ee7170e73ffef4252d04e0f807c",
+    "caller_manifest_sha256": "2ea8a8fc3b30aa20a6e809075c13e8c8c50831eec12a4cad190fcd9265613d7c",
+    "environment_reuse": "existing installed Project retained; only the copied Manifest Arrhenius path changed; no package resolution or installation",
+    "native_before": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "native_after": {
+      "accelerate_threading_mode": 1,
+      "blas_threads": 1,
+      "julia_threads": 1
+    },
+    "numerical_library_sha256": {
+      "libblastrampoline.5.dylib": "62981c8ceac4b417dea4325e0d838996da0f8ece3fbb353ea2f9148cd8973c1e",
+      "libgomp.1.dylib": "eada7cdb8992f30047dbe30dd52ba5ba63e7fa5bca4d5e214859ce9037528554",
+      "libopenblas64_.dylib": "0a1d2340c8bcd23b8e42b9cecef2069f3717fb548e2df8d5c392df6e889a5538"
+    },
+    "reference_thread_checks": {
+      "before": {
+        "threadpools": [
+          {
+            "file": "libgomp.1.dylib",
+            "query": "omp_get_max_threads",
+            "threads": 1
+          },
+          {
+            "file": "libopenblasp-r0.3.30.dylib",
+            "query": "openblas_get_num_threads",
+            "threads": 1
+          }
+        ],
+        "accelerate_threading_mode": 1
+      },
+      "after": {
+        "threadpools": [
+          {
+            "file": "libgomp.1.dylib",
+            "query": "omp_get_max_threads",
+            "threads": 1
+          },
+          {
+            "file": "libopenblasp-r0.3.30.dylib",
+            "query": "openblas_get_num_threads",
+            "threads": 1
+          }
+        ],
+        "accelerate_threading_mode": 1
+      }
+    }
+  },
+  "provenance": {
+    "integrated_commit": "ec021b9e22ee74f31c1479412f691b1dd788819d",
+    "core_sha256": {
+      "src/Arrhenius.jl": "ce9bb812b602bd3775a44cac0f652bd22fc7c4d707e3a3843927385ea35bd6d0",
+      "src/BlowersMasel.jl": "6e2266794056367d648a68a9160f15d839fde8d9bab923a4f350fbafec7cb95d",
+      "src/CatalyticFlames.jl": "8e8fab0b4eea80daf99d73e1e587b188f6ff0810a11c0667efdeba966e0d3222",
+      "src/CondensedEquilibrium.jl": "7017f51d280908bff54593f46d6241f2f471b4be34c3d4b774c1d2f3dd469026",
+      "src/Constants.jl": "2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83",
+      "src/CounterflowFlames.jl": "7a0ca9c3cdea0bd58c23a5d9e453b3a52400b1aaf50f6d5eb469d802213ea1c1",
+      "src/CoverageDependentThermo.jl": "cf3e8f5adde603343c58717b7deefe54694284475cb8833b923fa584823eb4df",
+      "src/CriticalProperties.jl": "90cc6911489ffe90748b15965e5da14dbde9232a0beea03312fc4ec31e5f63ba",
+      "src/DataStructure.jl": "07acaddb93237a04d978e9a73fdc136cde20ff4d922a00db790e9c4a67e85f1e",
+      "src/DustyGasTransport.jl": "b87c8a982bff05c3976c4cad27578a05098124d32fc31dce6f4756d4db0701a4",
+      "src/Equilibrium.jl": "ce2091af79c5b2ce4340735fd3936659ba269091c3f619451fef304699c7d9a2",
+      "src/FlameDerivatives.jl": "c9ead3f2c74d4c51c7b686e82c5d2ecca9f704b569d913a332f6bd5dee647562",
+      "src/FlameIO.jl": "e78b0366d1c680d744d95b14f1d5591bcd9efa8c2ac20b2d0bd1598b1f0e8021",
+      "src/Flames.jl": "070c23a6b6ac5d577b6ca1317ebbb62691ec044af2ee715771f445c9eed1d07b",
+      "src/IdealGasMixing.jl": "5ab4e26a5912a1b3a154777cbf886ddf66f48a5e26cd41af9006206d6eb87046",
+      "src/IdealGasStates.jl": "46b90818b147c9c55cfe6c6caafaf3b8f194b8eaf14b2a2828d3d26c80ec3000",
+      "src/Kinetics.jl": "eeecf3a212264d5ff41b7e7110dced88937d6da6a76df8bfffb091837fd43a4e",
+      "src/Magic.jl": "9386419d03e7f481a134f2d56a2b59c4b340f1ba276bbc6ce52861597805c8e0",
+      "src/MovingWallReactors.jl": "c14ee93fa7c0a3e5e10b1e3c6b51764ff52f32929f79cf71372b21a1881f9d00",
+      "src/MulticomponentTransport.jl": "b798c622769beb0cda757abce23a05501938e7d1bba3553afab2f4ced267206a",
+      "src/Precision.jl": "970165da7f441088adacc1a5c8fa14dbcbc699df73b57d5681d9d05ab52949fd",
+      "src/PremixedCounterflowFlames.jl": "b9cda647f2cf6d6dfff79f7da558dd14f425f4ece8709024c2c7205f12114991",
+      "src/PureWater.jl": "234a75cf5ea3a06886c9003ce19f0a8d6f7492e38022b3af23604d1b3a512955",
+      "src/ReactorNetworks.jl": "e9b9410cb69d72fe92b737d958e4c5cac51be277faa7457ccf9bcbe40e5bee9b",
+      "src/Reactors.jl": "6753e519f66fd240f85622a7ea993beff2eb41050d8d61140c090a8558dd5994",
+      "src/RealGasReactors.jl": "4c62099789aa1f7a19c5728f3519714ad68c4a684e9e8dcaa575e54596c79e50",
+      "src/RealGasThermo.jl": "83d8015787f947b9e8dc84ab71f6131191530f13b57cb29914f706488398833a",
+      "src/Solution.jl": "7e3dbc589eebb3e9904d22a3f9bd1fd8f88ddc36712ef3a248d334770b6339c4",
+      "src/SurfaceFlowReactors.jl": "c7f39a9f1ae4ac6b63548d104dbd4895ae8674fc69df592e101ac58b674f4909",
+      "src/SurfaceKinetics.jl": "d55b05829c4bdeee4f56a79d78ae676750600187c9a543ce72deed690ac8409e",
+      "src/Thermo.jl": "e09107c74cc4fa0379204e92ba43517df81fa01f19785fa4c5956ee02a6492c3",
+      "src/Thermo/IdealGasThermo.jl": "e85feaf3272a8da51792935207ad7fbf2ab8a2b00f7c67dd0a6fae58a5b0cf31",
+      "src/Transport.jl": "c75b8b87274d08e1c1df6c9d40e39746980fc0098040fe9be6ca87518bf844a3",
+      "src/_Arrhenius_dev.jl": "6b08d913208a17d66dda42345ecb14d164c53dcfda9292cda5f68e60e7056eed",
+      "src/_transport_test.jl": "8e2ad5c75074bce96ee9cb7a72cbdfb041cc6c9c3b0cc7983b3f370327ee4ee3"
+    },
+    "integrated_core_normalized_sha256": {
+      "src/Arrhenius.jl": "2efddb7e93198ea70ac2a3b131e1a87209e864750d67c40fba5a3dd8bbd6740d",
+      "src/BlowersMasel.jl": "984f41457a3773bd5344d598c4c13dea39b44f163248eac3410bc4606c35b4e1",
+      "src/CatalyticFlames.jl": "556a56ffaba0efab9cfee3a8bf9446d9e878bf645ce358177476ae866c161ef1",
+      "src/CondensedEquilibrium.jl": "cc87745498cbf3a39cf31f9ff02039da3ee82fc5681fb9fd3965b53011617b6f",
+      "src/Constants.jl": "bfb9adcaca09a62fd066c192be0ef6b78d5c9ff3ba14dd0d15fa22f1a63b2f85",
+      "src/CounterflowFlames.jl": "2968bd0aa9148b1594adb913728289340fbb2afccf31b425c561597021a9e904",
+      "src/CoverageDependentThermo.jl": "a85d5a7b350d1027a1df8bb5fd3083696c892f2699a109e6ebd4b0d8cc0072d1",
+      "src/CriticalProperties.jl": "2e35232ae55571b659c6e0f9fa841a6687afb27cf8a5c71ad158d7b70ef65787",
+      "src/DataStructure.jl": "871144111ab1fcde069f9a305e4cc86b00873afd43c140cd11a9a08dd452fa39",
+      "src/DustyGasTransport.jl": "038c18a8a2f8896fe8df1b89a64f55c77e040c09d7490a7744615c5059caa702",
+      "src/Equilibrium.jl": "b18b1187cd32bcb1d7cf2d787e4a78eb2a5e5ff17ac1f1c296652bbe347cd3b2",
+      "src/FlameDerivatives.jl": "f99160db20ef5ef46d66dd26bed53a62dd6ab8529602d35717169cce9deffb68",
+      "src/FlameIO.jl": "329ad9b2a13b857eaa90b92c9b0c56781a59cb09b28c5efe4cf6ee529e42d219",
+      "src/Flames.jl": "7aabf01ab42bfcf3f4cd0f993d28e29b63c1ad306caa7a00b015086a26d3aa64",
+      "src/IdealGasMixing.jl": "b20393e4b2b585b4d6b425f9a234aa969ed3d19b006a0d43a6f2743668af9059",
+      "src/IdealGasStates.jl": "ff25fb32c0b3d0236e4056b7425e10009ed5ff3f624f6e6f7112e4b93cb6d793",
+      "src/Kinetics.jl": "93429db6a18ceb3ed06677368dccc06b218795a0223a1d98d7e0536cafcb3561",
+      "src/Magic.jl": "2668705b59a8c165e3ef83e7b2819e38e2621e556bb4dcd52ab9da5071547d05",
+      "src/MovingWallReactors.jl": "797eef9d601f6267c1c86230ca56f4b52a0cf0167b447ca8d5ebb3964f4e8042",
+      "src/MulticomponentTransport.jl": "be6c79094a461cacd89d4b32d071981d97dac155320e39773055476ff46a6f66",
+      "src/Precision.jl": "6479d7e824bb9202afdb35c451b8b2fd390e2f8aa6da7242fa89c9482b9661d4",
+      "src/PremixedCounterflowFlames.jl": "6fa806b11f9e1b3fa0093a4899cfd73c026e7ec1178e0d94e1a513e8746f6a22",
+      "src/PureWater.jl": "0a7c0cac82ecd2a4ec03ec39244a3bb3ea8f9c24dd17515f411801a481fccbac",
+      "src/ReactorNetworks.jl": "2280b2d488e7951666211689faaad6a32bfe1cf49c1934527f9eb88d926651a3",
+      "src/Reactors.jl": "4b21174754b99820366f7d58a31a8d37eb003790a183331bababe1456da7b9db",
+      "src/RealGasReactors.jl": "4eff53bd105b96d5fae54b104d1fc7a52c07013dce5b1b007de8dcfe5593be0e",
+      "src/RealGasThermo.jl": "f6d766ef9309436d20865b0935098d5a4639250a0d86e9327b2e640c7dc9e1c4",
+      "src/Solution.jl": "9d81a9db797edef3eaa39c33f42a005efc2400d3279f976e09a989c5ace87498",
+      "src/SurfaceFlowReactors.jl": "ea0c99c30548f8bd6c88d7d3ee11bb0dabaa82298afbdba1f20cdd28afa485f9",
+      "src/SurfaceKinetics.jl": "5e09d9431acafaefac61620793d978a106636a41850f262f4c6c5ca620f1e45d",
+      "src/Thermo.jl": "c62484dab57278889893e23484e94d4e97dd40ea9afd3c13d8e78a67433e31bd",
+      "src/Thermo/IdealGasThermo.jl": "da7b665352be8eef480c7e4af4ee0056a48aeb3971c711e58f0eec6e44383df2",
+      "src/Transport.jl": "89720c2d0ad3ba0f197f2a45ba27684b8ee3def7222684b42e20e80a7af76ee3",
+      "src/_Arrhenius_dev.jl": "d1dc25ca8db181fc3c9210e62fd6f1f96de0cea1311f7cf7d0764680cead3c68",
+      "src/_transport_test.jl": "c05ea401d9a45a591f4158c01a267d2719c7926003645551a1a3245a52c8bd51"
+    },
+    "core_identity_rule": "raw hashes equal the tested WSL runtime; newline-normalized content equals integrated Git blobs",
+    "helper_sha256": {
+      "example/reactors/engine_qndf/adapter.jl": "65ddd558e17d1e0dba4a41fc3612e22a76e3870ebe51044e3a4d4d504cb07aa5",
+      "example/reactors/engine_qndf/checks.jl": "ac2f1cf6393764856a771659e284d50af0763c896ad1201fcb505ef67f625929",
+      "example/reactors/engine_qndf/derivatives.jl": "4990d462748e4299ba844bd583b7b45cd8a288a5c9453a3ce8719bdda0e93a5e",
+      "example/reactors/engine_qndf/element_budget.jl": "b74f3d0d48a80a2c0f1e017cea9c968a25a7dac2ebd03ac59109ca4ec1cee511",
+      "example/reactors/engine_qndf/entry.jl": "8f8ec2b631f9d546129a49ab530318848ffb53591c980025c7029f39235fb14d",
+      "example/reactors/engine_qndf/invariant_coordinates.jl": "b43ddc348813faa12f18bd8ed22f1c1f4bf44fbe9a604dc846a5395cdff1b024",
+      "example/reactors/engine_qndf/mass_weights.jl": "e6475217fb0acff3da889a6fad70d88f45a2df194ab67a0abbb96dfd7e5a8056",
+      "example/reactors/engine_qndf/scaling.jl": "6789c90786793f2962d506fc97ee2a2c2a8b488186f21e5095170252cbcec408",
+      "example/reactors/engine_qndf/signed_reactor.jl": "0aa4f218007e8508218a266d6dc7baa36875d27674a5ac79f322160dbb1bf779",
+      "example/reactors/engine_qndf/solve.jl": "a7213de4825b0bf5e95b4c9b1619476738404ec4a2e5abb81ef08d229faffd9b",
+      "example/reactors/engine_qndf/trial_rates.jl": "ee24a1562eb3c8ac1f48e0c48fbcd38f5f5af084623a38e3645284dd5de31923",
+      "example/reactors/engine_qndf/unseeded_derivatives.jl": "42eba54ff7782b591fc7ef8e843985949598affa5ee1ec57b50b0f81d25460a8",
+      "example/reactors/ic_engine_qndf_solver.jl": "0d6bb21cb6468c7d7897f51b09e07dbc5629eb624bb6c1319559c48882ce6dac",
+      "example/reactors/ic_engine_setup.jl": "5e3c08253a33484b779f6e054b8eee6e896d1e500b4e717f6e3822d5479ec3e8"
+    },
+    "exporter_sha256": "15bad398a9c7966827be44b93894098c16e3770558dc3c6dda60ed01da215670",
+    "comparator_sha256": "7a273fa976b802c30a5f8714d2b1cfeb3dd21d0c664a7848b5b3daed95eca431",
+    "thread_guard_sha256": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739",
+    "comparison_function_sha256": "ea7466504ae6b2ebcf8edcbe29d5ad7c20edb12a321cdb0b19c6f8e3a90290af",
+    "comparison_file_sha256": "95575058a88a6152d7cd3d12364a34b480c894192e83e13db41cd6cb8443dac5",
+    "contract_sha256": "b04b474f39521129dcee488bdb9f0a416a29dd157d2223774eb2260eda814e6d",
+    "contract_log_sha256": "9de809a0e68922df9e3c55c584e48c3cf3734f3551b55d56bd4ecf3cee41aced",
+    "mechanism_sha256": "891a67bd111573e97ac1afaa7a93e58561c84d315ec59886c751f4db4ea9f6f5",
+    "sidecar_sha256": "16917120259e22f98a0f62eb75b956ae96a9d709e71bb7e198ab042582e7ea46",
+    "native_artifact_sha256": "7d398fda633d4209bc54c4a5885321223a11e109e4d0f36f266f5a893c379ff7",
+    "native_record_sha256": "c763ad50765688c3a52616fe06214f4cc20eb68511c97f465159470c4de44999",
+    "comparison_sha256": "443901e78f6c71fc5d416516f2429e8aed6b95c262b97c787a95892ec535f14f",
+    "reference_arrays_sha256": "dd489a48220b3ca2a2731045697ba5f3d776e8d134e215d7092abfa9b1bcd3fc",
+    "reference_integral_arrays_sha256": "faf6e098cb27b6e33a5fb284dd4d38987590edbcad493579beaa8963a07df38c"
+  },
+  "proof": {
+    "exit_codes": {
+      "contract": 0,
+      "prepare": 0,
+      "native": 0,
+      "comparison": 0
+    },
+    "full_public_preparation_export_comparison": true,
+    "fresh_original_source_initialization": true,
+    "stored_trajectory_input_to_calculation": false,
+    "independently_initialized_CT_trajectories": true,
+    "reference_endpoint_method": "two CT instances from identical CT-only interval entries: pre-event step samples plus separately advanced exact endpoint; no backward advance",
+    "source_inputs_unchanged": true,
+    "all_25_interval_gates_passed": true,
+    "native_interval_boundary_states_and_ledgers_bitwise_continuous": true,
+    "before_fuel_H_C_species_exactly_zero": true,
+    "full_coordinates_retained_after_activation": true,
+    "prescribed_fuel_source_pass": true,
+    "mocked_loading_schema_assertions": 394
+  },
+  "output_counts": {
+    "integration_points": 32296,
+    "display_points": 3979,
+    "interval_points_including_repeated_entries": 32320
+  },
+  "solver_counts": {
+    "accepted_steps": 32295,
+    "jacobian_evaluations": 433,
+    "mass_guard_rejections": 0,
+    "nonlinear_failures": 0,
+    "nonlinear_iterations": 94858,
+    "rejected_steps": 1198,
+    "rhs_evaluations": 98845
+  },
+  "native_conservation_gates": {
+    "accepted_history_mass_relative": {
+      "value": 2.8851861395487413e-12,
+      "limit": 2e-07,
+      "passed": true
+    },
+    "accepted_history_energy_relative": {
+      "value": 7.989047144570029e-08,
+      "limit": 2e-06,
+      "passed": true
+    },
+    "volume_identity_m3": {
+      "value": 2.948964857030223e-13,
+      "limit": 1e-10,
+      "passed": true
+    },
+    "maximum_element_balance_score": {
+      "value": 2.8097584670616043e-08,
+      "limit": 2e-07,
+      "passed": true
+    },
+    "maximum_element_quadrature_score": {
+      "value": 9.739778847245025e-08,
+      "limit": 2e-07,
+      "passed": true
+    },
+    "element_score_definition": "2e-7 * abs(error_e)/(2e-7*reference_inventory_e + absolute_budget_e)",
+    "element_absolute_budget_kmol": "sum_k(abs(A_e,k)/MW_k * atol_mass_k), with the minimum applied component atols in the interval",
+    "maximum_mass_reference_to_current_mass": {
+      "value": 0.5116449246432796,
+      "maximum": 1,
+      "passed": true
+    },
+    "minimum_mass_fraction": {
+      "value": -8.845018816547907e-16,
+      "minimum": -1e-13,
+      "passed": true
+    },
+    "maximum_output_interval_s": {
+      "value": 5.555555555555869e-05,
+      "maximum": 5.555555555561112e-05,
+      "passed": true
+    },
+    "maximum_output_temperature_change_K": {
+      "value": 19.99849323067815,
+      "maximum": 20.00000001,
+      "passed": true
+    }
+  },
+  "native_quadrature_gates": {
+    "relative_changes": [
+      1.8111357968919606e-09,
+      2.843245061612265e-08,
+      4.907355743988262e-09,
+      2.497491657926787e-09
+    ],
+    "relative_limit": 0.0001,
+    "efficiency_relative_change": 3.0243586524036914e-08,
+    "CO_relative_change": 2.4098641970837775e-09,
+    "work_quadrature_to_ledger": {
+      "value": 2.844398050427799e-10,
+      "limit": 0.0001,
+      "passed": true
+    },
+    "passed": true
+  },
+  "independent_reference_convergence": {
+    "passed": true,
+    "relative_changes": [
+      3.220921154234446e-07,
+      7.933847152585827e-07,
+      3.1335872983095925e-06,
+      1.8635295495617044e-06
+    ],
+    "relative_limit": 0.0001,
+    "efficiency_relative_change": 4.712924481786729e-07,
+    "CO_relative_change": 1.2700553819744442e-06,
+    "checked_before_integral_comparison": true
+  },
+  "independent_comparison": {
+    "correctness_pass": true,
+    "trajectory_errors": {
+      "temperature_K": 0.0183827098007896,
+      "pressure_relative": 8.982183453909443e-06,
+      "volume_m3": 2.683911036124864e-13,
+      "mass_relative": 7.8379218670932e-09,
+      "mass_fraction": 3.0629036252144415e-06,
+      "entropy_J_per_kg_K": 0.0098583874923861
+    },
+    "trajectory_limits": {
+      "temperature_K": 0.5,
+      "pressure_relative": 0.0002,
+      "volume_m3": 2e-10,
+      "mass_relative": 5e-05,
+      "mass_fraction": 0.0001,
+      "entropy_J_per_kg_K": 0.5
+    },
+    "rate_peak_scaled_errors": {
+      "mdot_in": 6.47178372221242e-10,
+      "mdot_out": 1.558304717140254e-09,
+      "mdot_fuel": 9.035018104045861e-16,
+      "work_rate": 2.0731062364794e-06,
+      "heat_release_rate": 3.385007166879706e-05
+    },
+    "rate_limits": {
+      "mdot_in": 0.002,
+      "mdot_out": 0.002,
+      "mdot_fuel": 1e-13,
+      "work_rate": 0.002,
+      "heat_release_rate": 0.005
+    },
+    "integral_relative_errors": {
+      "heat_J": 1.0707236930418418e-07,
+      "work_J": 2.6024530952462044e-07,
+      "efficiency": 1.5317295654071472e-07,
+      "CO_ppm": 4.336279622041417e-07
+    },
+    "integral_limits": {
+      "heat_J": 0.0001,
+      "work_J": 1e-05,
+      "efficiency": 0.0001,
+      "CO_ppm": 0.0001
+    }
+  },
+  "rate_normalization": "maximum reference magnitude over the complete source history, excluding points within 1e-11 s of switching events",
+  "native_integrals": {
+    "CO_ppm": 8.79764226775645,
+    "efficiency": 0.532978705021122,
+    "heat_J": 5561.435531324967,
+    "work_J": 2964.1267075440364
+  },
+  "reference_integrals": {
+    "heat_J": 5561.43612680111,
+    "work_J": 2964.1274789443096,
+    "efficiency": 0.5329787866590585,
+    "CO_ppm": 8.797646082661792
+  },
+  "limitations": [
+    "Correctness evidence is for the full pinned ideal-gas n-dodecane engine on Apple M4 only.",
+    "No performance qualification is established by this record.",
+    "The adapter requires caller-owned QNDF dependencies and the source topology; arbitrary fuels or reactor networks are not covered.",
+    "Signed mass-action eligibility and the exact pre-fuel invariant-subspace restriction remain unchanged.",
+    "The existing caller Project has six direct dependencies; it was reused without resolving or installing packages."
+  ],
+  "reproduction": {
+    "commands": [
+      "python validation/ic_engine_qndf_case.py prepare --source-mechanism CANTERA/data/nDodecane_Reitz.yaml --output engine-reference",
+      "julia --project=CALLER_ENV validation/ic_engine_qndf_case.jl engine-reference/dodecane_IG.yaml engine-reference/native.npz",
+      "python validation/ic_engine_qndf_case.py compare --native engine-reference/native.npz --native-mechanism engine-reference/dodecane_IG.yaml --source-example CANTERA/samples/python/reactors/ic_engine.py --source-mechanism CANTERA/data/nDodecane_Reitz.yaml --output engine-reference/comparison.json"
+    ],
+    "prerequisites": "Use the pinned Cantera source/runtime and an existing Julia caller environment containing Arrhenius, ForwardDiff, OrdinaryDiffEqBDF and SciMLBase; set numerical thread counts to one."
+  }
+}

@@ -1,0 +1,505 @@
+{
+  "case": "onedim/ion_burner_flame",
+  "calculation_validated": true,
+  "performance_status": "not_validated",
+  "scope": "Complete fresh burner construction and frozen-diffusion/enabled-field sequence with native conservative balances. All temperature, raw species mass fractions, mole fractions, electric field, velocity, density and heat-release profiles validated. Mechanisms reused; each repetition starts from a fresh physical state and solver.",
+  "cantera_version": "4.0.0a2",
+  "cantera_commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+  "source_example_sha256": "69f4d02bc8482f51c439a879fda59a947ba652a3735cdc4315b3f81d7f47481b",
+  "mechanism_sha256": "1409cc65488ea885118257c65d0a0b72fbcf5968f7b4a0572f637f9bdec9a66a",
+  "native_commit": "ced411470f454082d4a75faaaec2c5e05271d6e3",
+  "native_helper": "example/flames/source_ion_flame_sequence.jl",
+  "native_helper_sha256": "cb852e1fbd3981dbf52eeb747d3b12bd083046625d9a16a87e037ad1fc5b8134",
+  "native_source_sha256": {
+    "src/Arrhenius.jl": "66955aeaae9949841416b45b99be7430e27591c9c57c406f58d3b03b48a0d4b6",
+    "src/BlowersMasel.jl": "984f41457a3773bd5344d598c4c13dea39b44f163248eac3410bc4606c35b4e1",
+    "src/CatalyticFlames.jl": "556a56ffaba0efab9cfee3a8bf9446d9e878bf645ce358177476ae866c161ef1",
+    "src/CondensedEquilibrium.jl": "cc87745498cbf3a39cf31f9ff02039da3ee82fc5681fb9fd3965b53011617b6f",
+    "src/Constants.jl": "bfb9adcaca09a62fd066c192be0ef6b78d5c9ff3ba14dd0d15fa22f1a63b2f85",
+    "src/CounterflowFlames.jl": "2968bd0aa9148b1594adb913728289340fbb2afccf31b425c561597021a9e904",
+    "src/CoverageDependentThermo.jl": "a85d5a7b350d1027a1df8bb5fd3083696c892f2699a109e6ebd4b0d8cc0072d1",
+    "src/CriticalProperties.jl": "2e35232ae55571b659c6e0f9fa841a6687afb27cf8a5c71ad158d7b70ef65787",
+    "src/DataStructure.jl": "73f89edb49e0c640e316333e3d1750a31ef941041cd75154f2674790c71954c0",
+    "src/DustyGasTransport.jl": "038c18a8a2f8896fe8df1b89a64f55c77e040c09d7490a7744615c5059caa702",
+    "src/Equilibrium.jl": "0583534a1cebf593abf256ab6b378ee3b3ea59cf091a98bbe2d1df56b88ad09e",
+    "src/FlameDerivatives.jl": "f99160db20ef5ef46d66dd26bed53a62dd6ab8529602d35717169cce9deffb68",
+    "src/FlameIO.jl": "c1a31d6aa550294ac6c2dc4b72f3a83a444314deb996141e939f3e235f94ff5b",
+    "src/Flames.jl": "fd91887e033feedca9158aed7d620c585e55c738d19cb5f28abbdf1dd86a26a8",
+    "src/IdealGasMixing.jl": "b20393e4b2b585b4d6b425f9a234aa969ed3d19b006a0d43a6f2743668af9059",
+    "src/IdealGasStates.jl": "ff25fb32c0b3d0236e4056b7425e10009ed5ff3f624f6e6f7112e4b93cb6d793",
+    "src/IonConservativeFlames.jl": "b1e629f2361be4b0bc047f016a5eed828b3b221ad94c7d0bf061d34c07243b4c",
+    "src/IonFlameProperties.jl": "34c31366408bf6db630768f23e21ffa8a22892a99c55d5d034f7ec00a5b9ed63",
+    "src/IonFlameResidual.jl": "26d7049290a3b3e8f7a3a1c4e4c75bc5ff76bbf3a068302b638b4791b4017e1e",
+    "src/IonTransport.jl": "09c7e3e50d874672dba9090eeb879081330225f213c4b00fb22a4303e7dceacf",
+    "src/IonizedFlames.jl": "52cefd824a798ef52f412b93116c81352ac62b276348a816a08ecf1a56dbe5f8",
+    "src/Kinetics.jl": "93429db6a18ceb3ed06677368dccc06b218795a0223a1d98d7e0536cafcb3561",
+    "src/Magic.jl": "2668705b59a8c165e3ef83e7b2819e38e2621e556bb4dcd52ab9da5071547d05",
+    "src/MovingWallReactors.jl": "797eef9d601f6267c1c86230ca56f4b52a0cf0167b447ca8d5ebb3964f4e8042",
+    "src/MulticomponentTransport.jl": "be6c79094a461cacd89d4b32d071981d97dac155320e39773055476ff46a6f66",
+    "src/PlasmaEEDF.jl": "eb97e918a78001462e3ce77011dd184d216c29af4f3e8a5c27cab7affc416895",
+    "src/PlasmaEEDFIO.jl": "3c330ce787bbd60e91a1ac9646603400260693b489013d389d078729423d6975",
+    "src/PlasmaEEDFTypes.jl": "4de3339a4b3c200de4b93ce7ecfdb06f491022d837c7024f0b4a8b1e69f771a8",
+    "src/PlasmaEnergyReactor.jl": "08f3b01c2930779bf3b7d58d93ea2ea0b9f2a48e17662936c20596f37b3c1fbd",
+    "src/PlasmaIO.jl": "b1677e34adb4755050178ac289b0fb22c1c73feb0554731a1b412f9341ba458b",
+    "src/PlasmaKinetics.jl": "68a5fd1a48064112e03cdc279bf1a3f8a5fb8d3ed8bf80c4a9fcd230edf3efe5",
+    "src/PlasmaRateIO.jl": "4847d5647fcc02fca0bb06237cbd99eb3e8a5ddc641844de59051f24bfb5cf9f",
+    "src/PlasmaThermochemistry.jl": "0f55d45ea941eae4ebef35a5dd1886bfc17d40d4bf300c496e322a6ccef10830",
+    "src/Precision.jl": "f4bf7b2306a132cff9a1666bc2bf91f9966082c54de98cd20966902f146a13f8",
+    "src/PremixedCounterflowFlames.jl": "6fa806b11f9e1b3fa0093a4899cfd73c026e7ec1178e0d94e1a513e8746f6a22",
+    "src/PureWater.jl": "0a7c0cac82ecd2a4ec03ec39244a3bb3ea8f9c24dd17515f411801a481fccbac",
+    "src/ReactorNetworks.jl": "2280b2d488e7951666211689faaad6a32bfe1cf49c1934527f9eb88d926651a3",
+    "src/Reactors.jl": "fbf200fb0d9437c351f9765304f33e3f896b342adb962f16b6e2cae3691a4452",
+    "src/RealGasReactors.jl": "4eff53bd105b96d5fae54b104d1fc7a52c07013dce5b1b007de8dcfe5593be0e",
+    "src/RealGasThermo.jl": "f6d766ef9309436d20865b0935098d5a4639250a0d86e9327b2e640c7dc9e1c4",
+    "src/SignedEquilibrium.jl": "f370f8741bbb95aed2432fbc102d6c978e999524265cd49ee457e5f9702aa4c0",
+    "src/Solution.jl": "72f250fbe5613adc9a7b57ef90caf2cdf60e4279b09b8da095fd84735b2c5c98",
+    "src/SurfaceFlowReactors.jl": "ea0c99c30548f8bd6c88d7d3ee11bb0dabaa82298afbdba1f20cdd28afa485f9",
+    "src/SurfaceKinetics.jl": "5e09d9431acafaefac61620793d978a106636a41850f262f4c6c5ca620f1e45d",
+    "src/Thermo/IdealGasThermo.jl": "da7b665352be8eef480c7e4af4ee0056a48aeb3971c711e58f0eec6e44383df2",
+    "src/Thermo.jl": "c62484dab57278889893e23484e94d4e97dd40ea9afd3c13d8e78a67433e31bd",
+    "src/Transport.jl": "9ac83a8621e29d0915c7b3516517ee920e3c6c3b523674dcf7656f621c093246",
+    "src/_Arrhenius_dev.jl": "d1dc25ca8db181fc3c9210e62fd6f1f96de0cea1311f7cf7d0764680cead3c68",
+    "src/_transport_test.jl": "c05ea401d9a45a591f4158c01a267d2719c7926003645551a1a3245a52c8bd51"
+  },
+  "inputs": {
+    "temperature_K": 600.0,
+    "pressure_Pa": 101325.0,
+    "composition": "CH4:1,O2:2,N2:7.52",
+    "width_m": 0.05,
+    "burner_mass_flux": "0.15 m/s times inlet density",
+    "transport": "ionized-gas",
+    "refine_criteria": {
+      "ratio": 3.0,
+      "slope": 0.05,
+      "curve": 0.1
+    }
+  },
+  "accuracy": {
+    "passed": true,
+    "cases": {
+      "burner-frozen": {
+        "passed": true,
+        "gates": {
+          "T": true,
+          "Y": true,
+          "X": true,
+          "E": true,
+          "velocity": true,
+          "rho": true,
+          "qdot": true,
+          "elements": true,
+          "normalization": true,
+          "continuity": true,
+          "gauss": true,
+          "finite": true,
+          "positive_density": true,
+          "rho_eos": true,
+          "reference_uncertainty": true
+        },
+        "profile_errors": {
+          "T": 0.00046077784468421005,
+          "Y": 0.016238013798287397,
+          "X": 0.016347928986816827,
+          "E": 0.0,
+          "velocity": 0.0003983862195481441,
+          "rho": 0.00023548468528148924,
+          "qdot": 0.000681812755187043
+        },
+        "reference_extrapolation_change": {
+          "T": 0.000187759140918024,
+          "Y": 0.006357473225049244,
+          "X": 0.006402559294612817,
+          "E": 0.0,
+          "velocity": 0.00016869403117015982,
+          "rho": 0.00014430002266987112,
+          "qdot": 0.0008964333466443447
+        },
+        "elements": {
+          "O": {
+            "inlet": 0.22014123768662783,
+            "outlet": 0.22014123760504867,
+            "abs_error": 8.157916009388089e-11,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.013869764834559713,
+            "outlet": 0.013869764829100892,
+            "abs_error": 5.458820895309913e-12,
+            "pass": true
+          },
+          "C": {
+            "inlet": 0.04131690114779184,
+            "outlet": 0.04131690112488089,
+            "abs_error": 2.2910943975329445e-11,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.7246720963310207,
+            "outlet": 0.7246720964407526,
+            "abs_error": 1.0973189024099383e-10,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.0,
+            "outlet": -9.593213194610424e-117,
+            "abs_error": 9.593213194610424e-117,
+            "pass": true
+          },
+          "E": {
+            "inlet": 0.0,
+            "outlet": -1.6481240802119288e-22,
+            "abs_error": 1.6481240802119288e-22,
+            "pass": true
+          }
+        },
+        "speed_error": 2.26644440813215e-06,
+        "speed_reference_uncertainty": 6.976599775838415e-07,
+        "gauss_scaled_defect": 0.0,
+        "continuity_relative_error": 1.1448125212173964e-12,
+        "native_points": 164,
+        "reference_points": [
+          169,
+          337,
+          673
+        ]
+      },
+      "burner-field": {
+        "passed": true,
+        "gates": {
+          "T": true,
+          "Y": true,
+          "X": true,
+          "E": true,
+          "velocity": true,
+          "rho": true,
+          "qdot": true,
+          "elements": true,
+          "normalization": true,
+          "continuity": true,
+          "gauss": true,
+          "finite": true,
+          "positive_density": true,
+          "rho_eos": true,
+          "reference_uncertainty": true
+        },
+        "profile_errors": {
+          "T": 0.0004607907041761039,
+          "Y": 0.016238120094392815,
+          "X": 0.016348040124246215,
+          "E": 0.03046870830468638,
+          "velocity": 0.0003984184155646819,
+          "rho": 0.00023552627705821286,
+          "qdot": 0.0006817268454357266
+        },
+        "reference_extrapolation_change": {
+          "T": 0.00018775038443957995,
+          "Y": 0.006357398814163807,
+          "X": 0.006402481174983829,
+          "E": 0.005272415840118226,
+          "velocity": 0.00016866838823822067,
+          "rho": 0.00014426122576029186,
+          "qdot": 0.0008965997096737771
+        },
+        "elements": {
+          "O": {
+            "inlet": 0.22014123768662783,
+            "outlet": 0.22014123776912564,
+            "abs_error": 8.249781413560697e-11,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.013869764834559713,
+            "outlet": 0.013869764850177655,
+            "abs_error": 1.5617942702994547e-11,
+            "pass": true
+          },
+          "C": {
+            "inlet": 0.04131690114779184,
+            "outlet": 0.041316901147754805,
+            "abs_error": 3.703287676515288e-14,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.7246720963310207,
+            "outlet": 0.7246720962329416,
+            "abs_error": 9.807910039683065e-11,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.0,
+            "outlet": 2.0973856957205875e-55,
+            "abs_error": 2.0973856957205875e-55,
+            "pass": true
+          },
+          "E": {
+            "inlet": 0.0,
+            "outlet": 2.2512414730981573e-19,
+            "abs_error": 2.2512414730981573e-19,
+            "pass": true
+          }
+        },
+        "speed_error": 2.278212661020787e-06,
+        "speed_reference_uncertainty": 6.877991479786695e-07,
+        "gauss_scaled_defect": 7.673066170915896e-15,
+        "continuity_relative_error": 1.9780777904404147e-15,
+        "native_points": 164,
+        "reference_points": [
+          169,
+          337,
+          673
+        ]
+      }
+    },
+    "limits": {
+      "T": 0.01,
+      "Y": 0.05,
+      "X": 0.05,
+      "E": 0.05,
+      "velocity": 0.01,
+      "rho": 0.01,
+      "qdot": 0.05
+    },
+    "element_absolute_limit": 1e-06,
+    "charged_profile_floor": "20*source state atol; 1e-20 electron /1e-16 ion",
+    "reference": "first-order extrapolation of independently solved whole-grid bisections; previous extrapolation bounds uncertainty",
+    "reference_uncertainty_fraction": 0.2
+  },
+  "repeat_accuracy": {
+    "passed": true,
+    "cases": {
+      "burner-frozen": {
+        "passed": true,
+        "gates": {
+          "T": true,
+          "Y": true,
+          "X": true,
+          "E": true,
+          "velocity": true,
+          "rho": true,
+          "qdot": true,
+          "elements": true,
+          "normalization": true,
+          "continuity": true,
+          "gauss": true,
+          "finite": true,
+          "positive_density": true,
+          "rho_eos": true,
+          "reference_uncertainty": true
+        },
+        "profile_errors": {
+          "T": 0.00046077784468421005,
+          "Y": 0.016238013798287397,
+          "X": 0.016347928986816827,
+          "E": 0.0,
+          "velocity": 0.0003983862195481441,
+          "rho": 0.00023548468528148924,
+          "qdot": 0.000681812755187043
+        },
+        "reference_extrapolation_change": {
+          "T": 0.000187759140918024,
+          "Y": 0.006357473225049244,
+          "X": 0.006402559294612817,
+          "E": 0.0,
+          "velocity": 0.00016869403117015982,
+          "rho": 0.00014430002266987112,
+          "qdot": 0.0008964333466443447
+        },
+        "elements": {
+          "O": {
+            "inlet": 0.22014123768662783,
+            "outlet": 0.22014123760504867,
+            "abs_error": 8.157916009388089e-11,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.013869764834559713,
+            "outlet": 0.013869764829100892,
+            "abs_error": 5.458820895309913e-12,
+            "pass": true
+          },
+          "C": {
+            "inlet": 0.04131690114779184,
+            "outlet": 0.04131690112488089,
+            "abs_error": 2.2910943975329445e-11,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.7246720963310207,
+            "outlet": 0.7246720964407526,
+            "abs_error": 1.0973189024099383e-10,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.0,
+            "outlet": -9.593213194610424e-117,
+            "abs_error": 9.593213194610424e-117,
+            "pass": true
+          },
+          "E": {
+            "inlet": 0.0,
+            "outlet": -1.6481240802119288e-22,
+            "abs_error": 1.6481240802119288e-22,
+            "pass": true
+          }
+        },
+        "speed_error": 2.26644440813215e-06,
+        "speed_reference_uncertainty": 6.976599775838415e-07,
+        "gauss_scaled_defect": 0.0,
+        "continuity_relative_error": 1.1448125212173964e-12,
+        "native_points": 164,
+        "reference_points": [
+          169,
+          337,
+          673
+        ]
+      },
+      "burner-field": {
+        "passed": true,
+        "gates": {
+          "T": true,
+          "Y": true,
+          "X": true,
+          "E": true,
+          "velocity": true,
+          "rho": true,
+          "qdot": true,
+          "elements": true,
+          "normalization": true,
+          "continuity": true,
+          "gauss": true,
+          "finite": true,
+          "positive_density": true,
+          "rho_eos": true,
+          "reference_uncertainty": true
+        },
+        "profile_errors": {
+          "T": 0.0004607907041761039,
+          "Y": 0.016238120094392815,
+          "X": 0.016348040124246215,
+          "E": 0.03046870830468638,
+          "velocity": 0.0003984184155646819,
+          "rho": 0.00023552627705821286,
+          "qdot": 0.0006817268454357266
+        },
+        "reference_extrapolation_change": {
+          "T": 0.00018775038443957995,
+          "Y": 0.006357398814163807,
+          "X": 0.006402481174983829,
+          "E": 0.005272415840118226,
+          "velocity": 0.00016866838823822067,
+          "rho": 0.00014426122576029186,
+          "qdot": 0.0008965997096737771
+        },
+        "elements": {
+          "O": {
+            "inlet": 0.22014123768662783,
+            "outlet": 0.22014123776912564,
+            "abs_error": 8.249781413560697e-11,
+            "pass": true
+          },
+          "H": {
+            "inlet": 0.013869764834559713,
+            "outlet": 0.013869764850177655,
+            "abs_error": 1.5617942702994547e-11,
+            "pass": true
+          },
+          "C": {
+            "inlet": 0.04131690114779184,
+            "outlet": 0.041316901147754805,
+            "abs_error": 3.703287676515288e-14,
+            "pass": true
+          },
+          "N": {
+            "inlet": 0.7246720963310207,
+            "outlet": 0.7246720962329416,
+            "abs_error": 9.807910039683065e-11,
+            "pass": true
+          },
+          "Ar": {
+            "inlet": 0.0,
+            "outlet": 2.0973856957205875e-55,
+            "abs_error": 2.0973856957205875e-55,
+            "pass": true
+          },
+          "E": {
+            "inlet": 0.0,
+            "outlet": 2.2512414730981573e-19,
+            "abs_error": 2.2512414730981573e-19,
+            "pass": true
+          }
+        },
+        "speed_error": 2.278212661020787e-06,
+        "speed_reference_uncertainty": 6.877991479786695e-07,
+        "gauss_scaled_defect": 7.673066170915896e-15,
+        "continuity_relative_error": 1.9780777904404147e-15,
+        "native_points": 164,
+        "reference_points": [
+          169,
+          337,
+          673
+        ]
+      }
+    },
+    "limits": {
+      "T": 0.01,
+      "Y": 0.05,
+      "X": 0.05,
+      "E": 0.05,
+      "velocity": 0.01,
+      "rho": 0.01,
+      "qdot": 0.05
+    },
+    "element_absolute_limit": 1e-06,
+    "charged_profile_floor": "20*source state atol; 1e-20 electron /1e-16 ion",
+    "reference": "first-order extrapolation of independently solved whole-grid bisections; previous extrapolation bounds uncertainty",
+    "reference_uncertainty_fraction": 0.2
+  },
+  "replay": {
+    "complete_calculations_per_runtime": 2,
+    "native_stages_checked": 4,
+    "cantera_stages_checked": 4,
+    "native_max_absolute_difference": 0.0,
+    "cantera_max_absolute_difference": 0.0,
+    "relative_tolerance": 1e-12,
+    "absolute_tolerance": 1e-14,
+    "source_profile_reconstruction_passed": true,
+    "source_reconstruction_fields": [
+      "E",
+      "T",
+      "X",
+      "Y",
+      "grid",
+      "qdot",
+      "rho",
+      "velocity"
+    ]
+  },
+  "references": {
+    "levels": [
+      0,
+      1,
+      2
+    ],
+    "points": [
+      169,
+      337,
+      673
+    ],
+    "refinement": "Independent whole-grid bisections and first-order extrapolation; preceding extrapolation bounds reference uncertainty.",
+    "sha256": {
+      "burner-field-0.npz": "77e5054ee5579b8b80ec0735099771201ba84c4c3cb509e4de77640859088ec8",
+      "burner-field-1.npz": "2e7279d9b46cd545b86f53e88d253644c55551373efc238dcfddc7050238850a",
+      "burner-field-2.npz": "ba6fa11883dbfc560f3b6d28d3eaa71eb6b24b1b117e2a3f66c2af903f9a8ba1",
+      "burner-frozen-0.npz": "c18253520dc68424421a91c6689b9987769212c9521b37c5ba3044476a91f53d",
+      "burner-frozen-1.npz": "c49e6443bcfc20e1091d27878004c0657a1966413922d3889bce0221377aac08",
+      "burner-frozen-2.npz": "41b790d260e196df3309b481b131ce1e66906aa54e828bd6f6a9c1e077457c60"
+    }
+  },
+  "local_validation": {
+    "core_assertions": 3129,
+    "core_testsets": 85,
+    "additional_independent_checks": 973,
+    "source_and_inputs_unchanged": true
+  },
+  "timing_qualification": "Pending formal repeated batches and noise gates; this report makes no speed claim."
+}

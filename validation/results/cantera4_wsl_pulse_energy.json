@@ -1,0 +1,1432 @@
+{
+  "schema_version": 1,
+  "scope": "Native closed constant-pressure energy-plasma RHS at six independently prescribed methane-pulse states; no full native trajectory or speed qualification",
+  "passed": true,
+  "cantera_version": "4.0.0a2",
+  "cantera_source_commit": "726522be4e2a13454d8415b7ef799d621f665cf3",
+  "julia_version": "1.12.7",
+  "native_source_commit": "cdd581d7d685fe879f6ff5c5ca82f0ab0383ac2c",
+  "baseline_commit": "393847d4b603ad92708e0bdde64eeca48fa9d8fa",
+  "source_hashes": {
+    "src/Arrhenius.jl": "324de8b7bf4d482365a996d449f04a9e53ae1921028bc4e65154e206a0e8f877",
+    "src/PlasmaThermochemistry.jl": "0f55d45ea941eae4ebef35a5dd1886bfc17d40d4bf300c496e322a6ccef10830",
+    "src/PlasmaEnergyReactor.jl": "e84c953601934665fd6cf248de806d460920b236ae17d5e5bb43829c89633596",
+    "src/PlasmaEEDF.jl": "eb97e918a78001462e3ce77011dd184d216c29af4f3e8a5c27cab7affc416895",
+    "test/runtests.jl": "9b03119f62487cd66006dc189e535d8765489340d60c8c04698a8b7b265f74d0",
+    "test/plasma_energy.jl": "fdf845dd42815149a7b0efe67db3a08ffbc1f1da3db34c86c30f4694acfc18c8",
+    "example/reactors/ode_solver.jl": "3aa38aff6e50e06b92f3a52cd1ffcca22c1ce6047143056e27b644f07c105ed2"
+  },
+  "counts": {
+    "species": 71,
+    "reactions": 440,
+    "state_variables": 73,
+    "selected_states": 6
+  },
+  "state_layout": [
+    "mass_kg",
+    "total_enthalpy_J",
+    "mass_fractions_in_mechanism_order"
+  ],
+  "reference": {
+    "settings": {
+      "rtol": 1e-11,
+      "atol": 1e-23,
+      "max_steps": 20000.0,
+      "max_time_step": 0.0,
+      "actual_default_volume": 1.0
+    },
+    "output_count": 901,
+    "chunks": 91,
+    "convergence_checks": [
+      {
+        "name": "both-complete-source-contracts",
+        "passed": true
+      },
+      {
+        "name": "exact-times",
+        "passed": true
+      },
+      {
+        "name": "species-metadata",
+        "passed": true
+      },
+      {
+        "name": "effective-tolerances",
+        "passed": true
+      },
+      {
+        "name": "shapes",
+        "passed": true
+      },
+      {
+        "name": "temperature-convergence",
+        "passed": true,
+        "max_abs_error": 2.1077539713587612e-10,
+        "max_gate_ratio": 2.6346919462817027e-08
+      },
+      {
+        "name": "X/H2",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.3039236621687445e-21,
+        "max_gate_ratio": 1.3038583901635137e-07,
+        "peak_reference": 5.006065514717029e-16
+      },
+      {
+        "name": "X/H",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 1.630281714372072e-15,
+        "max_gate_ratio": 0.001321019579850887,
+        "peak_reference": 1.224109125930481e-09
+      },
+      {
+        "name": "X/O",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 6.0545836231153206e-15,
+        "max_gate_ratio": 0.001329044191516951,
+        "peak_reference": 4.545592403744461e-09
+      },
+      {
+        "name": "X/O2",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 8.298917109073045e-15,
+        "max_gate_ratio": 4.367851185227292e-11,
+        "peak_reference": 0.18999999999809997
+      },
+      {
+        "name": "X/OH",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 4.4168247307199245e-21,
+        "max_gate_ratio": 4.415412193355161e-07,
+        "peak_reference": 3.1991064546344674e-15
+      },
+      {
+        "name": "X/H2O",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 4.6023095279539115e-24,
+        "max_gate_ratio": 4.6023083071717153e-10,
+        "peak_reference": 2.65254327735573e-18
+      },
+      {
+        "name": "X/HO2",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 5.845703656679087e-16,
+        "max_gate_ratio": 0.001303033452228824,
+        "peak_reference": 4.386226847576382e-10
+      },
+      {
+        "name": "X/H2O2",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 9.80052327253867e-25,
+        "max_gate_ratio": 9.800522909000013e-11,
+        "peak_reference": 3.70938019838493e-19
+      },
+      {
+        "name": "X/C",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.9734922492844568e-34,
+        "max_gate_ratio": 1.9734922492844567e-20,
+        "peak_reference": 5.766739915147083e-31
+      },
+      {
+        "name": "X/CH",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.9046824606716763e-31,
+        "max_gate_ratio": 2.9046824606716746e-17,
+        "peak_reference": 4.211188119852187e-23
+      },
+      {
+        "name": "X/CH2",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 8.141476991206182e-29,
+        "max_gate_ratio": 8.141476991007657e-15,
+        "peak_reference": 3.5263816827812534e-22
+      },
+      {
+        "name": "X/CH2(S)",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.9913957168325528e-29,
+        "max_gate_ratio": 1.9913957168310917e-15,
+        "peak_reference": 7.335765227690549e-24
+      },
+      {
+        "name": "X/CH3",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 1.6899482785480227e-15,
+        "max_gate_ratio": 0.0013214179510160008,
+        "peak_reference": 1.2689185522916964e-09
+      },
+      {
+        "name": "X/CH4",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.55351295663786e-15,
+        "max_gate_ratio": 2.6879084194477613e-11,
+        "peak_reference": 0.09499999999904998
+      },
+      {
+        "name": "X/CO",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 1.2616371626472289e-21,
+        "max_gate_ratio": 1.261577401717304e-07,
+        "peak_reference": 4.737000666268202e-16
+      },
+      {
+        "name": "X/CO2",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 6.336653631250266e-30,
+        "max_gate_ratio": 6.336653631207057e-16,
+        "peak_reference": 6.81894499623389e-23
+      },
+      {
+        "name": "X/HCO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 5.280861221990715e-30,
+        "max_gate_ratio": 5.280861221970119e-16,
+        "peak_reference": 7.791572807925716e-23
+      },
+      {
+        "name": "X/CH2O",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.8943415364751577e-21,
+        "max_gate_ratio": 1.8942068095042085e-07,
+        "peak_reference": 7.112579802443188e-16
+      },
+      {
+        "name": "X/CH2OH",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.932939148217773e-32,
+        "max_gate_ratio": 2.9329391482177707e-18,
+        "peak_reference": 8.431712212993718e-27
+      },
+      {
+        "name": "X/CH3O",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 7.80386989850076e-23,
+        "max_gate_ratio": 7.803846999104811e-09,
+        "peak_reference": 2.934372746014885e-17
+      },
+      {
+        "name": "X/CH3OH",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 8.752620360290357e-28,
+        "max_gate_ratio": 8.75262036000581e-14,
+        "peak_reference": 3.2510032677584647e-22
+      },
+      {
+        "name": "X/C2H",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.4190164912076346e-34,
+        "max_gate_ratio": 2.4190164912076345e-20,
+        "peak_reference": 2.0207377753540237e-34
+      },
+      {
+        "name": "X/C2H2",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 8.932484730177086e-35,
+        "max_gate_ratio": 8.932484730177087e-21,
+        "peak_reference": 9.388916084116482e-34
+      },
+      {
+        "name": "X/C2H3",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.4228434844847026e-37,
+        "max_gate_ratio": 1.4228434844847026e-23,
+        "peak_reference": 1.5074578353193563e-31
+      },
+      {
+        "name": "X/C2H4",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 8.51193562043421e-32,
+        "max_gate_ratio": 8.511935620397653e-18,
+        "peak_reference": 4.2950632479316805e-23
+      },
+      {
+        "name": "X/C2H5",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.5251848770484337e-30,
+        "max_gate_ratio": 2.5251848770481944e-16,
+        "peak_reference": 9.47915274317453e-25
+      },
+      {
+        "name": "X/C2H6",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.9291647741057185e-22,
+        "max_gate_ratio": 2.929132562420953e-08,
+        "peak_reference": 1.0997004771641744e-16
+      },
+      {
+        "name": "X/HCCO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.4392258745254825e-44,
+        "max_gate_ratio": 2.4392258745254824e-30,
+        "peak_reference": 5.077389811083471e-40
+      },
+      {
+        "name": "X/CH2CO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.1045682768718313e-42,
+        "max_gate_ratio": 1.1045682768718313e-28,
+        "peak_reference": 4.1735129330227997e-38
+      },
+      {
+        "name": "X/HCCOH",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 5.87064659594132e-36,
+        "max_gate_ratio": 5.87064659594132e-22,
+        "peak_reference": 5.87064659594132e-36
+      },
+      {
+        "name": "X/N",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 8.007914377621842e-39,
+        "max_gate_ratio": 8.007914377621842e-25,
+        "peak_reference": 2.003965558144505e-33
+      },
+      {
+        "name": "X/NH",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.3248972904769187e-31,
+        "max_gate_ratio": 2.3248972904768985e-17,
+        "peak_reference": 8.725131356771354e-26
+      },
+      {
+        "name": "X/NH2",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.60685580736776e-49,
+        "max_gate_ratio": 1.60685580736776e-35,
+        "peak_reference": 3.586744648963121e-48
+      },
+      {
+        "name": "X/NH3",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.4636160035216264e-35,
+        "max_gate_ratio": 1.4636160035216263e-21,
+        "peak_reference": 1.4636160035216264e-35
+      },
+      {
+        "name": "X/NNH",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.7803003804193982e-25,
+        "max_gate_ratio": 1.7803003570034036e-11,
+        "peak_reference": 1.3178081036076534e-19
+      },
+      {
+        "name": "X/NO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.331362192344391e-31,
+        "max_gate_ratio": 2.3313621923443706e-17,
+        "peak_reference": 8.749446037032036e-26
+      },
+      {
+        "name": "X/NO2",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 3.696860390705603e-39,
+        "max_gate_ratio": 3.6968603907056027e-25,
+        "peak_reference": 9.274549724943156e-34
+      },
+      {
+        "name": "X/N2O",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 6.510205700769405e-31,
+        "max_gate_ratio": 6.510205700769087e-17,
+        "peak_reference": 4.8893124015970885e-25
+      },
+      {
+        "name": "X/HNO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 8.336653769035364e-38,
+        "max_gate_ratio": 8.336653769035365e-24,
+        "peak_reference": 1.6532081284654412e-32
+      },
+      {
+        "name": "X/CN",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.7398677899490876e-59,
+        "max_gate_ratio": 1.7398677899490876e-45,
+        "peak_reference": 3.906437337593529e-56
+      },
+      {
+        "name": "X/HCN",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 3.543435451675424e-38,
+        "max_gate_ratio": 3.543435451675424e-24,
+        "peak_reference": 2.630374974612332e-32
+      },
+      {
+        "name": "X/H2CN",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 9.263858216581517e-46,
+        "max_gate_ratio": 9.263858216581517e-32,
+        "peak_reference": 2.0013674563575713e-40
+      },
+      {
+        "name": "X/HCNN",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.5123060391182868e-30,
+        "max_gate_ratio": 1.5123060391180598e-16,
+        "peak_reference": 5.3908758824142545e-24
+      },
+      {
+        "name": "X/HCNO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.6576540543895628e-52,
+        "max_gate_ratio": 1.657654054389563e-38,
+        "peak_reference": 5.789991325279648e-47
+      },
+      {
+        "name": "X/HOCN",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.1122167839255184e-34,
+        "max_gate_ratio": 1.1122167839255185e-20,
+        "peak_reference": 1.1289951472565679e-34
+      },
+      {
+        "name": "X/HNCO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.6771581502523912e-44,
+        "max_gate_ratio": 1.6771581502523913e-30,
+        "peak_reference": 1.5171975068857464e-42
+      },
+      {
+        "name": "X/NCO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.0677231732920937e-50,
+        "max_gate_ratio": 1.0677231732920936e-36,
+        "peak_reference": 3.9975934158037634e-45
+      },
+      {
+        "name": "X/N2",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.4432899320127035e-15,
+        "max_gate_ratio": 2.0185873185120023e-12,
+        "peak_reference": 0.7149999999928499
+      },
+      {
+        "name": "X/AR",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 4.526612298090539e-34,
+        "max_gate_ratio": 4.526612298090539e-20,
+        "peak_reference": 4.915096960530008e-34
+      },
+      {
+        "name": "X/C3H7",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 5.4528899010945674e-36,
+        "max_gate_ratio": 5.452889901094567e-22,
+        "peak_reference": 8.150318955387099e-36
+      },
+      {
+        "name": "X/C3H8",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.9887161221304387e-37,
+        "max_gate_ratio": 1.9887161221304387e-23,
+        "peak_reference": 1.4495225334596162e-32
+      },
+      {
+        "name": "X/CH2CHO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 3.517925781589729e-35,
+        "max_gate_ratio": 3.517925781589729e-21,
+        "peak_reference": 1.269377824427436e-31
+      },
+      {
+        "name": "X/CH3CHO",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.338835020585114e-36,
+        "max_gate_ratio": 2.3388350205851137e-22,
+        "peak_reference": 5.864663375052533e-31
+      },
+      {
+        "name": "X/e",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 3.120431058381407e-17,
+        "max_gate_ratio": 0.00156021550952325,
+        "peak_reference": 1.0000000601632728e-11
+      },
+      {
+        "name": "X/N2(v1)",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.1583096514350329e-19,
+        "max_gate_ratio": 2.123890165241742e-05,
+        "peak_reference": 1.6205869190685254e-13
+      },
+      {
+        "name": "X/N2(v2)",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.0038524338574773e-19,
+        "max_gate_ratio": 9.963424888817534e-06,
+        "peak_reference": 7.537513515209719e-14
+      },
+      {
+        "name": "X/N2(v3)",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 4.801726803666645e-20,
+        "max_gate_ratio": 4.784476762946895e-06,
+        "peak_reference": 3.605418434329603e-14
+      },
+      {
+        "name": "X/N2(v4)",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 2.5744794243874677e-20,
+        "max_gate_ratio": 2.569512368921361e-06,
+        "peak_reference": 1.9330731878095455e-14
+      },
+      {
+        "name": "X/N2(v5)",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.9198498901525655e-20,
+        "max_gate_ratio": 1.9170863370311807e-06,
+        "peak_reference": 1.4415381654977706e-14
+      },
+      {
+        "name": "X/N2(v6)",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 1.4883895157390418e-20,
+        "max_gate_ratio": 1.4867279903129397e-06,
+        "peak_reference": 1.1175719007968721e-14
+      },
+      {
+        "name": "X/N2(v7)",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 5.362011009797362e-21,
+        "max_gate_ratio": 5.359853069339318e-07,
+        "peak_reference": 4.0261186829695354e-15
+      },
+      {
+        "name": "X/N2(v8)",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 5.2370362817678265e-21,
+        "max_gate_ratio": 5.234977741846749e-07,
+        "peak_reference": 3.932280178810235e-15
+      },
+      {
+        "name": "X/N2(A)",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 6.540246380683986e-16,
+        "max_gate_ratio": 0.0013052311355587997,
+        "peak_reference": 4.910795561419055e-10
+      },
+      {
+        "name": "X/N2(B)",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 1.0862787444020925e-16,
+        "max_gate_ratio": 0.001186552111402453,
+        "peak_reference": 8.154918136028248e-11
+      },
+      {
+        "name": "X/N2(a')",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 1.0129384156633836e-16,
+        "max_gate_ratio": 0.0011770459886173356,
+        "peak_reference": 7.605767535500228e-11
+      },
+      {
+        "name": "X/N2(C)",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 6.41443667577299e-17,
+        "max_gate_ratio": 0.0011031057377840312,
+        "peak_reference": 4.814888324902199e-11
+      },
+      {
+        "name": "X/CH4+",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 6.241909342913425e-31,
+        "max_gate_ratio": 6.241909342913132e-17,
+        "peak_reference": 4.68680005852813e-25
+      },
+      {
+        "name": "X/O2+",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 4.79886039596611e-31,
+        "max_gate_ratio": 4.7988603959659374e-17,
+        "peak_reference": 3.60327230985706e-25
+      },
+      {
+        "name": "X/N2+",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 9.908698717838344e-31,
+        "max_gate_ratio": 9.908698717837607e-17,
+        "peak_reference": 7.440045892976441e-25
+      },
+      {
+        "name": "X/CO2+",
+        "passed": true,
+        "plotted": false,
+        "max_abs_error": 5.42986669848274e-54,
+        "max_gate_ratio": 5.42986669848274e-40,
+        "peak_reference": 4.0771204461481156e-48
+      },
+      {
+        "name": "X/H2O+",
+        "passed": true,
+        "plotted": true,
+        "max_abs_error": 1.032746249881261e-51,
+        "max_gate_ratio": 1.032746249881261e-37,
+        "peak_reference": 3.4053121208828094e-45
+      },
+      {
+        "name": "baseline/charge-inventory",
+        "passed": true,
+        "initial_kmol_E_per_kg": 3.618767871058958e-13,
+        "max_abs_drift": 1.1200845981001104e-18,
+        "max_relative_drift": 3.0952098559787994e-06,
+        "absolute_gate": 3.7187678710589574e-17,
+        "terminal_kmol_E_per_kg": 3.618763274462874e-13
+      },
+      {
+        "name": "reference/charge-inventory",
+        "passed": true,
+        "initial_kmol_E_per_kg": 3.618767871058958e-13,
+        "max_abs_drift": 2.1912665962528543e-20,
+        "max_relative_drift": 6.055283660987145e-08,
+        "absolute_gate": 3.7187678710589574e-17,
+        "terminal_kmol_E_per_kg": 3.6187680860804615e-13
+      }
+    ],
+    "time_endpoint_s": 9.00999999999986e-08
+  },
+  "native_prescribed_state_properties": {
+    "chunk-018": {
+      "Te": 0.0009999999999999998,
+      "volume": 1.0000000062561423,
+      "T": 300.00000187684236,
+      "P": 101325.00000000001,
+      "mass": 1.1225364367953647,
+      "h_mass": -254430.99255396548,
+      "E": 305505.88873395935,
+      "rho": 1.1225364297726173,
+      "mu": 0.5043086437250544
+    },
+    "chunk-025": {
+      "Te": 0.0009999999999999998,
+      "volume": 1.0000002629663938,
+      "T": 300.00007835378744,
+      "P": 101325.0,
+      "mass": 1.1225364367953652,
+      "h_mass": -254430.85854500977,
+      "E": 4647994.302811211,
+      "rho": 1.1225361416060842,
+      "mu": 0.04641640580698031
+    },
+    "initial": {
+      "Te": 0.0009999999999999998,
+      "volume": 0.9999999999999998,
+      "T": 300.0,
+      "P": 101325.00000000001,
+      "mass": 1.122536436795365,
+      "h_mass": -254430.99457593425,
+      "E": 5.8862981373786726e-08,
+      "rho": 1.1225364367953652,
+      "mu": 0.524940828779533
+    },
+    "chunk-045": {
+      "Te": 0.0009999999999999998,
+      "volume": 1.0000005084451842,
+      "T": 300.00015156764124,
+      "P": 101325.00000000003,
+      "mass": 1.122536436795365,
+      "h_mass": -254430.75670716653,
+      "E": 0.001038190307604408,
+      "rho": 1.1225358660474098,
+      "mu": 0.5249410930477687
+    },
+    "terminal": {
+      "Te": 0.0009999999999999998,
+      "volume": 1.0000005274090222,
+      "T": 300.00015729177636,
+      "P": 101325.00000000003,
+      "mass": 1.122536436795365,
+      "h_mass": -254430.75670716653,
+      "E": 3.698288846035419e-99,
+      "rho": 1.1225358447598326,
+      "mu": 0.5249411032915503
+    },
+    "chunk-015": {
+      "Te": 0.0009999999999999998,
+      "volume": 1.0000000000202325,
+      "T": 300.0000000060698,
+      "P": 101325.00000000003,
+      "mass": 1.122536436795365,
+      "h_mass": -254430.9945693952,
+      "E": 17968.77846232635,
+      "rho": 1.1225364367726534,
+      "mu": 0.5249408287805417
+    }
+  },
+  "acceptance_gates": {
+    "T": {
+      "atol": 1e-06,
+      "rtol": 1e-09
+    },
+    "rho": {
+      "atol": 1e-12,
+      "rtol": 1e-09
+    },
+    "P": {
+      "atol": 1e-08,
+      "rtol": 1e-10
+    },
+    "h_mass": {
+      "atol": 1e-06,
+      "rtol": 1e-10
+    },
+    "mass": {
+      "atol": 1e-12,
+      "rtol": 1e-10
+    },
+    "volume": {
+      "atol": 1e-12,
+      "rtol": 1e-09
+    },
+    "E": {
+      "atol": 1e-120,
+      "rtol": 1e-09
+    },
+    "mu": {
+      "atol": 1e-12,
+      "rtol": 1e-09
+    },
+    "X": {
+      "atol": 1e-18,
+      "rtol": 1e-10
+    },
+    "EEDF": {
+      "atol": 1e-12,
+      "rtol": 1e-09
+    },
+    "heating": {
+      "atol": 1e-20,
+      "rtol": 1e-09
+    },
+    "Te": "Absolute error <=8*eps(Float64)*0.001 K; identical stored value across all states.",
+    "species_RHS": "abs(delta) <= 1e-18 + 1e-7*abs(reference_dYdt) + 1e-11*(MW/rho)*gross; gross=sum(abs(net_stoichiometry)*abs(reference_ROP)).",
+    "Y": "Exact signed, unnormalized source mass fractions.",
+    "closed_mass": "Exact zero mass derivative."
+  },
+  "independent_checks": [
+    {
+      "name": "initial/T",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "initial/rho",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 1.9763008804446394e-07
+    },
+    {
+      "name": "initial/P",
+      "passed": true,
+      "max_abs_error": 1.4551915228366852e-11,
+      "max_gate_ratio": 1.434746386824437e-06
+    },
+    {
+      "name": "initial/h_mass",
+      "passed": true,
+      "max_abs_error": 2.9103830456733704e-11,
+      "max_gate_ratio": 1.1006209957878526e-06
+    },
+    {
+      "name": "initial/mass",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "initial/volume",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 2.218227821428884e-07
+    },
+    {
+      "name": "initial/E",
+      "passed": true,
+      "max_abs_error": 4.1028158382630173e-22,
+      "max_gate_ratio": 6.970112186825353e-06
+    },
+    {
+      "name": "initial/mu",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "initial/Te-roundtrip-and-stability",
+      "passed": true,
+      "value": 0.0009999999999999998,
+      "reference": 0.001,
+      "abs_error": 2.168404344971009e-19,
+      "arithmetic_bound": 1.7763568394002505e-18
+    },
+    {
+      "name": "initial/unprojected-Y",
+      "passed": true
+    },
+    {
+      "name": "initial/X",
+      "passed": true,
+      "max_abs_error": 1.1102230246251565e-16,
+      "max_gate_ratio": 2.921639384745976e-06
+    },
+    {
+      "name": "initial/EEDF",
+      "passed": true,
+      "max_abs_error": 6.162975822039155e-33,
+      "max_gate_ratio": 6.162975822038947e-21
+    },
+    {
+      "name": "initial/closed-mass",
+      "passed": true
+    },
+    {
+      "name": "initial/heating",
+      "passed": true,
+      "max_abs_error": 1.0111132208032988e-33,
+      "max_gate_ratio": 1.01111321359526e-13
+    },
+    {
+      "name": "initial/species-RHS",
+      "passed": true,
+      "max_gate_ratio": 4.9302688891603056e-14,
+      "failed_species": []
+    },
+    {
+      "name": "initial/finite-J",
+      "passed": true
+    },
+    {
+      "name": "initial/signed-zero-Joule",
+      "passed": true
+    },
+    {
+      "name": "chunk-015/T",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-015/rho",
+      "passed": true,
+      "max_abs_error": 4.440892098500626e-16,
+      "max_gate_ratio": 3.95260176096918e-07
+    },
+    {
+      "name": "chunk-015/P",
+      "passed": true,
+      "max_abs_error": 1.4551915228366852e-11,
+      "max_gate_ratio": 1.4347463868244368e-06
+    },
+    {
+      "name": "chunk-015/h_mass",
+      "passed": true,
+      "max_abs_error": 2.9103830456733704e-11,
+      "max_gate_ratio": 1.1006209958150699e-06
+    },
+    {
+      "name": "chunk-015/mass",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-015/volume",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 2.218227821384048e-07
+    },
+    {
+      "name": "chunk-015/E",
+      "passed": true,
+      "max_abs_error": 3.637978807091713e-11,
+      "max_gate_ratio": 2.0246110856779545e-06
+    },
+    {
+      "name": "chunk-015/mu",
+      "passed": true,
+      "max_abs_error": 1.1102230246251565e-16,
+      "max_gate_ratio": 2.11092762507019e-07
+    },
+    {
+      "name": "chunk-015/Te-roundtrip-and-stability",
+      "passed": true,
+      "value": 0.0009999999999999998,
+      "reference": 0.001,
+      "abs_error": 2.168404344971009e-19,
+      "arithmetic_bound": 1.7763568394002505e-18
+    },
+    {
+      "name": "chunk-015/unprojected-Y",
+      "passed": true
+    },
+    {
+      "name": "chunk-015/X",
+      "passed": true,
+      "max_abs_error": 2.039157646249539e-56,
+      "max_gate_ratio": 2.0391576462495387e-38
+    },
+    {
+      "name": "chunk-015/EEDF",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-015/closed-mass",
+      "passed": true
+    },
+    {
+      "name": "chunk-015/heating",
+      "passed": true,
+      "max_abs_error": 2.4556356947869062e-11,
+      "max_gate_ratio": 3.6965280014773835e-06
+    },
+    {
+      "name": "chunk-015/species-RHS",
+      "passed": true,
+      "max_gate_ratio": 6.26135914704706e-14,
+      "failed_species": []
+    },
+    {
+      "name": "chunk-015/finite-J",
+      "passed": true
+    },
+    {
+      "name": "chunk-015/signed-zero-Joule",
+      "passed": true
+    },
+    {
+      "name": "chunk-018/T",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-018/rho",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 1.976300892797655e-07
+    },
+    {
+      "name": "chunk-018/P",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-018/h_mass",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-018/mass",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-018/volume",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-018/E",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-018/mu",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 4.394237218824403e-07
+    },
+    {
+      "name": "chunk-018/Te-roundtrip-and-stability",
+      "passed": true,
+      "value": 0.0009999999999999998,
+      "reference": 0.001,
+      "abs_error": 2.168404344971009e-19,
+      "arithmetic_bound": 1.7763568394002505e-18
+    },
+    {
+      "name": "chunk-018/unprojected-Y",
+      "passed": true
+    },
+    {
+      "name": "chunk-018/X",
+      "passed": true,
+      "max_abs_error": 1.1102230246251565e-16,
+      "max_gate_ratio": 1.5527594532988556e-06
+    },
+    {
+      "name": "chunk-018/EEDF",
+      "passed": true,
+      "max_abs_error": 1.7763568394002505e-15,
+      "max_gate_ratio": 7.131523286137384e-06
+    },
+    {
+      "name": "chunk-018/closed-mass",
+      "passed": true
+    },
+    {
+      "name": "chunk-018/heating",
+      "passed": true,
+      "max_abs_error": 4.656612873077393e-10,
+      "max_gate_ratio": 2.5241319613612446e-07
+    },
+    {
+      "name": "chunk-018/species-RHS",
+      "passed": true,
+      "max_gate_ratio": 0.000374177014034436,
+      "failed_species": []
+    },
+    {
+      "name": "chunk-018/finite-J",
+      "passed": true
+    },
+    {
+      "name": "chunk-018/signed-zero-Joule",
+      "passed": true
+    },
+    {
+      "name": "chunk-025/T",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-025/rho",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-025/P",
+      "passed": true,
+      "max_abs_error": 1.4551915228366852e-11,
+      "max_gate_ratio": 1.4347463868244368e-06
+    },
+    {
+      "name": "chunk-025/h_mass",
+      "passed": true,
+      "max_abs_error": 8.731149137020111e-11,
+      "max_gate_ratio": 3.301864685937913e-06
+    },
+    {
+      "name": "chunk-025/mass",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-025/volume",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-025/E",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-025/mu",
+      "passed": true,
+      "max_abs_error": 9.132278266932303e-14,
+      "max_gate_ratio": 0.001925974377755452
+    },
+    {
+      "name": "chunk-025/Te-roundtrip-and-stability",
+      "passed": true,
+      "value": 0.0009999999999999998,
+      "reference": 0.001,
+      "abs_error": 2.168404344971009e-19,
+      "arithmetic_bound": 1.7763568394002505e-18
+    },
+    {
+      "name": "chunk-025/unprojected-Y",
+      "passed": true
+    },
+    {
+      "name": "chunk-025/X",
+      "passed": true,
+      "max_abs_error": 1.3877787807814457e-17,
+      "max_gate_ratio": 1.4608196282721558e-06
+    },
+    {
+      "name": "chunk-025/EEDF",
+      "passed": true,
+      "max_abs_error": 6.740441538255482e-13,
+      "max_gate_ratio": 0.0031156015455638363
+    },
+    {
+      "name": "chunk-025/closed-mass",
+      "passed": true
+    },
+    {
+      "name": "chunk-025/heating",
+      "passed": true,
+      "max_abs_error": 7.732957601547241e-05,
+      "max_gate_ratio": 0.0019675258710979103
+    },
+    {
+      "name": "chunk-025/species-RHS",
+      "passed": true,
+      "max_gate_ratio": 0.021920823370150968,
+      "failed_species": []
+    },
+    {
+      "name": "chunk-025/finite-J",
+      "passed": true
+    },
+    {
+      "name": "chunk-025/signed-zero-Joule",
+      "passed": true
+    },
+    {
+      "name": "chunk-045/T",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-045/rho",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 1.9763018843909494e-07
+    },
+    {
+      "name": "chunk-045/P",
+      "passed": true,
+      "max_abs_error": 1.4551915228366852e-11,
+      "max_gate_ratio": 1.4347463868244368e-06
+    },
+    {
+      "name": "chunk-045/h_mass",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-045/mass",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-045/volume",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 2.218226694708923e-07
+    },
+    {
+      "name": "chunk-045/E",
+      "passed": true,
+      "max_abs_error": 3.686287386450715e-18,
+      "max_gate_ratio": 3.5506856107688923e-06
+    },
+    {
+      "name": "chunk-045/mu",
+      "passed": true,
+      "max_abs_error": 1.1102230246251565e-16,
+      "max_gate_ratio": 2.110926564401995e-07
+    },
+    {
+      "name": "chunk-045/Te-roundtrip-and-stability",
+      "passed": true,
+      "value": 0.0009999999999999998,
+      "reference": 0.001,
+      "abs_error": 2.168404344971009e-19,
+      "arithmetic_bound": 1.7763568394002505e-18
+    },
+    {
+      "name": "chunk-045/unprojected-Y",
+      "passed": true
+    },
+    {
+      "name": "chunk-045/X",
+      "passed": true,
+      "max_abs_error": 5.551115123125783e-17,
+      "max_gate_ratio": 2.921639428998844e-06
+    },
+    {
+      "name": "chunk-045/EEDF",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "chunk-045/closed-mass",
+      "passed": true
+    },
+    {
+      "name": "chunk-045/heating",
+      "passed": true,
+      "max_abs_error": 1.6478988765704848e-25,
+      "max_gate_ratio": 5.121484825498459e-06
+    },
+    {
+      "name": "chunk-045/species-RHS",
+      "passed": true,
+      "max_gate_ratio": 6.301792484472424e-07,
+      "failed_species": []
+    },
+    {
+      "name": "chunk-045/finite-J",
+      "passed": true
+    },
+    {
+      "name": "chunk-045/signed-zero-Joule",
+      "passed": true
+    },
+    {
+      "name": "terminal/T",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "terminal/rho",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 1.9763019218358419e-07
+    },
+    {
+      "name": "terminal/P",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "terminal/h_mass",
+      "passed": true,
+      "max_abs_error": 5.820766091346741e-11,
+      "max_gate_ratio": 2.2012439717036097e-06
+    },
+    {
+      "name": "terminal/mass",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "terminal/volume",
+      "passed": true,
+      "max_abs_error": 2.220446049250313e-16,
+      "max_gate_ratio": 2.2182266526848773e-07
+    },
+    {
+      "name": "terminal/E",
+      "passed": true,
+      "max_abs_error": 1.05578380432331e-112,
+      "max_gate_ratio": 2.8547900076946653e-05
+    },
+    {
+      "name": "terminal/mu",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "terminal/Te-roundtrip-and-stability",
+      "passed": true,
+      "value": 0.0009999999999999998,
+      "reference": 0.001,
+      "abs_error": 2.168404344971009e-19,
+      "arithmetic_bound": 1.7763568394002505e-18
+    },
+    {
+      "name": "terminal/unprojected-Y",
+      "passed": true
+    },
+    {
+      "name": "terminal/X",
+      "passed": true,
+      "max_abs_error": 2.0679515313825692e-25,
+      "max_gate_ratio": 1.835093156265666e-07
+    },
+    {
+      "name": "terminal/EEDF",
+      "passed": true,
+      "max_abs_error": 0.0,
+      "max_gate_ratio": 0.0
+    },
+    {
+      "name": "terminal/closed-mass",
+      "passed": true
+    },
+    {
+      "name": "terminal/heating",
+      "passed": true,
+      "max_abs_error": 1.6090572024220985e-215,
+      "max_gate_ratio": 1.6090572024220985e-195
+    },
+    {
+      "name": "terminal/species-RHS",
+      "passed": true,
+      "max_gate_ratio": 2.366356396650071e-07,
+      "failed_species": []
+    },
+    {
+      "name": "terminal/finite-J",
+      "passed": true
+    },
+    {
+      "name": "terminal/signed-zero-Joule",
+      "passed": true
+    },
+    {
+      "name": "fixed-inputs-unchanged",
+      "passed": true
+    }
+  ],
+  "local_ci": {
+    "core": {
+      "passed": true,
+      "source_unchanged": true,
+      "passed_assertions": 2893,
+      "total_assertions": 2893
+    },
+    "optional_regressions": {
+      "passed": true,
+      "source_unchanged": true,
+      "passed_assertions": 142,
+      "total_assertions": 142,
+      "summaries": [
+        {
+          "name": "signed product values and gradients",
+          "Pass": 18,
+          "Total": 18
+        },
+        {
+          "name": "signed RHS and structured columns",
+          "Pass": 25,
+          "Total": 25
+        },
+        {
+          "name": "AnyN zero guard and mutation propagation",
+          "Pass": 25,
+          "Total": 25
+        },
+        {
+          "name": "scope, corrupt data, and wrapper fallback",
+          "Pass": 22,
+          "Total": 22
+        },
+        {
+          "name": "KLU fixed-pattern and singular-core recovery",
+          "Pass": 14,
+          "Total": 14
+        },
+        {
+          "name": "native_bdf selection, lifecycle, and balances",
+          "Pass": 38,
+          "Total": 38
+        }
+      ]
+    },
+    "energy_integration": {
+      "passed": true,
+      "source_unchanged": true,
+      "passed_assertions": 24,
+      "total_assertions": 24
+    },
+    "energy_integration_tolerances": {
+      "reltol": 1e-12,
+      "abstol": 1e-19,
+      "invariant_rtol": "min(1e-10,64eps(Float64)*(attempted_steps+1)); cumulative steps at terminal state"
+    }
+  },
+  "numerical_notes": [
+    "The source reference is converged between scalar atols1e-21 and1e-23 at fixed rtol1e-11. Its full trajectory supplies verification states only; this report does not integrate the native methane pulse.",
+    "Independent species production uses Decimal100 accumulation of source rates with separately parsed integer net stoichiometry. The gross-rate allowance bounds rounding in those input rates; it is not a trajectory-tolerance change.",
+    "Electron temperature is stored through mean electron energy in Julia. The one-ULP conversion difference is bounded explicitly, and the stored value must remain unchanged.",
+    "Accepted signed collision-target fractions retain their signs and are normalized by their signed target sum. Standalone EEDF input validation remains nonnegative.",
+    "Jacobian checks establish finite entries and exact invariant/Joule blocks; they do not establish accuracy of every finite-difference species derivative.",
+    "The inert charged-mixture integration test checks two exact constant-Joule heating segments, signed traces, negative enthalpy, actual Jacobian use and retention of accepted state after an explicit EEDF update."
+  ],
+  "full_example_calculation_validated": false,
+  "performance_validated": false,
+  "evidence_sha256": {
+    "native_driver": "0b2a70b9448d2e98ffb669bb0f0ab314a4a5a205028012b87f5ecbf40cc7f9b3",
+    "independent_review": "6bf86b784950bbb5893333cae8bf54b032c68b19ced991617597da9494f8ef00",
+    "reference_review": "ce65e105d4767e1593f346418a3ee3d53165df8214e112f50fb1199f0af36fb5",
+    "core_ci": "c4937d5a9f75fb7f0de0337862f8ce9492c8e097fdfde37b15a629960823bd6d",
+    "optional_ci": "d516e34841cdce820da996553fd05b67814c4ddadb524416c24d89aee0cda664",
+    "energy_integration_ci": "c646bfc47ae92f44657bc67a47e26e93ee00ab3e6f90509635e84f82cf982b72",
+    "energy_integration_test": "0cbbdc0d2051cdd1e6d840222ab59eeec4e47e17ea1056555039692d1fa2f60e"
+  }
+}

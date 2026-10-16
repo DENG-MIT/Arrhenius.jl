@@ -1,37 +1,60 @@
-# Arrhenius
+# Arrhenius.jl
 
-We are in an early-development. Expect some adventures and rough edges.
+Arrhenius.jl is a Julia package for reacting-flow and combustion calculations. It provides native chemistry, thermodynamics, transport, reactors, and one-dimensional flame solvers; Cantera YAML mechanisms are preprocessed into sidecar data files.
 
-## Installation
+## Key capabilities
 
-> pkg> add https://github.com/DENG-MIT/Arrhenius.jl
+- Ideal-gas thermochemistry, kinetics, equilibrium, and sound speeds
+- Zero-dimensional reactors and connected reactor networks
+- Free, burner-stabilized, counterflow, impinging-jet, catalytic, and ionized flames
+- Mixture-averaged and multicomponent transport, Soret diffusion, and radiation options
+- Surface chemistry, plasma models, porous transport, pure-water properties, and real-gas models
+- Julia-native calculations with differentiable components and caller-selected ODE integrators
 
+## Install
 
-## Publication
+In Julia's package manager, enter <code>] add https://github.com/DENG-MIT/Arrhenius.jl</code>. For a local checkout, activate the repository project and run <code>Pkg.instantiate()</code> before using its examples. See the [installation guide](https://deng-mit.github.io/Arrhenius.jl/dev/install/).
 
-+ [Arrhenius.jl: A Differentiable Combustion Simulation Package](https://arxiv.org/pdf/2107.06172.pdf): overview of Arrhenius.jl and applications in deep mechanism reduction, uncertainty quantification, mechanism tuning and model discovery. [Slides in NCM21](https://www.slideshare.net/WeiqiJi/arrheniusjl-a-differentiable-combustion-simulation-package-248457895), [Vedio for NCM21](https://www.youtube.com/watch?v=X1mwpW78NvA).
-+ [Machine Learning Approaches to Learn HyChem Models](https://www.researchgate.net/publication/350890609_Machine_Learning_Approaches_to_Learn_HyChem_Models): demonstrate 1000 times faster than genetic algorithms using commercial software for optimizing complex kinetic models.
-+ [Neural Differential Equations for Inverse Modeling in Model Combustors](https://www.researchgate.net/publication/351223124_Neural_Differential_Equations_for_Inverse_Modeling_in_Model_Combustors)
-+ [SGD-based Optimization in Modeling Combustion Kinetics: Case Studies in Tuning Mechanistic and Hybrid Kinetic Models](https://doi.org/10.1016/j.fuel.2022.124560)
+## Quick start: constant-pressure ignition
 
+The optional reactor example environment provides SciML's QNDF integrator. From the repository root, run this with <code>julia --project=example/reactors</code>:
 
+~~~julia
+using Arrhenius
+include("example/reactors/ode_solver.jl")
 
+gas = CreateSolution("mechanism/h2o2.yaml")
+reactor = IdealGasReactor(gas; temperature=1001.0, pressure=one_atm,
+    mole_fractions=Dict("H2" => 2, "O2" => 1, "AR" => 4))
+solution = solve_reactor(reactor, (0.0, 0.001); integrator=native_bdf,
+    reltol=1e-8, abstol=1e-14)
+@show reactor_properties(reactor, solution.u[end]).temperature
+~~~
 
-## Applications
+## Quick start: freely propagating flame
 
-+ **Sensitivity analysis for auto-ignition** | [repo](https://github.com/DENG-MIT/ArrheniusActiveSubspace) | Features: auto-differentiation, multi-threading, sensitivity to all of three Arrhenius params A, b and Ea, active subspace based uncertainty quantification
-+ **Sensitivity analysis for one-dimensional flames** | [repo](https://github.com/DENG-MIT/Arrhenius_Flame_1D) | Features: auto-differentiation, multi-threading, sensitivity to all of three Arrhenius params A, b and Ea.
-+ **Automonous learn kinetic mechanism using neural network** | [repo](https://github.com/DENG-MIT/CRNN_HyChem) | Features: Chemical Reaction Neural Network (CRNN), Neural Ordinary Differential Equations.
-+ **Deep Reduction** | [repo](https://github.com/DENG-MIT/DeepReduction) | Features: Two-stages mechanism reduction with deep learning.
+The repository includes the H₂/O₂ mechanism and its preprocessed sidecar. Run from the repository root with <code>julia --project=.</code>:
 
-**Examples**
+~~~julia
+using Arrhenius
 
-> Note that some of the examples are in development and you can have early access by contacting [Weiqi Ji](mailto:weiqiji@mit.edu)
-  + [Pyrolysis of JP10](./example/pyrolysis/pyrolysis.ipynb)
-  + [Perfect Stirred Reactor](./example/perfect_stirred_reactor)
-  + [Auto-ignition](https://github.com/DENG-MIT/NN-Ignition)
-  + [Compute Jacobian using AD](https://gist.github.com/jiweiqi/21b8d149bd95b97d9ae948ab92e446df)
+gas = CreateSolution("mechanism/h2o2.yaml")
+flame = FreeFlame(gas; T=300.0, P=one_atm,
+    X="H2:1.1,O2:1,AR:5", width=0.03)
+solve!(flame)
+@show flame_speed(flame)
+~~~
 
-## Relevent packages
-+ [ReactionMechanismSimulator.jl](https://github.com/ReactionMechanismGenerator/ReactionMechanismSimulator.jl) The amazing Reaction Mechanism Simulator for simulating large chemical kinetic mechanisms
-+ [Cantera](https://cantera.org/) A comprehensive C++ based combustion simulation package and with great python interface. Arrhenius relies on Cantera when it is applicable.
+## Documentation
+
+- [Install and prepare mechanisms](https://deng-mit.github.io/Arrhenius.jl/dev/install/)
+- [Flame models and discretization](https://deng-mit.github.io/Arrhenius.jl/dev/flames/)
+- [Solver options](https://deng-mit.github.io/Arrhenius.jl/dev/solver_options/)
+- [Reactor models](https://deng-mit.github.io/Arrhenius.jl/dev/reactors/)
+- [Runnable examples](https://deng-mit.github.io/Arrhenius.jl/dev/examples/)
+- [Validation methods](https://deng-mit.github.io/Arrhenius.jl/dev/validation/)
+- [API reference](https://deng-mit.github.io/Arrhenius.jl/dev/api/)
+
+## Citation and license
+
+If you use Arrhenius.jl in published work, cite [“Arrhenius.jl: A Differentiable Combustion Simulation Package”](https://arxiv.org/abs/2107.06172). The package is released under the [MIT License](LICENSE).

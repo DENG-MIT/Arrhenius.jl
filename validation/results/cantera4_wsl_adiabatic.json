@@ -1,0 +1,232 @@
+{
+  "example": "thermo/adiabatic",
+  "cases": 50,
+  "scope": "All 50 CH4/air phi values 0.3..3.5 at 300 K and 101325 Pa, initial gas 1 kmol and graphite 0 kmol; HP equilibrium temperature and all 54 species amounts. Prepared models; imports, checks, printing and file I/O excluded.",
+  "cantera_version": "4.0.0a2",
+  "cantera_source_sha": "726522be4e2a13454d8415b7ef799d621f665cf3",
+  "published_source_sha256": "d110b027ffc26a3b8417175f8aca047bbde718a63309a8c20090573d87e9eaff",
+  "gas_sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+  "graphite_sha256": "6074b6dd691785403dee1eeebf8e583b747681c34a148746bab2256282939cbd",
+  "cantera_shared_libraries_sha256": {
+    "libcantera_shared.so.4.0.0": "1edb2105be995bea941fad7b942651788835d13737fe3b15dff342c0e64571f6"
+  },
+  "cantera_extension_sha256": "cb6f63a9170b57a6e8f3a0ba1eeb92ecfb43becf64f92fcae867a9f2a5e4f6ac",
+  "cantera_build_record_sha256": "fd95180063b52d8b4b5a0effe4cb95addd52b7a996c37d34f68a6a931570686c",
+  "loaded_libraries_match_build_record": true,
+  "harness_sha256": "8263fbe4836c5e2ab04428f4fe5d1d95ea9b806c400bf0a0c75f3e74c48c7087",
+  "environment_helper_sha256": "a7fb9c06cf45edf95872d38cf0a66ae19e8eadb834641c0b4d0ab08614b350fb",
+  "exporter_sha256": "3a853f7474c30bb16a50b311a3c7189ecafab968f097508d0133e4c1657b2c0d",
+  "native_metadata": {
+    "timestamp_utc": "2026-09-11T18:02:45.685",
+    "first_call_scope": "First call inside the measurement wrapper; wrapper specialization, imports and process startup excluded. This is not whole-process cold latency.",
+    "system": "Linux",
+    "inputs_unchanged": true,
+    "warm_outputs_checked": 9,
+    "preparation_seconds": 6.232961815,
+    "julia_version": "1.12.7",
+    "cpu": "Intel(R) Core(TM) Ultra 7 155H",
+    "measurement_wrapper_seconds": 6.541927082,
+    "source_unchanged": true,
+    "import_seconds": 5.353411612,
+    "kernel_release": "6.6.87.2-microsoft-standard-WSL2",
+    "native_artifact_sha256": "cfac307c5b0cce38266d4ca7fd154fb92dd16934f633fcfa5e5f3a064c47a5bb",
+    "numerical_threads": {
+      "julia_threads": 1,
+      "blas_threads": 1
+    },
+    "input_hashes": {
+      "phase": "2b7b43c2133fe4d37cda7d36d0523fb4afd6b3eb07dc6e7a0e8e97ad7235b9e2",
+      "gas": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+      "sidecar": "342f217b9d9e5b3b338350bf1428e32d833e9aa61ee05e97fc91a2e47c7b7b80"
+    },
+    "source_hashes": {
+      "src/Precision.jl": "8254899c8ea21426d95f90fa78ba1f3abc4a584ad03abd1085081af1a89f5eb5",
+      "src/Magic.jl": "9386419d03e7f481a134f2d56a2b59c4b340f1ba276bbc6ce52861597805c8e0",
+      "src/BlowersMasel.jl": "984f41457a3773bd5344d598c4c13dea39b44f163248eac3410bc4606c35b4e1",
+      "src/Thermo/IdealGasThermo.jl": "925d7c8846bcaf9d6e2c1032b4a56c09b559b0064a2419c9694d236308a33a06",
+      "src/Constants.jl": "2ef778e2e8bbb70507a3cab1d8cb8f06dc17d0aac44c6cef56c36e833ce06e83",
+      "src/RealGasThermo.jl": "c0b6975b1a8e21608c8c58174258f2ea2c20a297df7d165d282c110ca613decd",
+      "src/CounterflowFlames.jl": "2968bd0aa9148b1594adb913728289340fbb2afccf31b425c561597021a9e904",
+      "src/RealGasReactors.jl": "4eff53bd105b96d5fae54b104d1fc7a52c07013dce5b1b007de8dcfe5593be0e",
+      "src/SurfaceFlowReactors.jl": "ea0c99c30548f8bd6c88d7d3ee11bb0dabaa82298afbdba1f20cdd28afa485f9",
+      "src/Equilibrium.jl": "b18b1187cd32bcb1d7cf2d787e4a78eb2a5e5ff17ac1f1c296652bbe347cd3b2",
+      "src/IdealGasStates.jl": "ff25fb32c0b3d0236e4056b7425e10009ed5ff3f624f6e6f7112e4b93cb6d793",
+      "src/FlameDerivatives.jl": "f99160db20ef5ef46d66dd26bed53a62dd6ab8529602d35717169cce9deffb68",
+      "validation/numerical_threads.jl": "d3e91bf0e05b0043e2f50fac7082fe73af8e9d7326b249793129bd43bb28f739",
+      "src/DustyGasTransport.jl": "038c18a8a2f8896fe8df1b89a64f55c77e040c09d7490a7744615c5059caa702",
+      "src/CondensedEquilibrium.jl": "cc87745498cbf3a39cf31f9ff02039da3ee82fc5681fb9fd3965b53011617b6f",
+      "src/Transport.jl": "e7bde8e0af9cc810826117add97ad3159abd86b75f9ff4e861ba04768bc7c374",
+      "src/Kinetics.jl": "f6d3ebbdfd316250ec77dbd3db8cc0742951fc7b7f5fe081cda4a69db3013efb",
+      "src/CatalyticFlames.jl": "556a56ffaba0efab9cfee3a8bf9446d9e878bf645ce358177476ae866c161ef1",
+      "src/PureWater.jl": "0a7c0cac82ecd2a4ec03ec39244a3bb3ea8f9c24dd17515f411801a481fccbac",
+      "src/Solution.jl": "055c42704ac880746eb68e574dc8ebcf779849d97307a636c859af08ced1a8d5",
+      "src/CoverageDependentThermo.jl": "a85d5a7b350d1027a1df8bb5fd3083696c892f2699a109e6ebd4b0d8cc0072d1",
+      "src/Flames.jl": "7aabf01ab42bfcf3f4cd0f993d28e29b63c1ad306caa7a00b015086a26d3aa64",
+      "Project.toml": "3452e1b1c23a944371eaa9c6de5de61f4585c5a6d90b5b7b6fecda3be22c3d78",
+      "src/CriticalProperties.jl": "2e35232ae55571b659c6e0f9fa841a6687afb27cf8a5c71ad158d7b70ef65787",
+      "src/ReactorNetworks.jl": "2280b2d488e7951666211689faaad6a32bfe1cf49c1934527f9eb88d926651a3",
+      "src/FlameIO.jl": "329ad9b2a13b857eaa90b92c9b0c56781a59cb09b28c5efe4cf6ee529e42d219",
+      "example/thermodynamics/adiabatic.jl": "79c8aec151401b8a5d856ba86a34c14b4b1dd3a3fc96cf2500f1ad2c0284065f",
+      "validation/condensed_equilibrium_timing.jl": "23d29e8b3759c9acad4c8586f66ecfc8e02a34748fdc095bbc09136d54cf41f3",
+      "src/_transport_test.jl": "8e2ad5c75074bce96ee9cb7a72cbdfb041cc6c9c3b0cc7983b3f370327ee4ee3",
+      "src/MulticomponentTransport.jl": "be6c79094a461cacd89d4b32d071981d97dac155320e39773055476ff46a6f66",
+      "src/Reactors.jl": "4b21174754b99820366f7d58a31a8d37eb003790a183331bababe1456da7b9db",
+      "src/PremixedCounterflowFlames.jl": "6fa806b11f9e1b3fa0093a4899cfd73c026e7ec1178e0d94e1a513e8746f6a22",
+      "src/Arrhenius.jl": "983ad45ac17f654940bfc23b5db0dc24a12be289c106990330ade53d37c47099",
+      "src/MovingWallReactors.jl": "797eef9d601f6267c1c86230ca56f4b52a0cf0167b447ca8d5ebb3964f4e8042",
+      "src/IdealGasMixing.jl": "b20393e4b2b585b4d6b425f9a234aa969ed3d19b006a0d43a6f2743668af9059",
+      "src/Thermo.jl": "605993638d6b5505157ce3758a108618252fc288147db8ac28458972b4f56426",
+      "src/_Arrhenius_dev.jl": "6b08d913208a17d66dda42345ecb14d164c53dcfda9292cda5f68e60e7056eed",
+      "src/SurfaceKinetics.jl": "5e09d9431acafaefac61620793d978a106636a41850f262f4c6c5ca620f1e45d",
+      "src/DataStructure.jl": "9dcb372036b76e69fec743e77e4ea7e7e2af440a04cdafa85c587048cbf83556"
+    }
+  },
+  "native_artifact_sha256": "cfac307c5b0cce38266d4ca7fd154fb92dd16934f633fcfa5e5f3a064c47a5bb",
+  "reference_artifact": "report.reference.npz",
+  "reference_artifact_sha256": "13a1053edfd68b3d0f28379c91f38ba7142516b6f63c41b55f597d5d3780a277",
+  "hardware": {
+    "cpu": "Intel(R) Core(TM) Ultra 7 155H",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "kernel_release": "6.6.87.2-microsoft-standard-WSL2",
+    "system": "Linux",
+    "machine": "x86_64",
+    "logical_cpus": 18
+  },
+  "benchmark_target": "wsl",
+  "numerical_threads": {
+    "threadpools": [
+      {
+        "file": "libgomp.so.1.0.0",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.34.so",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ]
+  },
+  "numerical_threads_after": {
+    "threadpools": [
+      {
+        "file": "libgomp.so.1.0.0",
+        "query": "omp_get_max_threads",
+        "threads": 1
+      },
+      {
+        "file": "libopenblasp-r0.3.34.so",
+        "query": "openblas_get_num_threads",
+        "threads": 1
+      }
+    ]
+  },
+  "checks": {
+    "source": {
+      "phi": {
+        "pass": true,
+        "maximum_absolute_error": 4.440892098500626e-16,
+        "relative_tolerance": 0.0,
+        "absolute_tolerance": 5e-16,
+        "expected_shape": [
+          50
+        ]
+      },
+      "T": {
+        "pass": true,
+        "maximum_absolute_error": 3.0986166166258045e-07,
+        "relative_tolerance": 0.0,
+        "absolute_tolerance": 0.001,
+        "expected_shape": [
+          50
+        ]
+      },
+      "species_moles": {
+        "pass": true,
+        "maximum_absolute_error": 1.2254780523690556e-10,
+        "relative_tolerance": 2e-05,
+        "absolute_tolerance": 1e-09,
+        "expected_shape": [
+          54,
+          50
+        ]
+      }
+    },
+    "refined": {
+      "phi": {
+        "pass": true,
+        "maximum_absolute_error": 4.440892098500626e-16,
+        "relative_tolerance": 0.0,
+        "absolute_tolerance": 5e-16,
+        "expected_shape": [
+          50
+        ]
+      },
+      "T": {
+        "pass": true,
+        "maximum_absolute_error": 3.288682819402311e-07,
+        "relative_tolerance": 0.0,
+        "absolute_tolerance": 0.001,
+        "expected_shape": [
+          50
+        ]
+      },
+      "species_moles": {
+        "pass": true,
+        "maximum_absolute_error": 9.539402601177471e-11,
+        "relative_tolerance": 2e-05,
+        "absolute_tolerance": 1e-09,
+        "expected_shape": [
+          54,
+          50
+        ]
+      }
+    },
+    "physical": {
+      "pass": true,
+      "maxima": {
+        "element_balance": 3.186281026257995e-14,
+        "enthalpy_balance": 6.985078246352223e-11,
+        "graphite_affinity": 7.59846526319076e-15,
+        "complementarity": 1.1387675558395533e-16
+      },
+      "balance_limit": 2e-09,
+      "chemical_potential_limit": 1e-08,
+      "nonnegative_amounts": true
+    }
+  },
+  "correctness_pass": true,
+  "cantera_import_seconds": 0.06481990497559309,
+  "cantera_preparation_seconds": 0.04944445192813873,
+  "cantera_first_seconds": 0.6637460072524846,
+  "julia_first_seconds": 0.009611035,
+  "cantera_warm_seconds": [
+    0.6889021499082446,
+    0.6539275739341974,
+    0.6480387006886303,
+    0.6400976907461882,
+    0.6478552650660276,
+    0.6343466038815677,
+    0.646836506202817,
+    0.6547520952299237,
+    0.6505932710133493
+  ],
+  "julia_warm_seconds": [
+    0.010194607,
+    0.009009897,
+    0.00948678,
+    0.009467957,
+    0.009174292,
+    0.009075282,
+    0.011802391,
+    0.008894179,
+    0.009577688
+  ],
+  "warm_outputs_checked": 9,
+  "native_warm_outputs_checked": 9,
+  "speed_ratio": 68.44546301685044,
+  "minimum_speed_ratio": 0.95,
+  "qualification": "controlled",
+  "performance_pass": true,
+  "timestamp_utc": "2026-09-11T18:02:53Z"
+}

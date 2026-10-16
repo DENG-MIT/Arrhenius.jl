@@ -1,0 +1,63 @@
+{
+  "case": "onedim/diffusion_flame_continuation",
+  "calculation_validated": true,
+  "performance_status": "below_target",
+  "scope": "Instrumented complete H2/O2 counterflow continuation. A first and one warm calculation each replay all 133 accepted profiles and 132 rows of nine numerical outputs, including exact grids and controls. The final shared convergence check passes. This diagnostic compares residual reuse with the preceding implementation; it does not qualify the Cantera speed target.",
+  "accuracy_reference_report": "validation/results/cantera4_counterflow_continuation_d512dbc.json",
+  "julia_version": "1.12.7",
+  "baseline_native_commit": "bb3af6964329d8e4df7b4fbf3d9d1c3140b503d2",
+  "candidate_source_sha256": {
+    "src/CounterflowFlames.jl": "a305113a07129d16460aca44c3ee886399a7c9230b642201491d4adf7e40c54a"
+  },
+  "candidate_function_matches_tested_implementation": true,
+  "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+  "validation": {
+    "paired_signed_steady_transient_fixtures": 8,
+    "full_calculations": 2,
+    "profiles_per_calculation": 133,
+    "all_profiles_replayed": true,
+    "phase_structure_identical": true,
+    "all_other_per_phase_work_counts_identical": true,
+    "accepted_profile_replay_atol": 1e-08,
+    "accepted_profile_replay_rtol": 1e-08,
+    "warm_replay_atol": 1e-14,
+    "warm_replay_rtol": 1e-12
+  },
+  "elapsed": {
+    "scope": "Loaded mechanism reused; fresh physical state and solver. Initialization, setup, solve, numerical outputs, profile capture, telemetry and automatic GC included. Loading, compilation, validation, file I/O and explicit collection after the first calculation excluded.",
+    "baseline_first_seconds": 162.202415177,
+    "candidate_first_seconds": 147.257900871,
+    "baseline_warm_seconds": 153.675731476,
+    "candidate_warm_seconds": 140.513858294,
+    "warm_elapsed_reduction_fraction": 0.0856470508100724,
+    "warm_samples_per_implementation": 1,
+    "speed_qualified": false
+  },
+  "work": {
+    "baseline": {
+      "residual": 11104,
+      "jacobian_residual": 84237,
+      "jacobian": 1912,
+      "factorization": 1912,
+      "linear_solve": 8854,
+      "newton": 479,
+      "steady": 304,
+      "refine": 303,
+      "iterations": 4643,
+      "trials": 6461
+    },
+    "candidate": {
+      "residual": 7033,
+      "jacobian_residual": 84237,
+      "jacobian": 1912,
+      "factorization": 1912,
+      "linear_solve": 8854,
+      "newton": 479,
+      "steady": 304,
+      "refine": 303,
+      "iterations": 4643,
+      "trials": 6461
+    },
+    "non_jacobian_residual_reduction_fraction": 0.3666246397694525
+  }
+}
