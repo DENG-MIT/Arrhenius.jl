@@ -613,6 +613,23 @@ _counterflow_newton_continues(maxiters, iteration) =
 _counterflow_retry_steady(successful_steps) =
     successful_steps >= _COUNTERFLOW_TIME_STEPS_BETWEEN_STEADY
 
+# MultiNewton::boundStep returns the largest fraction in [0, 1] that keeps a
+# trial state within its component bounds. It lands exactly on a bound; using a
+# safety factor here can turn Cantera's bound-triggered failed step (and fresh
+# Jacobian retry) into several accepted near-zero steps.
+@inline function _counterflow_bound_fraction(value,step,lower,upper)
+    trial=value+step
+    if trial>upper
+        return max(0.0,min(1.0,(upper-value)/(trial-value)))
+    elseif trial<lower
+        # Match MultiNewton::boundStep's asymmetric lower-bound branch. It
+        # does not clamp to zero when the current value is already below the
+        # bound and the proposed step moves farther out of range.
+        return min(1.0,(value-lower)/(value-trial))
+    end
+    return 1.0
+end
+
 function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1e-8,loglevel=0,
         analytic=true,iterations=Ref(0),skip_dependent_transient=true,
         transient_update! = _counterflow_transient_update!)
@@ -646,6 +663,8 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
         # refactorize when dt changes (MultiNewton.cpp:223-255,
         # SteadyStateSystem.cpp:117-121,426-428).
         refresh=!w.jac_valid || w.jac_age>20
+        loglevel>2 && println("Counterflow Jacobian decision: ",refresh ? "fresh" : "reuse",
+            " age=",w.jac_age," dt=",dt)
         refreshed=false
         step=try
             if refresh
@@ -690,11 +709,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
                 k==size(u,1)-2 && (low=-1e-5/_counterflow_Vscale)
             end
             within_bounds &= low<=u[k,j]<=high
-            if step[k,j]<0
-                alpha=min(alpha,.99*(u[k,j]-low)/(-step[k,j]))
-            elseif step[k,j]>0
-                alpha=min(alpha,.99*(high-u[k,j])/step[k,j])
-            end
+            alpha=min(alpha,_counterflow_bound_fraction(u[k,j],step[k,j],low,high))
         end
         if step_converged && alpha==1 && _flame_correction_norm(step,weights)<1
             u .+= step
@@ -710,30 +725,34 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
         end
         accepted=false
         trial_merit=Inf
-        # Cantera's MultiNewton::dampStep: at most seven trials, each sqrt(2)
-        # shorter, then the step fails and the Jacobian is refreshed. A deeper
-        # search only accepts round-off-level steps on stiff trace species.
-        for backtrack in 1:7
-            @. trial=u+alpha*step
-            counterflow_residual!(rt,f,trial,w;previous,dt)
-            contracts=false
-            if all(isfinite,rt)
-                # Cantera's dampStep accepts a damping when the next weighted
-                # correction s1 satisfies s1<1 or s1<s0 (MultiNewton.cpp).
-                copyto!(trial_correction,vec(rt))
-                LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,w.pivots,trial_correction)
-                trial_merit=_flame_correction_norm(reshape(trial_correction,size(u)),weights)
-                contracts=trial_merit<1 || trial_merit<step_merit
+        # MultiNewton::dampStep returns a bound failure before evaluating trial
+        # residuals when its exact bound fraction is below 1e-10.
+        if alpha>=1e-10
+            # Cantera's MultiNewton::dampStep: at most seven trials, each sqrt(2)
+            # shorter. A deeper search only accepts round-off-level steps on
+            # stiff trace species.
+            for backtrack in 1:7
+                @. trial=u+alpha*step
+                counterflow_residual!(rt,f,trial,w;previous,dt)
+                contracts=false
+                if all(isfinite,rt)
+                    # Cantera accepts a damping when the next weighted correction
+                    # s1 satisfies s1<1 or s1<s0 (MultiNewton.cpp).
+                    copyto!(trial_correction,vec(rt))
+                    LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,w.pivots,trial_correction)
+                    trial_merit=_flame_correction_norm(reshape(trial_correction,size(u)),weights)
+                    contracts=trial_merit<1 || trial_merit<step_merit
+                end
+                loglevel>2 && println("    backtrack ",backtrack," alpha=",alpha,
+                    " trial_merit=",isfinite(trial_merit) ? trial_merit : -1.0)
+                if contracts
+                    u .= trial; accepted=true; break
+                end
+                alpha/=sqrt(2)
             end
-            loglevel>2 && println("    backtrack ",backtrack," alpha=",alpha,
-                " trial_merit=",isfinite(trial_merit) ? trial_merit : -1.0)
-            if contracts
-                u .= trial; accepted=true; break
-            end
-            alpha/=sqrt(2)
         end
         loglevel>1 && println("Counterflow Newton ",iteration," residual=",residualnorm," damping=",alpha)
-        if !accepted || alpha<=1e-10
+        if !accepted
             if loglevel>2
                 contrib=[(abs(step[i])/weights[(i-1)%size(u,1)+1],i) for i in eachindex(step)]
                 sort!(contrib,rev=true)
