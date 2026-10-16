@@ -1,15 +1,9 @@
-import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from skopt.space import Space
-from skopt.sampler import Lhs
-
 import cantera as ct
 
-np.random.seed(1)
-
-gas = ct.Solution('../mechanism/JP10skeletal.yaml')
+gas = ct.Solution('../../mechanism/JP10skeletal.yaml')
 gas.TPY = 1200, ct.one_atm, 'C10H16:0.05,N2:0.95'
 
 Y_fuel_0 = gas.Y[gas.species_index('C10H16')]
@@ -21,10 +15,10 @@ states = ct.SolutionArray(gas, extra=['t'])
 
 print('%10s %10s %10s %14s' % ('t [s]', 'T [K]', 'P [Pa]', 'u [J/kg]'))
 for n in range(10000):
-    states.append(r.thermo.state, t=sim.time)
+    states.append(r.phase.state, t=sim.time)
     sim.step()
 
-    if r.thermo.Y[gas.species_index('C10H16')] < Y_fuel_0 * 0.05:
+    if r.phase.Y[gas.species_index('C10H16')] < Y_fuel_0 * 0.05:
         break
 
 nodedata = np.vstack((states.t, states.T, states.Y.T)).T
@@ -49,4 +43,7 @@ plt.plot(states.t, states.Y[:, gas.species_index('H')])
 plt.xlabel('Time (ms)')
 plt.ylabel('CH3/H Mole Fraction')
 plt.tight_layout()
-plt.show()
+if os.environ.get("ARRHENIUS_GENERATE_ONLY") == "1":
+    plt.savefig("JP10_pyrolysis.png")
+else:
+    plt.show()
