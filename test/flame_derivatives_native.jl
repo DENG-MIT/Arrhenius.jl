@@ -39,13 +39,6 @@ end
     end
 end
 
-@testset "start residual convergence is restricted to steady Newton" begin
-    converged=Arrhenius._flame_residual_converged
-    @test converged(nothing,5e-9,1e-8)
-    @test !converged(zeros(1),5e-9,1e-8)
-    @test !converged(nothing,1e-8,1e-8)
-end
-
 @testset "conservative flame local Jacobian" begin
     mechanism=joinpath(@__DIR__,"..","mechanism","h2o2.yaml")
     gas=CreateSolution(mechanism)

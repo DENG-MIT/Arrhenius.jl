@@ -838,8 +838,6 @@ function _flame_correction_norm(step,weights)
     end
     return sqrt(total/length(step))
 end
-_flame_residual_converged(previous,residual_norm,tolerance) =
-    previous === nothing && residual_norm < tolerance
 # Prescribed-temperature systems retain residual merit; correction merit helps
 # the coupled species and energy solve.
 _flame_correction_enabled(f) = _conservative_flame(f) &&
@@ -908,8 +906,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         residual_norm = norm(r,Inf)
         # Final-grid polishing also checks the physical species criterion.
         # Intermediate grids retain the existing equation-residual criterion.
-        if !_flame_needs_correction_check(f) && iteration > minimum_iterations &&
-                _flame_residual_converged(previous,residual_norm,tolerance) && (!require_positive ||
+        if !_flame_needs_correction_check(f) && iteration > minimum_iterations && residual_norm < tolerance && (!require_positive ||
                 minimum(@view(u[2:end-1,:])) > -1e-12)
             return true
         end
