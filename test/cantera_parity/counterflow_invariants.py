@@ -1,9 +1,9 @@
 """Audit native counterflow continuity, closure and elemental rate balances.
 
 Usage: counterflow_invariants.py MECHANISM_YAML FINAL_PROPERTIES_NPZ
-FINAL_PROPERTIES_NPZ is emitted by counterflow_refine_audit.jl. Cantera supplies
-only the element/species stoichiometry; rates, diffusion fluxes and state are
-native. Element transport residuals are in kg m^-3 s^-1 at interior points.
+The NPZ contains the native state, residual, transport rates and fluxes. Cantera
+supplies only element/species stoichiometry. Element transport residuals are in
+kg m^-3 s^-1 at interior points.
 """
 import json,sys
 import numpy as np

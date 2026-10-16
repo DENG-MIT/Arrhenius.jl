@@ -52,6 +52,13 @@ CF_KINDS = ("diffusion", "premixed", "twin", "stagnation")
 CT_COMPONENT = {"mdot": "velocity", "V": "spreadRate", "Lambda": "Lambda", "T": "T"}
 
 
+def mechanism_path(spec):
+    path = os.fspath(spec["mechanism"])
+    if not os.path.isabs(path):
+        path = os.path.join(PROJECT, path)
+    return path + ".yaml"
+
+
 def load_spec(path):
     spec = json.load(open(path))
     if "kind" not in spec and "spec" in spec:
@@ -111,7 +118,7 @@ def roundtrip_all(can, back):
 
 def build(spec, grid):
     """Cantera flame on the exact grid (constructor kwarg; resizing corrupts)."""
-    gas = ct.Solution(spec["mechanism"] + ".yaml")
+    gas = ct.Solution(mechanism_path(spec))
     kind = spec["kind"]
     if kind == "diffusion":
         gas.TP = spec["T"], spec["P_atm"] * ct.one_atm
@@ -304,7 +311,7 @@ def main():
         return json.load(open(os.path.join(args.out, f"{job_id}_{suffix}.json")))
 
     # -- 1. canonical states; native self round trips (julia run 1)
-    species = list(ct.Solution(spec["mechanism"] + ".yaml").species_names)
+    species = list(ct.Solution(mechanism_path(spec)).species_names)
     A = canonical(args.stateA, species)
     B = canonical(args.stateB, species)
     if spec["kind"] in CF_KINDS and ("spreadRate" not in A or "spreadRate" not in B):
