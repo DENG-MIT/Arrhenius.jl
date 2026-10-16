@@ -55,7 +55,9 @@ function total_stat(stage, key)
 end
 function main(specfile, dir, reportfile, max_transitions=typemax(Int))
     spec=YAML.load_file(specfile); manifest=YAML.load_file(joinpath(dir,"manifest.json"))
-    stages=manifest["stages"]; gas=CreateSolution(spec["mechanism"]*".yaml")
+    stages=manifest["stages"]
+    mechanism=normpath(joinpath(@__DIR__, "../../..", spec["mechanism"]*".yaml"))
+    gas=CreateSolution(mechanism)
     rows=Any[]; firstdiv=nothing
     for i in 1:min(length(stages)-1,max_transitions)
         a=stages[i]; b=stages[i+1]
