@@ -140,15 +140,14 @@ function _validate_kinetics_dimensions(npz, ns, nr)
 end
 
 """
-    CreateSolution(mech; data_paths=String[], phase=nothing)
+    CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reader=:native)
     
-Load the first gas phase, or the phase named `phase` with sidecar
-`<mech>.<phase>.npz`, from a YAML mechanism and its preprocessed NPZ sidecar.
-Imported species/reaction sections require a v4 sidecar. Imports are resolved
-relative to the mechanism first, then in `data_paths`. Thermochemistry and
-kinetics are evaluated in Julia after loading.
+Load the selected gas phase directly from YAML. Gas kinetics are parsed in Julia;
+an optional legacy NPZ sidecar may provide transport polynomial fits. Set
+`kinetics_reader=:sidecar` to compare against the legacy kinetics arrays. Imports
+are resolved relative to the mechanism first, then in `data_paths`.
 """
-function CreateSolution(mech; data_paths=String[], phase=nothing)
+function CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reader=:native)
     yaml = YAML.load_file(mech)
     if phase !== nothing
         names = [get(p,"name","") for p in yaml["phases"]]
@@ -156,11 +155,34 @@ function CreateSolution(mech; data_paths=String[], phase=nothing)
         selected === nothing && throw(ArgumentError("phase $(phase) not found in $(mech)"))
         yaml["phases"] = vcat([yaml["phases"][selected]], deleteat!(copy(yaml["phases"]), selected))
     end
-    npz = npzread(phase === nothing ? "$mech.npz" : "$mech.$phase.npz")
-    _validate_sidecar_metadata(npz, mech; data_paths)
-    selection = _sidecar_selection(npz)
+    kinetics_reader in (:native,:sidecar) || throw(ArgumentError("kinetics_reader must be :native or :sidecar"))
+    sidecar_path = phase === nothing ? "$mech.npz" : "$mech.$phase.npz"
+    sidecar = nothing
+    if isfile(sidecar_path)
+        if kinetics_reader === :sidecar
+            sidecar = npzread(sidecar_path)
+            _validate_sidecar_metadata(sidecar, mech; data_paths)
+        else
+            # The sidecar is optional for native gas chemistry. Ignore unreadable
+            # or stale files; only a validated sidecar may contribute transport fits.
+            candidate = try
+                npzread(sidecar_path)
+            catch
+                nothing
+            end
+            if candidate !== nothing
+                try
+                    _validate_sidecar_metadata(candidate, mech; data_paths)
+                    sidecar = candidate
+                catch
+                    sidecar = nothing
+                end
+            end
+        end
+    end
+    selection = sidecar === nothing ? nothing : _sidecar_selection(sidecar)
     phase = yaml["phases"][1]
-    if selection === nothing && (!(get(phase,"species",nothing) isa AbstractVector) ||
+    if sidecar !== nothing && selection === nothing && (!(get(phase,"species",nothing) isa AbstractVector) ||
             !all(x -> x isa AbstractString,phase["species"]) ||
             get(phase,"reactions","all") != "all")
         throw(ArgumentError("selected/imported sections require a v4 sidecar; regenerate $(mech).npz"))
@@ -179,12 +201,32 @@ function CreateSolution(mech; data_paths=String[], phase=nothing)
     if yaml["phases"][1]["thermo"] == "ideal-gas" # switch to work with Cantera standard
         thermo = IdealGasThermo(yaml)
     else
-        constructorThermo = Symbol(yaml["phases"][1]["thermo"], :Thermo)
+        model = lowercase(String(yaml["phases"][1]["thermo"]))
+        constructorThermo = model == "redlich-kwong" ? :RedlichKwongThermo :
+            Symbol(replace(model,"-"=>"_"), :Thermo)
         thermo = @eval($constructorThermo)(yaml)
     end
 
 
     #### Kinetic data
+
+    # Kinetics arrays are parsed natively from YAML. A legacy sidecar is optional
+    # and currently supplies only transport fits, whose YAML polynomial fit path
+    # is separate from gas kinetics.
+    native_arrays = kinetics_reader === :native ?
+        _native_gas_arrays(yaml, yaml["phases"][1], species_names; mechanism=String(mech), data_paths) : nothing
+    npz = if kinetics_reader === :sidecar
+        sidecar === nothing && throw(ArgumentError("kinetics_reader=:sidecar requires $sidecar_path"))
+        sidecar
+    else
+        native_arrays
+    end
+    n_reactions = selection === nothing ? size(npz["Arrhenius_coeffs"],1) : Int(selection["n_reactions"])
+    if sidecar !== nothing && kinetics_reader === :native
+        for key in ("transport_model_utf8","species_viscosities_poly","thermal_conductivity_poly","binary_diff_coeffs_poly")
+            haskey(sidecar,key) && (npz[key]=sidecar[key])
+        end
+    end
 
     # Inert phases have no reaction arrays. Empty NPZ entries are omitted by the
     # exporter for compatibility with NPZ.jl; restore their unambiguous shapes.

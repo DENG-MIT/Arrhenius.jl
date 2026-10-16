@@ -292,3 +292,6 @@ end
     @show grad[1:3]
 
 end
+include("native_gas_mechanism.jl")
+
+include("gas_mechanism_audit.jl")

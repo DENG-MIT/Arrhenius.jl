@@ -13,6 +13,9 @@ module Arrhenius
 
     include("BlowersMasel.jl")
     include("DataStructure.jl")
+    include("GasMechanismIO.jl")
+    include("GasMechanismAudit.jl")
+    export audit_mechanism, refit_nasa7_continuity
     include("Solution.jl")
     include("Magic.jl")
     include("Thermo.jl")
