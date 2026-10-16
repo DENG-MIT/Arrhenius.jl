@@ -7,7 +7,7 @@ import cantera as ct
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from ct_dump import build
-from jacobian_trace import cantera_attempt_trace
+from jacobian_trace import cantera_attempt_trace, latest_stat
 
 def snapshot(f, root, idx, event, dt=None, kind=None):
     # Capture every domain, including boundary state, so replay inputs preserve
@@ -92,10 +92,12 @@ def main(spec_path, out_path):
     previous_grid = [np.asarray(f.flame.grid).tolist()]
     prior_jacobians = [0]
     def on_step(dt):
-        jacobians = sum(f.solver_stats.get("jacobian_evals", []))
+        jacobians = latest_stat(f.solver_stats, "jacobian_evals")
         # Cantera calls back after adapting dt: it grows dt only when this
         # successful step evaluated no new Jacobian (default growth=1.5).
-        used_dt = float(dt) / (1.5 if jacobians == prior_jacobians[0] else 1.0)
+        current_grid = np.asarray(f.flame.grid).tolist()
+        same_grid = current_grid == previous_grid[0]
+        used_dt = float(dt) / (1.5 if same_grid and jacobians == prior_jacobians[0] else 1.0)
         stage = snapshot(f, out, len(stages), "time_step", used_dt, spec["kind"])
         stage["dt_next"] = float(dt)
         stage["jacobians_total"] = jacobians
@@ -109,6 +111,7 @@ def main(spec_path, out_path):
         stage["refined_since_previous"] = current != previous_grid[0]
         stages.append(stage)
         previous_grid[0] = current
+        prior_jacobians[0] = latest_stat(f.solver_stats, "jacobian_evals")
         return 0.0
     f.set_time_step_callback(on_step)
     f.set_steady_callback(on_steady)
