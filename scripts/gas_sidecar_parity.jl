@@ -1,9 +1,12 @@
 using Arrhenius, Random, LinearAlgebra, YAML
 
-length(ARGS)==4 || error("usage: julia --project scripts/gas_sidecar_parity.jl <repo-root> <nh3-root> <npz-dir> <output.md>")
-repo,nh3,npzdir,out=abspath.(ARGS)
+length(ARGS) in (4,5) || error("usage: julia --project scripts/gas_sidecar_parity.jl <repo-root> <nh3-root> <npz-dir> <output.md> [mechanism-filter]")
+repo,nh3,npzdir,out=abspath.(ARGS[1:4])
+filter_name=length(ARGS)==5 ? strip(ARGS[5]) : ""
 inputs=[(joinpath(repo,"mechanism",n),"repo_"*n) for n in ("2S_CH4_CM2.yaml","JP10skeletal.yaml","LiDryer.yaml","gri30.yaml","h2o2.yaml","nDodecane_Reitz.yaml","nc7_ver3.1_mech.yaml")]
 append!(inputs,[(joinpath(nh3,n),"nh3_"*n) for n in ("alzueta_2023.yaml","creck_nh3.yaml","glarborg_2018.yaml","h2o2.yaml","nakamura_2017.yaml","shrestha_2020.yaml","stagni_2023.yaml")])
+!isempty(filter_name) && filter!(item->occursin(lowercase(filter_name),lowercase(item[2])),inputs)
+isempty(inputs) && error("no mechanisms matched filter: $filter_name")
 ordered(x::Float64)=(b=reinterpret(UInt64,x); (b>>63)==1 ? ~b : b|(UInt64(1)<<63))
 ulp(a,b)=abs(Int128(ordered(Float64(a)))-Int128(ordered(Float64(b))))
 lines=["# Native gas YAML parity against Cantera 4.0.0a2 sidecars","","Integer and logical arrays require exact equality. Floating arrays report maximum ULP difference and number of unequal entries. Wdot and thermo are evaluated at matching random mass fractions and 500, 1200, and 2600 K.","","## Array parity","","| Mechanism | Array | Result | Max ULP | Unequal |","|---|---|---|---:|---:|"]

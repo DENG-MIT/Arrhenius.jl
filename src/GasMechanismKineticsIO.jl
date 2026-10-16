@@ -32,6 +32,9 @@ const _GAS_ATOMIC_WEIGHTS = Dict(
 _gasfloat(x, what) = x isa Real && !(x isa Bool) && isfinite(Float64(x)) ?
     Float64(x) : throw(ArgumentError("$what must be a finite number"))
 
+# Cantera UnitSystem uses std::pow for dimensional conversion factors.
+@inline _gas_pow(x,y)=ccall(:pow,Cdouble,(Cdouble,Cdouble),Float64(x),Float64(y))
+
 function _gas_units(root, local_units=Dict{Any,Any}())
     u = merge(Dict{Any,Any}(),get(root, "units", Dict{Any,Any}()),local_units)
     u isa AbstractDict || throw(ArgumentError("units must be a mapping"))
@@ -92,7 +95,11 @@ function _gas_arrhenius(data, order, units; name="rate-constant")
             lp==target && qp==order-1 || throw(ArgumentError("$name A units do not match reaction order $order"))
             lf=lu=="m" ? 1.0 : lu=="cm" ? 1e-2 : 1e-3
             qf=qu=="kmol" ? 1.0 : 1e-3; tf=tu=="s" ? 1.0 : tu=="ms" ? 1e-3 : 1e-6
-            A *= (lf^lp/qf^qp)/tf
+            source_factor=1.0
+            source_factor *= _gas_pow(lf,lp)
+            source_factor *= _gas_pow(qf,-qp)
+            source_factor *= _gas_pow(tf,-1.0)
+            A = A * source_factor / 1.0
         else
             throw(ArgumentError("unsupported $name A units $(repr(unit))"))
         end
@@ -100,10 +107,16 @@ function _gas_arrhenius(data, order, units; name="rate-constant")
         lf,qf,tf,_=units
         # Match Cantera UnitSystem::convertTo order for the dimensional rate
         # unit: output factor, length, time, then quantity.
-        A = A / 1.0 * lf^(3*(order-1)) * tf^(-1.0) * qf^(1-order)
+        A = A / 1.0
+        A *= _gas_pow(lf,3*(order-1))
+        A *= _gas_pow(tf,-1.0)
+        A *= _gas_pow(qf,1-order)
     end
     b=_gasfloat(get(data,"b",0.0),"$name b")
-    Ea=_gas_quantity(get(data,"Ea",0.0),units[4],"$name Ea")/4184.0
+    # Cantera stores activation energy as Ea/R and reconstructs J/kmol in
+    # input_data before the sidecar converts it back to cal/mol.
+    Ea_j_kmol=_gas_quantity(get(data,"Ea",0.0),units[4],"$name Ea")
+    Ea=((Ea_j_kmol/R)*R)/4184.0
     (A,b,Ea)
 end
 
@@ -112,7 +125,7 @@ function _gas_pressure(x, root)
     factors=Dict("pa"=>1.0,"kpa"=>1e3,"mpa"=>1e6,"bar"=>1e5,"atm"=>101325.0,"torr"=>101325.0/760)
     if x isa Real
         haskey(factors,default) || throw(ArgumentError("unsupported pressure unit $default"))
-        return Float64(x)*factors[default]
+        return Float64(x)/1.0*_gas_pow(factors[default],1.0)
     end
     x isa AbstractString || throw(ArgumentError("pressure must be a number or quantity string"))
     m=match(r"^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*(.*?)\s*$",x)
@@ -248,7 +261,11 @@ function _native_gas_arrays(root, phase, names; mechanism="", data_paths=String[
             push!(fall,j); arr[j,:].=_gas_arrhenius(get(r,"high-P-rate-constant",nothing),order,units;name="high-P-rate-constant")
             push!(low,_gas_arrhenius(get(r,"low-P-rate-constant",nothing),order+1,units;name="low-P-rate-constant"))
             if haskey(r,"Troe")
-                t=r["Troe"]; push!(troe,(_gasfloat(t["A"],"Troe A"),_gasfloat(t["T1"],"Troe T1"),_gasfloat(get(t,"T2",1e30),"Troe T2"),_gasfloat(t["T3"],"Troe T3"))); push!(falltroe,length(troe))
+                t=r["Troe"]
+                t1=_gasfloat(t["T1"],"Troe T1"); t3=_gasfloat(t["T3"],"Troe T3")
+                # Cantera stores reciprocal T1/T3 internally and exports their reciprocals.
+                push!(troe,(_gasfloat(t["A"],"Troe A"),1.0/(1.0/t1),_gasfloat(get(t,"T2",1e30),"Troe T2"),1.0/(1.0/t3)))
+                push!(falltroe,length(troe))
             else push!(falltroe,-1) end
         elseif typ=="linear-Burke" || typ=="pressure-dependent-Arrhenius"
             rates=Any[]
@@ -276,7 +293,11 @@ function _native_gas_arrays(root, phase, names; mechanism="", data_paths=String[
             end
             grouped=Dict{Float64,Vector{NTuple{3,Float64}}}()
             for item in rates
-                p=_gas_pressure(item["P"],root); push!(get!(grouped,p,NTuple{3,Float64}[]),_gas_arrhenius(item,order,units))
+                p=_gas_pressure(item["P"],root)
+                isfinite(p) && p>0 || throw(ArgumentError("$ctx PLOG pressure must be finite and positive"))
+                # Cantera groups PLOG rates by log(P), then exports exp(log(P)).
+                p=exp(log(p))
+                push!(get!(grouped,p,NTuple{3,Float64}[]),_gas_arrhenius(item,order,units))
             end
             isempty(grouped) && throw(ArgumentError("$ctx PLOG has no rates"))
             ps=sort!(collect(keys(grouped))); arr[j,:].=first(grouped[first(ps)])
