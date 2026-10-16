@@ -35,22 +35,8 @@ end
         pstep=copy(step); pstep[1,:].*=1000
         expected=sqrt(sum((pstep[k,j]/(1e-4*sum(abs,physical[k,:])/5+atol))^2 for k in 1:5,j in 1:5)/25)
         @test Arrhenius._flame_correction_norm(step,weights) ≈ expected rtol=1e-14
-        expected_ct=sqrt(sum((pstep[k,j]/(1e-4*sum(abs,physical[k,:])/5+atol))^2 for k in 1:5,j in 1:5)/45)
-        @test Arrhenius._flame_correction_norm(step,weights;extra_components=4) ≈ expected_ct rtol=1e-14
-        @test expected_ct ≈ expected*sqrt(25/45) rtol=1e-14
         @test all(isfinite,weights) && all(>(0),weights) && isequal(state,initial)
     end
-end
-
-@testset "intermediate steady correction convergence threshold and grid guard" begin
-    converged = Arrhenius._flame_steady_correction_converged
-    @test converged(true, nothing, 1.0, false, true)
-    @test converged(true, nothing, prevfloat(1.0), false, true)
-    @test !converged(true, nothing, nextfloat(1.0), false, true)
-    @test !converged(true, nothing, 0.5, false, false)
-    @test !converged(false, nothing, 0.5, false, true)
-    @test !converged(true, zeros(1), 0.5, false, true)
-    @test !converged(true, nothing, 0.5, true, true)
 end
 
 @testset "conservative flame local Jacobian" begin

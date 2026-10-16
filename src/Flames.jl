@@ -831,24 +831,20 @@ function _flame_correction_weights(u,transient)
     end
     return weights
 end
-function _flame_correction_norm(step,weights;extra_components=0)
+function _flame_correction_norm(step,weights)
     total=0.0
     for j in axes(step,2),k in axes(step,1)
         total += (step[k,j]/weights[k])^2
     end
-    return sqrt(total/(length(step)+extra_components*size(step,2)))
+    return sqrt(total/length(step))
 end
 # Prescribed-temperature systems retain residual merit; correction merit helps
 # the coupled species and energy solve.
 _flame_correction_enabled(f) = _conservative_flame(f) &&
     !(f isa BurnerFlame && !isempty(f.imposed_temperature))
 
-_flame_steady_correction_converged(policy,previous,s1,fixed_temperature,intermediate_grid) =
-    policy && previous === nothing && !fixed_temperature && intermediate_grid && s1 <= 1
-
 function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
-        require_positive=false,minimum_iterations=0,cantera_steady_stop=false,
-        loglevel=0,analytic=true,iterations=Ref(0))
+        require_positive=false,minimum_iterations=0,loglevel=0,analytic=true,iterations=Ref(0))
     _premixed_stats(f).newton_calls+=1; PREMIXED_STATS.newton_calls+=1
     u = f.state
     r,trial,rt = similar(u),similar(u),similar(u)
@@ -894,9 +890,6 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     fixed_temperature = f isa BurnerFlame && !isempty(f.imposed_temperature)
     cantera_transient = previous !== nothing && !_flame_correction_enabled(f) && !fixed_temperature
     policy_merit = policy && !fixed_temperature
-    # Intermediate FD grids may use Cantera's full-domain component count.
-    # The final grid keeps the native tight residual path and its norm.
-    norm_extra_components = cantera_steady_stop && policy_merit && previous === nothing ? 4 : 0
     correction_enabled = _flame_correction_enabled(f) || cantera_transient || policy_merit
     correction_weights = correction_enabled ? _flame_correction_weights(f,u,previous !== nothing) : Float64[]
     trial_correction = correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
@@ -1002,8 +995,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             continue
         end
         # Trial correction merit uses the already factored (lagged) Newton J.
-        step_merit = correction_enabled ? _flame_correction_norm(step,correction_weights;
-            extra_components=norm_extra_components) : 0.0
+        step_merit = correction_enabled ? _flame_correction_norm(step,correction_weights) : 0.0
         accepted = false
         # Cantera's MultiNewton::dampStep: at most seven trials, each sqrt(2)
         # shorter, before the Jacobian is refreshed or the step fails.
@@ -1016,8 +1008,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
                 if correction_enabled
                     copyto!(trial_correction,vec(rt))
                     LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,trial_correction)
-                    trial_merit = _flame_correction_norm(reshape(trial_correction,size(u)),
-                        correction_weights;extra_components=norm_extra_components)
+                    trial_merit = _flame_correction_norm(reshape(trial_correction,size(u)),correction_weights)
                     # Cantera dampStep accepts s1 < 1 or s1 < s0 and treats
                     # s1 < 1 as convergence of the Newton solve.
                     trial_contracts = (cantera_transient || policy_merit) ?
@@ -1030,12 +1021,9 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             if trial_contracts
                 u .= trial
                 accepted = true
-                # s1 < 1 converges a transient step (Cantera dampStep).
+                # s1 < 1 converges a time step (Cantera dampStep); the steady
+                # solve continues to the residual tolerance instead.
                 cantera_transient && trial_merit < 1 && return true
-                # Intermediate grids are followed by a full residual solve on
-                # the accepted final grid; never use this exit on that grid.
-                _flame_steady_correction_converged(policy,previous,trial_merit,
-                    fixed_temperature,cantera_steady_stop) && return true
                 break
             end
             alpha /= sqrt(2)
@@ -1090,8 +1078,7 @@ function _timestep_growth(residual!,r,strategy,growth,before,after,dt,iterations
 end
 
 function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
-        clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,
-        step_callback=nothing,analytic=true,cantera_steady_stop=false)
+        clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
     w = FlameWorkspace(f)
     push!(_premixed_stats(f).grids,length(f.grid)); push!(PREMIXED_STATS.grids,length(f.grid))
     # Species reset and clipping apply to neutral premixed flames only; ionized
@@ -1103,14 +1090,13 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
     # Cantera time-steps from the state before the failed steady attempt
     # (MultiNewton::solve leaves its input untouched on failure).
     steady_state = _flame_checkpoint_steady(f) || policy ? copy(f.state) : nothing
-    steady_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,cantera_steady_stop)
+    steady_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
     steady_ok && return true
     _premixed_stats(f).steady_failures+=1; PREMIXED_STATS.steady_failures+=1
     # A failed steady trial must not replace the accepted pseudo-time state.
     steady_state === nothing || copyto!(f.state,steady_state)
     policy && return _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,
-        timestep,tolerance,growth_factor,growth_strategy,step_callback,analytic,
-        cantera_steady_stop)
+        timestep,tolerance,growth_factor,growth_strategy,step_callback,analytic)
     dt = timestep[]
     previous = similar(f.state)
     failures = 0
@@ -1129,7 +1115,7 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
             if step % 10 == 0
                 loglevel > 0 && println("Transient step ",step," dt=",dt)
                 steady_state === nothing || copyto!(steady_state,f.state)
-                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,cantera_steady_stop)
+                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
                 trial_ok && return true
                 steady_state === nothing || copyto!(f.state,steady_state)
             end
@@ -1159,8 +1145,7 @@ end
 # failures (resetBadValues). A failed steady attempt restarts time stepping
 # from the state before the attempt.
 function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timestep,
-        tolerance,growth_factor,growth_strategy,step_callback,analytic,
-        cantera_steady_stop=false)
+        tolerance,growth_factor,growth_strategy,step_callback,analytic)
     dt = timestep[]
     previous = similar(f.state)
     iterations = Ref(0)
@@ -1192,7 +1177,7 @@ function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timeste
                 batch = 0
                 loglevel > 0 && println("Transient step ",successes," dt=",dt)
                 copyto!(steady_state,f.state)
-                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,cantera_steady_stop)
+                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
                 trial_ok && return true
                 copyto!(f.state,steady_state)
             end
@@ -1425,15 +1410,13 @@ function _auto_refine_loop!(f; refine_grid,ratio,slope,curve,prune,max_points,
         # Cantera SteadyStateSystem::solve restarts time stepping from the
         # configured initial step on every grid.
         _flame_persistent_jacobian(f) && (timestep[] = initial_time_step)
-        intermediate = !strict
-        if !_flame_steady!(f; loglevel, max_time_steps, timestep, tolerance,
-                cantera_steady_stop=intermediate, controls...)
+        if !_flame_steady!(f; loglevel, max_time_steps, timestep, tolerance, controls...)
             # Retry the grid with clipped species; at a nonnegative converged
             # state both forms share the same solution.
             loglevel > 0 && println("Retrying ", length(f.grid), " points with clipped species")
             timestep[] = initial_time_step
             if !_flame_steady!(f; loglevel, max_time_steps, timestep, tolerance,
-                    clip_species=true, cantera_steady_stop=intermediate, controls...)
+                    clip_species = true, controls...)
                 # Cantera's time_step_regrid: refine the failed state and
                 # retry; when refinement cannot change the grid, rethrow.
                 if !(refine_grid && regrids < ts_regrid &&
@@ -1482,7 +1465,7 @@ function _auto_staged!(f; refine_grid,ratio,slope,curve,prune,max_points,
             _fresh_analytic_guess!(f, z)
             timestep[] = initial_step
             solved = _flame_steady!(f; loglevel, max_time_steps, timestep,
-                tolerance=1e-6, cantera_steady_stop=true, controls...)
+                tolerance = 1e-6, controls...)
             solved || continue
             domain_check && _flame_domain_too_narrow(f) && throw(FlameDomainTooNarrow())
             try
@@ -1688,15 +1671,12 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
         # Cantera SteadyStateSystem::solve restarts time stepping from the
         # configured initial step on every grid.
         _flame_persistent_jacobian(f) && (timestep[] = initial_time_step)
-        intermediate = !strict
-        if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,
-                cantera_steady_stop=intermediate,controls...)
+        if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,controls...)
             # Retry the grid with clipped species; at a nonnegative converged
             # state both forms share the same solution.
             loglevel > 0 && println("Retrying ",length(f.grid)," points with clipped species")
             timestep[] = initial_time_step
-            if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,
-                    clip_species=true,cantera_steady_stop=intermediate,controls...)
+            if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,clip_species=true,controls...)
                 # Cantera's time_step_regrid: refine the failed state and retry.
                 refine_grid && regrids < time_step_regrid && _refine_flame!(f;ratio,slope,curve,prune,max_points) ||
                     error("flame solve failed on $(length(f.grid)) points")
