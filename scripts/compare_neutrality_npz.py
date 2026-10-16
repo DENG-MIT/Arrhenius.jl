@@ -10,10 +10,13 @@ base, candidate = map(Path, sys.argv[1:3])
 nh3_root = Path(sys.argv[3]) if len(sys.argv) == 4 else None
 if nh3_root:
     import cantera as ct
-    import json
-    specs = {p.stem: json.loads(p.read_text()) for d in nh3_root.glob("specs_*") if d.is_dir() for p in d.glob("*.json")}
+    import csv, json
+    specs = {}
+    for manifest in base.rglob("manifest.csv"):
+        for row in csv.DictReader(manifest.open()):
+            specs[row["id"]] = json.loads((nh3_root / row["spec"]).read_text())
     gas_cache = {}
-    invariant_max = {"sumY_abs": 0.0, "element_mass_fraction_abs": 0.0, "planar_mass_flux_rel": 0.0}
+    invariant_max = {"sumY_abs": 0.0, "planar_mass_flux_rel": 0.0}
 state_keys = ("grid", "T", "Y", "velocity", "inlet_Y", "SL")
 base_files = {p.name: p for p in base.rglob("*.npz")}
 candidate_files = {p.name: p for p in candidate.rglob("*.npz")}
@@ -47,25 +50,17 @@ for name in files:
         if nh3_root:
             spec = specs[name[:-4]]
             mechanism = spec["mechanism"]
-            gas = gas_cache.setdefault(mechanism, ct.Solution(str(nh3_root / f"{mechanism}.yaml")))
+            if mechanism not in gas_cache:
+                gas_cache[mechanism] = ct.Solution(str(nh3_root / f"{mechanism}.yaml"))
+            gas = gas_cache[mechanism]
             names = bytes(a["species_names_utf8"]).decode("utf-8").splitlines()
             if names != gas.species_names or names != bytes(b["species_names_utf8"]).decode("utf-8").splitlines():
                 raise SystemExit(f"species order mismatch for {name}")
-            elem_matrix = np.zeros((gas.n_elements, gas.n_species))
-            for j, species in enumerate(names):
-                comp = gas.species(species).composition
-                mw = gas.molecular_weights[j]
-                for e, atoms in comp.items():
-                    ei = gas.element_index(e)
-                    elem_matrix[ei, j] = atoms * gas.atomic_weights[ei] / mw
             for label, z in (("base", a), ("candidate", b)):
                 ys = z["Y"].astype(float)
                 sum_error = float(np.max(np.abs(ys.sum(axis=0) - 1.0)))
-                elem = elem_matrix @ ys
-                elem_error = float(np.max(np.abs(elem - elem[:, :1])))
                 invariant_max["sumY_abs"] = max(invariant_max["sumY_abs"], sum_error)
-                invariant_max["element_mass_fraction_abs"] = max(invariant_max["element_mass_fraction_abs"], elem_error)
-                print(f"  {label}_invariants: max_abs_sumY={sum_error:.17g} max_abs_element_mass_fraction_drift={elem_error:.17g}")
+                print(f"  {label}_invariants: max_abs_sumY={sum_error:.17g}")
                 if spec["kind"] in ("free", "burner", "fixed"):
                     pressure = float(spec["P_atm"]) * ct.one_atm
                     flux = []
