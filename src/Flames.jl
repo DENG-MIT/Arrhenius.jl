@@ -50,13 +50,14 @@ Construct a native Julia premixed flame with mixture-averaged diffusion using
 mole-fraction gradients. The inlet mass flux (and flame speed) is an eigenvalue.
 Initialization uses native constant-enthalpy chemical equilibrium. Call `solve!`
 to solve the species and energy equations with adaptive grid refinement.
-`discretization=:conservative` uses shared finite-volume species and total
-enthalpy fluxes; `:finite_difference` retains the original discretization.
+`discretization=:finite_difference` is the default and matches Cantera's
+original discretization. `:conservative` uses shared finite-volume species and
+total enthalpy fluxes.
 """
 function FreeFlame(gas::Solution; T=300.0, P=one_atm, X, width=0.03, grid=nothing,
         transport_model=gas.trans.model==:ionized_gas ? :ionized_gas : :mixture_averaged,
         multicomponent_data=nothing, soret=false,flux_gradient_basis=:mole,
-        discretization=gas.trans.model==:ionized_gas ? :finite_difference : :conservative)
+        discretization=:finite_difference)
     discretization = Symbol(discretization)
     discretization in (:finite_difference,:conservative) ||
         throw(ArgumentError("discretization must be :finite_difference or :conservative"))
@@ -96,13 +97,14 @@ end
 Construct a burner-stabilized premixed flame. `mdot` is the inlet mass flux in
 kg/(m² s). The energy equation is enabled unless `set_temperature_profile!`
 specifies a measured temperature profile.
-Use `discretization=:conservative` for finite-volume species and total enthalpy
-balances, or `:finite_difference` for the original discretization.
+The default `discretization=:finite_difference` matches Cantera's original
+discretization. Use `:conservative` for finite-volume species and total enthalpy
+balances.
 """
 function BurnerFlame(gas::Solution; mdot,T=300.0,P=one_atm,X,width=.03,grid=nothing,
         transport_model=gas.trans.model==:ionized_gas ? :ionized_gas : :mixture_averaged,
         multicomponent_data=nothing,soret=false,flux_gradient_basis=:mole,
-        discretization=gas.trans.model==:ionized_gas ? :finite_difference : :conservative)
+        discretization=:finite_difference)
     isfinite(mdot) && mdot > 0 || throw(ArgumentError("mass flux must be finite and positive"))
     if gas.trans.model == :ionized_gas
         Symbol(transport_model)==:ionized_gas && !soret && multicomponent_data===nothing && flux_gradient_basis==:mole ||
@@ -309,6 +311,17 @@ struct FlameWorkspace{K}
     # Fallback for grids where signed species stall at their lower bound:
     # clipped node species with a finite-difference Jacobian.
     clip_species::Base.RefValue{Bool}
+    # Cantera-policy persistent Jacobian state (SystemJacobian::m_age and
+    # SteadyStateSystem::m_jac_ok), used only by _flame_persistent_jacobian
+    # flames: the unfactored steady band, its LU pivots, the age of the last
+    # evaluation, whether the stored matrix is usable, the 1/dt of the current
+    # factorization, and the evaluation counter behind the growth decision.
+    steady_jacobian::Matrix{Float64}
+    jacobian_pivots::Base.RefValue{Vector{LinearAlgebra.BlasInt}}
+    jacobian_age::Base.RefValue{Int}
+    jacobian_valid::Base.RefValue{Bool}
+    jacobian_rdt::Base.RefValue{Float64}
+    jacobian_evals::Base.RefValue{Int}
 end
 function FlameWorkspace(f::AbstractPremixedFlame)
     n, N = f.gas.n_species, length(f.grid)
@@ -321,7 +334,8 @@ function FlameWorkspace(f::AbstractPremixedFlame)
         f.transport_model == :mixture_averaged && f.soret_enabled ?
             MixtureThermalDiffusionWorkspace(f.multicomponent_data) : nothing,
         [_KineticsTemperatureCache(f.gas.reaction) for _ in 1:N],
-        _conservative_flame(f) ? ConservativeFlameWorkspace(n,N,f.gas) : nothing,Ref(false))
+        _conservative_flame(f) ? ConservativeFlameWorkspace(n,N,f.gas) : nothing,Ref(false),
+        zeros(6*(n+2)-2,(n+2)*N),Ref(LinearAlgebra.BlasInt[]),Ref(100000),Ref(false),Ref(NaN),Ref(0))
 end
 _flame_clipped(w) = w isa FlameWorkspace && w.clip_species[]
 # Node species value and derivative weight under the active species form.
@@ -473,6 +487,60 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
 end
 
 const _flame_timescale = 1e-4
+
+
+# Cantera SteadyStateSystem/MultiNewton solver policy for finite-difference
+# FreeFlame/BurnerFlame solves: one Jacobian is stored per grid and reused
+# across Newton calls (re-evaluated only past age 20 or after a damping
+# failure with an old Jacobian, MultiNewton.cpp:223-283), refactored with the
+# current 1/dt instead (SteadyStateSystem::initTimeInteg), and a successful
+# time step grows dt only when it evaluated no Jacobian
+# (SteadyStateSystem.cpp:309-311).
+_flame_persistent_jacobian(f) = false
+_flame_persistent_jacobian(f::Union{FreeFlame,BurnerFlame}) =
+    f.discretization == :finite_difference
+
+# Cantera SystemJacobian::updateTransient + SteadyStateSystem::factorizeJacobian:
+# the stored steady Jacobian gains the diagonal transient term of the current
+# time step and is refactorized without a Jacobian re-evaluation. The mask is
+# the rows where flame_residual! adds the transient term: temperature and
+# species at interior points, except the temperature row of a
+# prescribed-temperature burner.
+_flame_recoverable_factorization_error(e) = e isa SingularException ||
+    (e isa LinearAlgebra.LAPACKException && e.info > 0)
+
+function _flame_factorize!(f::Union{FreeFlame,BurnerFlame},w::FlameWorkspace,rdt)
+    B,N = size(f.state)
+    # A failed factorization overwrites the band before LAPACK reports its
+    # singular pivot. Invalidate every cache field before touching that band;
+    # callers may catch the exception and retry the solve later.
+    w.jacobian_valid[] = false
+    empty!(w.jacobian_pivots[])
+    w.jacobian_rdt[] = NaN
+    band = w.band
+    copyto!(band,w.steady_jacobian)
+    if rdt != 0
+        diagonal = 4B-1
+        # Both Cantera (EigenSparseJacobian::updateTransient) and the native
+        # residual subtract the transient term: J_transient = J_steady - M/dt.
+        # Cantera applies the sum-Y constraint only at boundary nodes; every
+        # species row is transient at interior nodes in the FD formulation.
+        # Prescribed-T burner overrides the temperature row at interior points.
+        coefficient = _flame_timescale*rdt
+        fixed_temperature = f isa BurnerFlame && !isempty(f.imposed_temperature)
+        dep_row = f.dependent_species+1
+        @inbounds for j in 2:N-1, k in 1:B-1
+            fixed_temperature && k == 1 && continue
+            k == dep_row && _conservative_flame(f) && continue
+            band[diagonal,(j-1)*B+k] -= coefficient
+        end
+    end
+    _,pivots = LinearAlgebra.LAPACK.gbtrf!(2B-1,2B-1,B*N,band)
+    w.jacobian_rdt[] = rdt
+    w.jacobian_pivots[] = pivots
+    w.jacobian_valid[] = true
+    return pivots
+end
 
 # Exponential-fit interpolation approaches centered interpolation on resolved
 # cells and upwind interpolation in convection-dominated cells. One weight is
@@ -656,7 +724,11 @@ function flame_residual!(residual, f::AbstractPremixedFlame, u=f.state, w=FlameW
         for k in 2:n+1
             total += u[k,j]
         end
-        residual[f.dependent_species+1,j] = total - 1
+        # Cantera replaces the dependent-species equation with sum(Y)-1 at
+        # boundaries only. Interior FD rows retain every species balance.
+        if j == 1 || j == N
+            residual[f.dependent_species+1,j] = total - 1
+        end
     end
     return residual
 end
@@ -778,19 +850,47 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     r,trial,rt = similar(u),similar(u),similar(u)
     bandwidth = 2*size(u,1)-1
     pivots = LinearAlgebra.BlasInt[]
-    age = 20
+    policy = _flame_persistent_jacobian(f)
+    # Cantera keeps the Jacobian age on the solver across calls (MultiNewton's
+    # Jacobian is owned by SteadyStateSystem); other flames refresh per call.
+    age = policy ? w.jacobian_age : Ref(20)
+    force_new_jacobian = false
+    jacobian_reevals = 0
+    rdt = 0.0
+    if policy
+        rdt = previous === nothing ? 0.0 : 1.0/dt
+        # Cantera initTimeInteg/setSteadyMode: a time-step change refactorizes
+        # the stored Jacobian with the new transient diagonal instead of
+        # re-evaluating it.
+        if w.jacobian_valid[] && w.jacobian_rdt[] != rdt
+            pivots = try
+                _flame_factorize!(f,w,rdt)
+            catch e
+                _flame_recoverable_factorization_error(e) || rethrow()
+                return false
+            end
+        end
+        # The policy path always solves against the stored factorization; when
+        # this call neither refactorized nor refreshed, copy the stored pivots
+        # so the local variable names a valid ipiv buffer.
+        if w.jacobian_valid[]
+            pivots = w.jacobian_pivots[]
+        end
+    end
     last_contraction = Inf
     # `previous` is immutable throughout this Newton solve. Cache its enthalpy
     # once per solve, never across successive pseudo-time states.
     previous_enthalpy = previous !== nothing ? _flame_previous_enthalpy(f,w,previous) : nothing
     residual_valid = false
     region_enabled = _conservative_flame(f)
-    # Cantera applies its weighted-step merit in every transient Newton solve
-    # (MultiNewton::dampStep), independent of the spatial discretization;
-    # prescribed-temperature systems retain residual merit.
-    cantera_transient = previous !== nothing && !_flame_correction_enabled(f) &&
-        !(f isa BurnerFlame && !isempty(f.imposed_temperature))
-    correction_enabled = _flame_correction_enabled(f) || cantera_transient
+    # Cantera applies its weighted-step merit in every Newton solve
+    # (MultiNewton::dampStep), independent of the spatial discretization and
+    # of rdt: acceptance is s1 < 1 || s1 < s0 and s1 < 1 converges.
+    # Prescribed-temperature systems retain residual merit.
+    fixed_temperature = f isa BurnerFlame && !isempty(f.imposed_temperature)
+    cantera_transient = previous !== nothing && !_flame_correction_enabled(f) && !fixed_temperature
+    policy_merit = policy && !fixed_temperature
+    correction_enabled = _flame_correction_enabled(f) || cantera_transient || policy_merit
     correction_weights = correction_enabled ? _flame_correction_weights(f,u,previous !== nothing) : Float64[]
     trial_correction = correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     current_region = falses(size(u,1)-2,2size(u,2)-1)
@@ -815,26 +915,44 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             _flame_active_region!(current_region,u)
             region_changed = region_valid && current_region != factored_region
         end
-        refresh = age >= 20 || region_changed
+        # Cantera MultiNewton::solve refreshes the Jacobian only past its
+        # maximum age (m_maxAge = 20) or on demand after a damping failure.
+        refresh = policy ? force_new_jacobian || !w.jacobian_valid[] || age[] > 20 :
+            age[] >= 20 || region_changed
         step = try
             if refresh
-                J = _flame_jacobian(f,u,w,r; previous,dt,previous_enthalpy,analytic)
-                _premixed_stats(f).jacobians+=1; PREMIXED_STATS.jacobians+=1
-                _,pivots = LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
+                if policy
+                    # Cantera OneDim::evalJacobian evaluates the steady
+                    # Jacobian (rdt = 0); the transient diagonal enters at
+                    # factorization (SystemJacobian::updateTransient).
+                    flame_residual!(rt,f,u,w)
+                    J = _flame_jacobian(f,u,w,rt; analytic)
+                    copyto!(w.steady_jacobian,J)
+                    w.jacobian_evals[] += 1
+                    _premixed_stats(f).jacobians+=1; PREMIXED_STATS.jacobians+=1
+                    pivots = _flame_factorize!(f,w,rdt)
+                else
+                    J = _flame_jacobian(f,u,w,r; previous,dt,previous_enthalpy,analytic)
+                    _premixed_stats(f).jacobians+=1; PREMIXED_STATS.jacobians+=1
+                    _,pivots = LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
+                end
                 if region_enabled
                     copyto!(factored_region,current_region)
                     region_valid = true
                 end
-                age = 0
+                age[] = 0
+                force_new_jacobian = false
             end
             correction = -vec(copy(r))
             LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,correction)
             reshape(correction,size(u))
         catch e
-            e isa SingularException || rethrow()
+            _flame_recoverable_factorization_error(e) || rethrow()
             return false
         end
         all(isfinite,step) || return false
+        # MultiNewton::solve increments the Jacobian age after every step.
+        policy && (age[] += 1)
         if _flame_needs_correction_check(f) && iteration > minimum_iterations &&
                 residual_norm < tolerance && _flame_correction_norm(step,correction_weights) < 1
             return true
@@ -862,8 +980,18 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         # dampStep rejects a bound factor no greater than 1e-10.
         if alpha <= 1e-10
             at_floor && return true
+            if policy
+                # MultiNewton::solve: a damping failure re-evaluates an old
+                # Jacobian (at most four times) and fails with a fresh one.
+                if age[] > 1 && jacobian_reevals <= 3
+                    jacobian_reevals += 1
+                    force_new_jacobian = true
+                    continue
+                end
+                return false
+            end
             refresh && return false
-            age = 20
+            age[] = 20
             continue
         end
         # Trial correction merit uses the already factored (lagged) Newton J.
@@ -882,8 +1010,9 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
                     LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,trial_correction)
                     trial_merit = _flame_correction_norm(reshape(trial_correction,size(u)),correction_weights)
                     # Cantera dampStep accepts s1 < 1 or s1 < s0 and treats
-                    # s1 < 1 as convergence of the time step.
-                    trial_contracts = cantera_transient ? trial_merit < 1 || trial_merit < step_merit :
+                    # s1 < 1 as convergence of the Newton solve.
+                    trial_contracts = (cantera_transient || policy_merit) ?
+                        trial_merit < 1 || trial_merit < step_merit :
                         trial_merit < step_merit
                 else
                     trial_contracts = norm(rt) < norm(r)*(1-1e-4*alpha)
@@ -892,6 +1021,8 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             if trial_contracts
                 u .= trial
                 accepted = true
+                # s1 < 1 converges a time step (Cantera dampStep); the steady
+                # solve continues to the residual tolerance instead.
                 cantera_transient && trial_merit < 1 && return true
                 break
             end
@@ -900,8 +1031,16 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         loglevel > 1 && println("Newton ",iteration," residual=",residual_norm," damping=",alpha)
         if !accepted || alpha <= 1e-10
             at_floor && return true
+            if policy
+                if age[] > 1 && jacobian_reevals <= 3
+                    jacobian_reevals += 1
+                    force_new_jacobian = true
+                    continue
+                end
+                return false
+            end
             refresh && return false
-            age = 20
+            age[] = 20
             continue
         end
         at_floor && alpha < 1e-3 && return true
@@ -910,7 +1049,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         # at exactly the newly accepted state. A rejected search never reuses it.
         r,rt = rt,r
         residual_valid = _flame_reuse_trial(f)
-        age += 1
+        policy || (age[] += 1)
     end
     return false
 end
@@ -947,11 +1086,17 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
     neutral = w isa FlameWorkspace
     clip_species && !neutral && return false
     neutral && (w.clip_species[] = clip_species)
-    steady_state = _flame_checkpoint_steady(f) ? copy(f.state) : nothing
-    _flame_newton!(f,w; loglevel,tolerance,analytic) && return true
+    policy = _flame_persistent_jacobian(f)
+    # Cantera time-steps from the state before the failed steady attempt
+    # (MultiNewton::solve leaves its input untouched on failure).
+    steady_state = _flame_checkpoint_steady(f) || policy ? copy(f.state) : nothing
+    steady_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
+    steady_ok && return true
     _premixed_stats(f).steady_failures+=1; PREMIXED_STATS.steady_failures+=1
     # A failed steady trial must not replace the accepted pseudo-time state.
     steady_state === nothing || copyto!(f.state,steady_state)
+    policy && return _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,
+        timestep,tolerance,growth_factor,growth_strategy,step_callback,analytic)
     dt = timestep[]
     previous = similar(f.state)
     failures = 0
@@ -970,7 +1115,8 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
             if step % 10 == 0
                 loglevel > 0 && println("Transient step ",step," dt=",dt)
                 steady_state === nothing || copyto!(steady_state,f.state)
-                _flame_newton!(f,w; loglevel,tolerance,analytic) && return true
+                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
+                trial_ok && return true
                 steady_state === nothing || copyto!(f.state,steady_state)
             end
         else
@@ -986,6 +1132,69 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
             dt *= .25
             timestep[] = dt
             dt > 1e-12 || return false
+        end
+    end
+    return false
+end
+
+# Cantera SteadyStateSystem::solve/timeStep for _flame_persistent_jacobian
+# flames: batches of ten successful time steps between steady attempts
+# (m_steps = {10}), dt grown only after a step that evaluated no Jacobian
+# (SteadyStateSystem.cpp:309-311), halved on failure (m_tfactor = 0.5, minimum
+# 1e-16, maximum 1e8), with clipped-species resets after three successive
+# failures (resetBadValues). A failed steady attempt restarts time stepping
+# from the state before the attempt.
+function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timestep,
+        tolerance,growth_factor,growth_strategy,step_callback,analytic)
+    dt = timestep[]
+    previous = similar(f.state)
+    iterations = Ref(0)
+    growth_residual = similar(f.state)
+    residual_at!(r,x,previous,dt) = flame_residual!(r,f,x,w; previous,dt)
+    successive_failures = 0
+    successes = 0
+    batch = 0
+    while successes < max_time_steps
+        copyto!(previous,f.state)
+        jacobians_before = w.jacobian_evals[]
+        # Cantera MultiNewton::solve has no iteration cap: a lagged Jacobian
+        # stall is broken by the age-20 refresh, not by giving up the step.
+        # 200 is a safety valve only; age refreshes every 21 iterations exit
+        # via convergence or damping failure long before it.
+        if _flame_newton!(f,w; previous,dt,maxiters=200,loglevel=0,analytic,iterations)
+            successive_failures = 0
+            successes += 1
+            batch += 1
+            # A step that refreshed the Jacobian does not grow dt.
+            if w.jacobian_evals[] == jacobians_before
+                dt *= _timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
+                    previous,f.state,dt,iterations[])
+            end
+            step_callback === nothing || step_callback(dt)
+            dt = min(dt,1e8)
+            timestep[] = dt
+            if batch >= 10
+                batch = 0
+                loglevel > 0 && println("Transient step ",successes," dt=",dt)
+                copyto!(steady_state,f.state)
+                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
+                trial_ok && return true
+                copyto!(f.state,steady_state)
+            end
+        else
+            copyto!(f.state,previous)
+            successive_failures += 1
+            if successive_failures > 2
+                # Cantera SteadyStateSystem::timeStep: every third successive
+                # failure resets bad values (clip negative species and
+                # renormalize) instead of reducing dt.
+                _flame_reset_species!(f.state)
+                successive_failures = 0
+                continue
+            end
+            dt *= .5
+            timestep[] = dt
+            dt > 1e-16 || return false
         end
     end
     return false
@@ -1198,6 +1407,9 @@ function _auto_refine_loop!(f; refine_grid,ratio,slope,curve,prune,max_points,
     for pass in 1:40
         loglevel > 0 && println("Solving on ", length(f.grid), " points")
         tolerance = strict ? 1e-8 : 1e-6
+        # Cantera SteadyStateSystem::solve restarts time stepping from the
+        # configured initial step on every grid.
+        _flame_persistent_jacobian(f) && (timestep[] = initial_time_step)
         if !_flame_steady!(f; loglevel, max_time_steps, timestep, tolerance, controls...)
             # Retry the grid with clipped species; at a nonnegative converged
             # state both forms share the same solution.
@@ -1456,6 +1668,9 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     for pass in 1:40
         loglevel > 0 && println("Solving on ",length(f.grid)," points")
         tolerance = strict ? 1e-8 : 1e-6
+        # Cantera SteadyStateSystem::solve restarts time stepping from the
+        # configured initial step on every grid.
+        _flame_persistent_jacobian(f) && (timestep[] = initial_time_step)
         if !_flame_steady!(f; loglevel,max_time_steps,timestep,tolerance,controls...)
             # Retry the grid with clipped species; at a nonnegative converged
             # state both forms share the same solution.

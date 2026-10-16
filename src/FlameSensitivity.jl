@@ -2,7 +2,8 @@
     flame_speed_sensitivities(f::FreeFlame)
 
 Normalized laminar flame speed sensitivities ``s_i = (k_i/S_u)\\,dS_u/dk_i`` to the
-rate constant of every reaction at a converged conservative free flame. One
+rate constant of every reaction at a converged conservative free flame. Construct
+with `discretization=:conservative` and solve before calling. One
 adjoint solve with the steady Newton Jacobian gives ``λ`` with ``Jᵀλ = ∂S_u/∂u``;
 scaling reaction ``i`` scales its net rate of progress, which enters only the
 species balances of each node, so ``s_i = -λᵀ ∂F/∂\\ln k_i / S_u``. The adjoint

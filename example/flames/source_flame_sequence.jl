@@ -51,9 +51,9 @@ function run_source_sequence(gas,data,case,profile=nothing;save_profiles=false,a
         begin
             if stage==1
                 X=free ? "H2:1.1,O2:1,AR:5" : fixed ? "CH4:.65,O2:1,N2:3.76" : "H2:1.5,O2:1,AR:7"
-                f=free ? FreeFlame(gas;T=300.,P=one_atm,X,width=.03) :
+                f=free ? FreeFlame(gas;T=300.,P=one_atm,X,width=.03,discretization=:conservative) :
                     BurnerFlame(gas;T=fixed ? 373.7 : 373.,P=fixed ? one_atm : .05one_atm,X,
-                        mdot=fixed ? .04 : .06,width=fixed ? .01 : .5)
+                        mdot=fixed ? .04 : .06,width=fixed ? .01 : .5,discretization=:conservative)
                 f.discretization==:conservative || error("source example requires the conservative discretization")
                 if fixed
                     set_temperature_profile!(f,vec(profile["positions"]),vec(profile["temperatures"]);relative=false,grid_policy=:adaptive)

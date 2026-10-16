@@ -103,6 +103,15 @@ using Arrhenius, LinearAlgebra, Test
     @test fixed.converged && fxs.jacobians>0 && fxs.newton_iterations>=fxs.jacobians
     @test counts(stats)==fcounts
 
+    # Cantera keeps every species balance at interior nodes and applies the
+    # sum-Y constraint to the dependent-species row only at boundaries.
+    j = clamp(f.anchor,2,length(f.grid)-1)
+    u = copy(f.state)
+    u[f.dependent_species+1,j] += 1e-4
+    rfd = flame_residual!(similar(u),f,u)
+    @test !isapprox(rfd[f.dependent_species+1,j],sum(@view(u[2:end-1,j]))-1;atol=1e-12)
+    @test isapprox(rfd[f.dependent_species+1,1],sum(@view(u[2:end-1,1]))-1;atol=1e-12)
+
     # Cantera's fourth refine criterion: prune=0 must reproduce the default.
     explicit = solve!(FreeFlame(gas;X,discretization=:finite_difference);prune=0.)
     @test explicit.grid==f.grid && explicit.state==f.state

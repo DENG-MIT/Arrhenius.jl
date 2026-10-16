@@ -102,8 +102,9 @@ set_transport!(flame, :multicomponent; data, soret=true)
 solve!(flame; slope=.02, curve=.04)
 ```
 
-For a prescribed burner temperature, `set_temperature_profile!(burner, z, T;
-relative=false, grid_policy=:adaptive)` stores every supplied pair and lets a
+For a prescribed burner temperature, construct the burner with
+`discretization=:conservative` before calling `set_temperature_profile!(burner, z, T;
+relative=false, grid_policy=:adaptive)`. This stores every supplied pair and lets a
 conservative, no-Soret flame refine its solution grid. Refinement also bounds the
 piecewise-linear temperature's deviation from each cell chord to 1% of the largest
 supplied temperature. The default `:full_knots` inserts all profile knots for
@@ -320,7 +321,9 @@ E = electric_field(flame)  # V/m at each grid point
 The planar model solves species, energy, continuity, and Gauss's law with
 signed charged-species states and ionized-gas transport. Select
 `discretization=:conservative` for conservative species and total-enthalpy
-balances, or use the default `:finite_difference` formulation. Conservative
+balances. `:finite_difference` is the default for neutral free and burner flames,
+including prescribed-temperature burner flames, and matches Cantera’s original
+discretization and solver policy. Conservative
 calculations initialize through a native frozen finite-difference solve.
 Soret diffusion, prescribed temperature profiles, and restart
 snapshots are not supported for this flame type.
