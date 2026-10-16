@@ -116,7 +116,8 @@ function _gas_arrhenius(data, order, units; name="rate-constant")
     # Cantera stores activation energy as Ea/R and reconstructs J/kmol in
     # input_data before the sidecar converts it back to cal/mol.
     Ea_j_kmol=_gas_quantity(get(data,"Ea",0.0),units[4],"$name Ea")
-    Ea=((Ea_j_kmol/R)*R)/4184.0
+    # Match AnyValue::applyUnits operation order for sidecar parity.
+    Ea=(Ea_j_kmol/R)/(1.0/R)/4184.0
     (A,b,Ea)
 end
 
@@ -346,9 +347,14 @@ function _gas_molecular_weight(root,phase,name)
     i===nothing && throw(ArgumentError("species definition not found for $name"))
     comp=defs[i]["composition"]
     total=0.0
-    for (e,v) in comp
-        element=String(e); haskey(_GAS_ATOMIC_WEIGHTS,element) || throw(ArgumentError("unknown element $element; supply an atomic weight table"))
-        total += _gasfloat(v,"$name composition")*_GAS_ATOMIC_WEIGHTS[element]
+    # Preserve the reference summation sequence by using the selected phase's element order.
+    element_order=get(phase,"elements",get(root,"elements",sort!(collect(keys(comp)))))
+    element_order isa AbstractString && lowercase(element_order)=="all" &&
+        (element_order=get(root,"elements",sort!(collect(keys(comp)))))
+    for e in element_order
+        element=String(e); haskey(comp,element) || continue
+        haskey(_GAS_ATOMIC_WEIGHTS,element) || throw(ArgumentError("unknown element $element; supply an atomic weight table"))
+        total += _gasfloat(comp[e],"$name composition")*_GAS_ATOMIC_WEIGHTS[element]
     end
     total
 end

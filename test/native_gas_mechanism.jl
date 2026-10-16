@@ -62,6 +62,17 @@ end
         @test_throws ArgumentError CreateSolution(path;kinetics_reader=:unknown)
     end
 
+    # These are Cantera's published sidecar values for compositions whose
+    # phase element order differs from alphabetical order.
+    mw_species=[
+        Dict("name"=>"HONO","composition"=>Dict("H"=>1,"N"=>1,"O"=>2)),
+        Dict("name"=>"NCO","composition"=>Dict("C"=>1,"N"=>1,"O"=>1)),
+    ]
+    mw_phase=Dict("elements"=>["H","O","N","C"])
+    mw_root=Dict("species"=>mw_species,"elements"=>["C","H","O","N"])
+    @test Arrhenius._gas_molecular_weight(mw_root,mw_phase,"HONO") == 47.013
+    @test Arrhenius._gas_molecular_weight(mw_root,mw_phase,"NCO") == 42.016999999999996
+
     Random.seed!(20261016)
     for T in (500.0,1200.0,2600.0)
         Y=rand(native.n_species); Y./=sum(Y)

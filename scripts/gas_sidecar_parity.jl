@@ -16,6 +16,12 @@ for (path,refname) in inputs
     gas=CreateSolution(path;data_paths=[dirname(path)])
     parsed=Arrhenius._native_gas_arrays(root,phase,gas.species_names;mechanism=path,data_paths=[dirname(path)])
     raw=Arrhenius.npzread(refpath)
+    if "molecular_weights" in keys(parsed) && "molecular_weights" in keys(raw)
+        for i in eachindex(parsed["molecular_weights"])
+            a,b=parsed["molecular_weights"][i],raw["molecular_weights"][i]
+            a == b || println("MW mismatch mechanism=$(basename(path)) species=$(gas.species_names[i]) native=$(repr(a)) sidecar=$(repr(b))")
+        end
+    end
     for key in sort!(collect(intersect(Set(keys(parsed)),Set(keys(raw)))))
         a,b=parsed[key],raw[key]; size(a)==size(b) || (push!(lines,"| $(basename(path)) | $key | SHAPE $(size(a)) != $(size(b)) | — | — |"); continue)
         isempty(a) && continue
