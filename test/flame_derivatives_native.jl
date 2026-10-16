@@ -181,4 +181,8 @@ end
     @test !Arrhenius._flame_correction_enabled(imposed)
     legacy=FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid,discretization=:finite_difference)
     @test !Arrhenius._flame_correction_enabled(legacy)
+    @test Arrhenius._flame_grid_sequence(legacy)
+    fixed_fd=BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.07,discretization=:finite_difference)
+    set_temperature_profile!(fixed_fd,grid,temperature(fixed_fd);relative=false)
+    @test !Arrhenius._flame_grid_sequence(fixed_fd)
 end
