@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """xresid — cross-residual check: both codes' residuals at both states.
 
-Usage (from a directory where the mechanism YAML resolves, e.g. nh3-parity):
+Usage (from a directory where the mechanism YAML resolves):
     xresid.py <spec.json> <stateA.npz> <stateB.npz> [--scales B|A]
               [--out DIR] [--json FILE] [--rtol 1e-11] [--top 30]
               [--discretization finite_difference|conservative]
