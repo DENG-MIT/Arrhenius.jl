@@ -749,8 +749,6 @@ _flame_species_forward(y)=_flame_species_weight(y)>0
 _flame_correction_weights(f,u,transient)=_flame_correction_weights(u,transient)
 _flame_needs_correction_check(f)=false
 _flame_step_sequencing(f)=_conservative_flame(f)
-_flame_grid_sequence(f)=_flame_step_sequencing(f) ||
-    (_flame_persistent_jacobian(f) && !(f isa BurnerFlame && !isempty(f.imposed_temperature)))
 _flame_checkpoint_steady(f)=_conservative_flame(f)
 _flame_reuse_trial(f)=_conservative_flame(f)
 _flame_refine_threshold(f,k)=k==1 ? sqrt(eps(Float64))/1000 : sqrt(eps(Float64))
@@ -1419,7 +1417,7 @@ end
 function _auto_refine_loop!(f; refine_grid,ratio,slope,curve,prune,max_points,
         max_time_steps,loglevel,domain_check,timestep,controls,initial_time_step,
         ts_regrid=3)
-    strict = !refine_grid || !_flame_grid_sequence(f)
+    strict = !refine_grid || !_flame_step_sequencing(f)
     regrids = 0
     for pass in 1:40
         loglevel > 0 && println("Solving on ", length(f.grid), " points")
@@ -1446,13 +1444,13 @@ function _auto_refine_loop!(f; refine_grid,ratio,slope,curve,prune,max_points,
                 loglevel > 0 && println("Time stepping failed; regridding to ",
                     length(f.grid), " points")
                 timestep[] = initial_time_step
-                strict = !_flame_grid_sequence(f)
+                strict = !_flame_step_sequencing(f)
                 continue
             end
         end
         domain_check && _flame_domain_too_narrow(f) && throw(FlameDomainTooNarrow())
         if refine_grid && _refine_flame!(f; ratio, slope, curve, prune, max_points)
-            strict = !refine_grid || !_flame_grid_sequence(f)
+            strict = !refine_grid || !_flame_step_sequencing(f)
         elseif !strict
             # The grid was accepted by refinement; re-solve to the full
             # tolerance and check refinement once more.
@@ -1682,7 +1680,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     # Grids that refinement may still change only guide refinement; they use a
     # looser steady tolerance. A grid accepted by refinement is then solved to
     # the full residual tolerance and checked again.
-    strict = !refine_grid || !_flame_grid_sequence(f)
+    strict = !refine_grid || !_flame_step_sequencing(f)
     expansions = 0
     for pass in 1:40
         loglevel > 0 && println("Solving on ",length(f.grid)," points")
@@ -1705,7 +1703,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
                 regrids += 1
                 loglevel > 0 && println("Time stepping failed; regridding to ",length(f.grid)," points")
                 timestep[] = initial_time_step
-                strict = !_flame_grid_sequence(f)
+                strict = !_flame_step_sequencing(f)
                 continue
             end
         end
@@ -1716,7 +1714,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
             expansions += 1
             loglevel > 0 && println("Expanding domain to ",f.grid[end]-f.grid[1]," m")
             refine_grid && _refine_flame!(f;ratio,slope,curve,prune,max_points)
-            strict = !refine_grid || !_flame_grid_sequence(f)
+            strict = !refine_grid || !_flame_step_sequencing(f)
             continue
         end
         refined = refine_grid && _refine_flame!(f;ratio,slope,curve,prune,max_points)
@@ -1724,7 +1722,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
             strict = true
             continue
         end
-        refined && (strict = !_flame_grid_sequence(f))
+        refined && (strict = !_flame_step_sequencing(f))
         if !refined
             if _conservative_flame(f) && minimum(@view(f.state[2:end-1,:])) <= -1e-12
                 # A clipped negative trial can converge on an unphysical branch.
