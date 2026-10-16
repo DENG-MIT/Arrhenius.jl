@@ -15,7 +15,7 @@ Thermal conductivity. [W/m/K].
 Mixture-averaged diffusion coefficients [m^2/s] relating the mass-averaged diffusive fluxes 
 (with respect to the mass averaged velocity) to gradients in the species mole fractions.
 
-Test this module in _transport_test.jl
+Transport behavior is covered by the package test suite.
 
 See also implementations in ReacTorch
 """

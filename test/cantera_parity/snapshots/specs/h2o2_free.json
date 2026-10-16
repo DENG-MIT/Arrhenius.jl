@@ -1,0 +1,12 @@
+{
+  "mechanism": "mechanism/h2o2",
+  "kind": "free",
+  "T": 300.0,
+  "P_atm": 1.0,
+  "X": "H2:2,O2:1,AR:3.76",
+  "width": 0.03,
+  "transport": "mixture-averaged",
+  "ratio": 3.0,
+  "slope": 0.06,
+  "curve": 0.12
+}

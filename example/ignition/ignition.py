@@ -1,10 +1,6 @@
-import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from skopt.space import Space
-from skopt.sampler import Lhs
-
 import cantera as ct
 
 np.random.seed(1)
@@ -19,7 +15,7 @@ states = ct.SolutionArray(gas, extra=['t'])
 
 print('%10s %10s %10s %14s' % ('t [s]', 'T [K]', 'P [Pa]', 'u [J/kg]'))
 while sim.time < 1.e-1:
-    states.append(r.thermo.state, t=sim.time)
+    states.append(r.phase.state, t=sim.time)
     sim.step()
 
 nodedata = np.vstack((states.t, states.T, states.Y.T)).T
@@ -43,4 +39,7 @@ plt.plot(states.t, states.Y[:, gas.species_index('H2O')])
 plt.xlabel('Time (ms)')
 plt.ylabel('CO2 Mole Fraction')
 plt.tight_layout()
-plt.show()
+if os.environ.get("ARRHENIUS_GENERATE_ONLY") == "1":
+    plt.savefig("CH4_ignition.png")
+else:
+    plt.show()
