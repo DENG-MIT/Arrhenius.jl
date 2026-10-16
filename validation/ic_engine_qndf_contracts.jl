@@ -100,7 +100,8 @@ end
     @test_throws MethodError E.solve_ic_engine_qndf("unused.yaml";reltol=1e-5)
     for name in ("entry.jl","adapter.jl","solve.jl","checks.jl")
         source=read(joinpath(reactors,"engine_qndf",name),String)
-        @test !occursin(r"C:/|C:\\\\|/home/|/Users/|npzread|TOML.parsefile|cd\(",source)
+        @test !occursin(r"C:/|C:\\\\|/Users/|npzread|TOML.parsefile|cd\(",source)
+        @test !occursin(string("/", "home", "/"),source)
     end
     cli=read(joinpath(reactors,"ic_engine.jl"),String)
     entry=read(joinpath(reactors,"engine_qndf","entry.jl"),String)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Cantera-side dump tool for lockstep comparison with Arrhenius.jl.
 
-Usage (from the validation harness directory (NH3_HARNESS_DIR) so mechanism YAMLs resolve):
+Usage: call from any directory; bundled mechanism paths resolve from the repository root:
     ct_dump.py spec.json outdir state    # initial-guess state + steady residual + Jacobian
     ct_dump.py spec.json outdir trace    # full solve; per-timestep states + stdout log
 
@@ -28,6 +28,7 @@ Environment: CANTERA_LOGLEVEL (default 2 for trace; state mode evaluates quietly
 import json
 import os
 import sys
+from pathlib import Path
 
 for v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS"):
     os.environ[v] = "1"
@@ -36,7 +37,10 @@ import cantera as ct
 
 
 def build(spec):
-    gas = ct.Solution(spec["mechanism"] + ".yaml")
+    mechanism = Path(spec["mechanism"])
+    if not mechanism.is_absolute():
+        mechanism = Path(__file__).resolve().parents[2] / mechanism
+    gas = ct.Solution(str(mechanism) + ".yaml")
     kind = spec["kind"]
     if kind in ("diffusion", "premixed", "twin", "stagnation"):
         # Counterflow family; case setup mirrors the harness Cantera driver.
