@@ -11,7 +11,6 @@ gas = CreateSolution(spec["mechanism"] * ".yaml")
 X = Dict(String(k) => parse(Float64, v) for (k, v) in split.(split(spec["X"], ","), ":"))
 P = spec["P_atm"] * one_atm
 f = FreeFlame(gas; T=spec["T"], P, X, width=spec["width"], transport_model=:mixture_averaged)
-f.energy_enabled = true
 
 const ATTEMPTS = NamedTuple[]
 const TRANSIENT_SUCCESSES = Ref(0)
