@@ -1,0 +1,44 @@
+  4     2.495e-07   9.980e-07    7.170    8.164    8.164    1      1/20
+  5     1.764e-07   9.980e-07    7.170    8.164    8.164    1      1/20
+  6     1.248e-07   9.980e-07    7.170    8.164    8.164    1      1/20
+  No damping coefficient found (max damping iterations reached)
+  ----------------------------------------------------------------------
+Newton steady-state solve failed.
+
+Attempt 10 timesteps.
+Timestep (0) dt= 1.0000e-05   log(ss)= 7.1700
+
+  ---------------------- Damped Newton iteration -----------------------
+  Iter  F_damp       F_bound     log(ss)  log(s0)  log(s1)  N_jac  Age
+  ----------------------------------------------------------------------
+  0     1.724e-02   1.724e-02    7.163    6.589    6.582    1      2/20
+  Damping coefficient found (solution has not converged yet)
+  No damped step can be taken without violating solution component bounds.
+  Re-evaluating Jacobian (damping coefficient not found with this Jacobian)
+  No damped step can be taken without violating solution component bounds.
+  ----------------------------------------------------------------------
+Timestep (0) failed--> Reducing timestep
+Timestep (0) dt= 5.0000e-06   log(ss)= 7.1700
+
+  ---------------------- Damped Newton iteration -----------------------
+  Iter  F_damp       F_bound     log(ss)  log(s0)  log(s1)  N_jac  Age
+  ----------------------------------------------------------------------
+  0     3.413e-02   3.413e-02    7.156    6.749    6.734    2      2/20
+  Damping coefficient found (solution has not converged yet)
+  No damped step can be taken without violating solution component bounds.
+  Re-evaluating Jacobian (damping coefficient not found with this Jacobian)
+  No damped step can be taken without violating solution component bounds.
+  ----------------------------------------------------------------------
+Timestep (0) failed--> Reducing timestep
+Timestep (0) dt= 2.5000e-06   log(ss)= 7.1700
+
+  ---------------------- Damped Newton iteration -----------------------
+  Iter  F_damp       F_bound     log(ss)  log(s0)  log(s1)  N_jac  Age
+  ----------------------------------------------------------------------
+  0     7.146e-02   7.146e-02    7.140    6.915    6.883    3      2/20
+  Damping coefficient found (solution has not converged yet)
+  No damped step can be taken without violating solution component bounds.
+  Re-evaluating Jacobian (damping coefficient not found with this Jacobian)
+  No damped step can be taken without violating solution component bounds.
+  ----------------------------------------------------------------------
+Timestep (0) failed--> Resetting negative species concentrations
