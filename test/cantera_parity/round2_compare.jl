@@ -3,7 +3,7 @@ using Arrhenius, YAML, NPZ, LinearAlgebra
 BLAS.set_num_threads(1)
 root=joinpath(ENV["HOME"],"work/hotwin")
 out=joinpath(root,"round2")
-adapter=joinpath(ENV["HOME"],"work/nh3-parity/h/nh3_native_server.jl")
+adapter=joinpath(get(ENV,"NH3_HARNESS_DIR","") == "" ? error("set NH3_HARNESS_DIR to the validation harness directory") : ENV["NH3_HARNESS_DIR"],"h/nh3_native_server.jl")
 Base.include_string(Main,split(read(adapter,String),"\nwhile true\n")[1],adapter)
 repo=normpath(joinpath(dirname(pathof(Arrhenius)),".."))
 source=haskey(ENV,"POLICY_A_SOURCE") ? read(ENV["POLICY_A_SOURCE"],String) :

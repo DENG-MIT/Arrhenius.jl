@@ -5,7 +5,7 @@
 # `counterflow_residual!` (src/CounterflowFlames.jl) line by line from the same
 # property arrays, and are self-checked against the production residual.
 #
-# Usage (from the nh3-parity directory so mechanism sidecars resolve):
+# Usage (from the validation harness directory (NH3_HARNESS_DIR) so mechanism sidecars resolve):
 #   julia --project=<worktree> native_dump_cf.jl spec.json outdir state CT_NPZ
 #       CT_NPZ: ct_state.npz (initial guess) or ct_solved.npz (converged state)
 #       written by ct_dump.py. Loads grid, T, u, V, Lambda, Y into the native

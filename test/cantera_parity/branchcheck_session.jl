@@ -1,7 +1,7 @@
 # Run a branchcheck's native cases in one persistent process. Cantera jobs and
 # gates use the existing harness; BASELINE_REFINE supplies the main method.
 using Arrhenius, YAML, NPZ
-harness=joinpath(ENV["HOME"],"work/nh3-parity/h/nh3_native_server.jl")
+harness=joinpath(get(ENV,"NH3_HARNESS_DIR","") == "" ? error("set NH3_HARNESS_DIR to the validation harness directory") : ENV["NH3_HARNESS_DIR"],"h/nh3_native_server.jl")
 Base.include_string(Main,split(read(harness,String),"\nwhile true\n")[1],harness)
 function refine_expr(path)
     expr=Meta.parseall(read(path,String))

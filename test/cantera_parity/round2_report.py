@@ -2,7 +2,7 @@
 import csv, json, os, subprocess
 import numpy as np
 from pathlib import Path
-root=Path.home()/"work/nh3-parity"
+root=Path(os.environ["NH3_HARNESS_DIR"])  # the validation harness directory
 task=Path.home()/"work/hotwin"
 out=task/"round2"
 tool=task/"repo/test/cantera_parity"
