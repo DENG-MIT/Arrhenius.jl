@@ -9,7 +9,9 @@ function measure(label, f; reps=9, n=1000)
         for _ in 1:n; f(); end
         push!(samples,(time_ns()-t0)/n)
     end
-    println(label," median_ns=",round(Int,median(samples))," alloc_B=",alloc," samples_ns=",round.(Int,samples))
+    value = median(samples)
+    println(label," median_ns=",round(Int,value)," alloc_B=",alloc," samples_ns=",round.(Int,samples))
+    return value
 end
 
 function main()
@@ -136,4 +138,62 @@ function main()
     println("output_sha256=",bytes2hex(sha256(reinterpret(UInt8,out))))
     @code_warntype Arrhenius._mass_action!(kw,gas.reaction,C)
 end
-main()
+
+# Profile the complete finite-difference path on a fixed 9-node, 125-species
+# flame. This reuses the same residual and Jacobian entry points as solves while
+# separating frozen-property work, residual assembly, and band insertion.
+function profile_fd_jacobian()
+    spec = YAML.load_file(ARGS[1])
+    mechanism = spec["mechanism"]
+    gas = Arrhenius.CreateSolution(mechanism * ".yaml")
+    Xdict = Dict(String(k) => parse(Float64, v) for (k,v) in split.(split(spec["X"], ","), ":"))
+    X = Arrhenius.mole_fractions(gas, Xdict)
+    P = Float64(spec["P_atm"] * Arrhenius.one_atm)
+    f = Arrhenius.FreeFlame(gas;T=300.0,P,X,width=.03,grid=collect(range(0,.03;length=9)))
+    w = Arrhenius.FlameWorkspace(f)
+    u = f.state
+    base = similar(u)
+    Arrhenius.flame_residual!(base,f,u,w;update_transport=true)
+    N = size(u,2)
+    nodes = 2:3:N
+    rp = similar(base)
+    perturbed = copy(u)
+    properties_color!() = Arrhenius._flame_properties!(w,f,perturbed;
+        update_transport=false,nodes)
+    residual_color!() = Arrhenius.flame_residual!(rp,f,perturbed,w;
+        update_transport=false,nodes)
+    properties_ns = measure("fd_properties_and_frozen_flux_color",properties_color!;reps=7,n=20)
+    residual_ns = measure("fd_residual_color",residual_color!;reps=7,n=20)
+    B = size(u,1)
+    band = zeros(6B-2,B*N)
+    steps = ones(N)
+    insertion!() = begin
+        fill!(band,0.0)
+        @inbounds for k in 1:B, color in 1:3
+            for j in color:3:N
+                column=(j-1)*B+k
+                for jj in max(1,j-1):min(N,j+1), kk in 1:B
+                    row=(jj-1)*B+kk
+                    band[4B-1+row-column,column]=rp[kk,jj]-base[kk,jj]
+                end
+            end
+        end
+        band
+    end
+    insertion_ns = measure("fd_band_insertion_all_columns",insertion!;reps=7,n=1)
+    full_jacobian!() = Arrhenius._flame_jacobian(f,u,w,base;analytic=false)
+    jacobian_ns = measure("fd_jacobian_9node",full_jacobian!;reps=5,n=1)
+    println("FD_PROFILE nspecies=",gas.n_species," nreactions=",gas.reaction.n_reactions,
+        " nodes=",N," state_columns=",B*N," residual_calls=",3B)
+    println("FD_PROFILE residual_assembly_est_ns_per_color=",round(Int,residual_ns-properties_ns),
+        " residual_share_est_ns=",round(Int,3B*residual_ns),
+        " band_insertion_ns=",round(Int,insertion_ns),
+        " remaining_jacobian_ns=",round(Int,jacobian_ns-3B*residual_ns-insertion_ns))
+end
+
+if get(ENV,"KERNEL_L0_FDJAC","0") == "1"
+    main()
+    profile_fd_jacobian()
+else
+    main()
+end

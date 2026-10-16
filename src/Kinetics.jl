@@ -307,18 +307,18 @@ function _mass_action!(workspace, reaction::Reaction, C)
 end
 
 @inline function _mass_action_product(C, species, orders, stoich, column, entries,
-        standard_terms::UInt8)
-    standard_terms == 0 && return _mass_action_product(C, species, orders, stoich, column, entries)
-    multiplier = isempty(entries) ? one(eltype(C)) : one(C[species[first(entries)]])
-    negative_factors = 0
-    @inbounds for j in entries
-        c = C[species[j]]
-        for _ in 1:Int(orders[j])
-            negative_factors += c < 0
-            multiplier *= c
-        end
+        plan::NTuple{4,Int64})
+    i1,i2,i3,n = plan
+    n == 0 && return _mass_action_product(C, species, orders, stoich, column, entries)
+    @inbounds c1 = C[i1]
+    n == 1 && return c1
+    @inbounds c2 = C[i2]
+    if n == 2
+        return c1 < 0 && c2 < 0 ? zero(c1) : c1*c2
     end
-    return negative_factors >= 2 ? zero(multiplier) : multiplier
+    @inbounds c3 = C[i3]
+    negatives = Int(c1 < 0) + Int(c2 < 0) + Int(c3 < 0)
+    return negatives >= 2 ? zero(c1) : (c1*c2)*c3
 end
 
 """Cantera's optimized C1/C2/C3 and general stoichiometry concentration product."""
