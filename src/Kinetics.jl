@@ -307,11 +307,17 @@ end
 
 """Cantera's optimized C1/C2/C3 and general stoichiometry concentration product."""
 @inline function _mass_action_product(C, species, orders, stoich, column, entries)
-    standard = _mass_action_standard(orders, stoich, species, column, entries)
     nterms = 0
+    standard = length(entries) <= 3
     if standard
         @inbounds for j in entries
-            nterms += Int(stoich[species[j], column])
+            coefficient = stoich[species[j], column]
+            if orders[j] == coefficient && coefficient >= 0 && isinteger(coefficient)
+                nterms += Int(coefficient)
+            else
+                standard = false
+                break
+            end
         end
     end
     standard &= 1 <= nterms <= 3
