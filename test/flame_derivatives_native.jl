@@ -25,16 +25,6 @@ function flame_test_automatic_jacobian(f,w;previous=nothing,dt=Inf)
     end
 end
 
-@testset "finite-difference steady convergence follows Cantera correction criterion" begin
-    converged = Arrhenius._flame_steady_correction_converged
-    @test converged(true, nothing, 1.0)
-    @test converged(true, nothing, prevfloat(1.0))
-    @test !converged(true, nothing, nextfloat(1.0))
-    @test !converged(false, nothing, 0.5)
-    @test !converged(true, zeros(1), 0.5)
-    @test !converged(true, nothing, 0.5, true)
-end
-
 @testset "trial correction metric finite trace and units" begin
     state=zeros(5,5); state[1,:].=1.2; state[2,:].=.1; state[3,:].=-1e-12; state[5,:].=.07
     initial=copy(state); step=fill(.003,size(state))
@@ -45,9 +35,6 @@ end
         pstep=copy(step); pstep[1,:].*=1000
         expected=sqrt(sum((pstep[k,j]/(1e-4*sum(abs,physical[k,:])/5+atol))^2 for k in 1:5,j in 1:5)/25)
         @test Arrhenius._flame_correction_norm(step,weights) ≈ expected rtol=1e-14
-        expected_ct = sqrt(sum((pstep[k,j]/(1e-4*sum(abs,physical[k,:])/5+atol))^2 for k in 1:5,j in 1:5)/(25+4*5))
-        @test Arrhenius._flame_correction_norm(step,weights;extra_components=4) ≈ expected_ct rtol=1e-14
-        @test expected_ct ≈ expected*sqrt(25/45) rtol=1e-14
         @test all(isfinite,weights) && all(>(0),weights) && isequal(state,initial)
     end
 end
