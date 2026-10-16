@@ -10,18 +10,21 @@ if not RUN:
 JL = os.environ.get("JL") or shutil.which("julia")
 if not JL:
     raise SystemExit("set JL to the Julia executable")
-PROJECT = os.environ.get("ARRHENIUS_PROJECT", str(HERE.parents[2]))
+PROJECT = str(HERE.parents[2])
 CAP = os.environ.get("SNAPLIB_CAP_SECONDS", "1800")
 
 def capped(argv):
     subprocess.run([RUN, CAP, *map(str, argv)], check=True)
 
-def main(spec, outdir):
+def main(spec, outdir, max_transitions=None):
     spec = Path(spec).resolve(); outdir = Path(outdir).resolve()
     outdir.mkdir(parents=True, exist_ok=True)
     capped([sys.executable, HERE / "capture.py", spec, outdir])
     replay = HERE / "replay.jl"
-    capped([JL, f"--project={PROJECT}", replay, spec, outdir, outdir / "replay.csv"])
+    argv = [JL, f"--project={PROJECT}", replay, spec, outdir, outdir / "replay.csv"]
+    if max_transitions is not None:
+        argv.append(str(max_transitions))
+    capped(argv)
     with open(outdir / "replay.csv", newline="") as stream:
         rows = list(csv.DictReader(line for line in stream if not line.startswith("first_divergence,")))
     manifest = json.loads((outdir / "manifest.json").read_text())
@@ -59,5 +62,6 @@ def main(spec, outdir):
     print(json.dumps(report, indent=2))
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3: raise SystemExit("usage: run.py SPEC.json OUTDIR")
-    main(sys.argv[1], sys.argv[2])
+    if len(sys.argv) not in (3, 4):
+        raise SystemExit("usage: run.py SPEC.json OUTDIR [MAX_TRANSITIONS]")
+    main(sys.argv[1], sys.argv[2], int(sys.argv[3]) if len(sys.argv) == 4 else None)

@@ -19,6 +19,7 @@ makedocs(
             "install.md",
             "mechanisms.md",
             "concepts.md",
+            "design_rationale.md",
         ],
         "reactors.md",
         "Flames" => ["flames.md", "solver_options.md"],
