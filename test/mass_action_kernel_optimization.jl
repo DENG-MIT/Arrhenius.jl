@@ -43,6 +43,43 @@ end
     return multiplier
 end
 
+# Literal reference copy of origin/main at 3b49a008567513145685203b5ba2320316a44d48.
+@inline function current_main_mass_action_product(C, species, orders, stoich, column, entries)
+    nterms = 0
+    standard = length(entries) <= 3
+    if standard
+        @inbounds for j in entries
+            coefficient = stoich[species[j], column]
+            if orders[j] == coefficient && coefficient >= 0 && isinteger(coefficient)
+                nterms += Int(coefficient)
+            else
+                standard = false
+                break
+            end
+        end
+    end
+    standard &= 1 <= nterms <= 3
+    multiplier = isempty(entries) ? one(eltype(C)) : one(C[species[first(entries)]])
+    if standard
+        negative_factors = 0
+        @inbounds for j in entries
+            c = C[species[j]]
+            for _ in 1:Int(stoich[species[j], column])
+                negative_factors += c < 0
+                multiplier *= c
+            end
+        end
+        return negative_factors >= 2 ? zero(multiplier) : multiplier
+    end
+    @inbounds for j in entries
+        order = orders[j]
+        order == 0 && continue
+        c = C[species[j]]
+        c > 0 || return zero(multiplier)
+        multiplier *= c^order
+    end
+    return multiplier
+end
 function comparison_vectors(ns)
     values = (0.0, 1.0e-25, -1.0e-25, -1.0e-14, 0.25, 1.0)
     mixed = [values[mod1(i, length(values))] for i in 1:ns]
@@ -68,7 +105,9 @@ function check_synthetic_mass_action(name, species_count, orders_values, stoich_
         C[1:species_count] .= small_C
         old = old_mass_action_product(C, species, orders, stoich, 1, entries)
         new = Arrhenius._mass_action_product(C, species, orders, stoich, 1, entries)
-        old === new || error("synthetic mismatch: $name C=$small_C old=$old new=$new")
+        current_main = current_main_mass_action_product(C, species, orders, stoich, 1, entries)
+        old === new || error("synthetic PR-base mismatch: $name C=$small_C old=$old new=$new")
+        current_main === new || error("synthetic current-main mismatch: $name C=$small_C main=$current_main candidate=$new")
         count += 1
     end
     println("MASS_ACTION_SYNTHETIC name=$name species=$species_count states=$count stored_stoich=$(nnz(stoich))")
@@ -108,6 +147,8 @@ function check_mass_action_mechanism(path)
     vectors = comparison_vectors(solution.n_species)
     forward_count = 0
     reverse_count = 0
+    current_main_forward = 0
+    current_main_reverse = 0
 
     # Sparse CSC matrices have unique row indices and no stored numeric zeros
     # after sparse(dense) construction. Assert this for every mechanism.
@@ -129,7 +170,11 @@ function check_mass_action_mechanism(path)
                 reaction.reactant_stoich_coeffs, col, rr)
             new = Arrhenius._mass_action_product(C, reactant_species, reactant_orders,
                 reaction.reactant_stoich_coeffs, col, rr)
-            old === new || error("forward mismatch: $path reaction=$col state=$state_index old=$old new=$new")
+            main = current_main_mass_action_product(C, reactant_species, reactant_orders,
+                reaction.reactant_stoich_coeffs, col, rr)
+            old === new || error("forward PR-base mismatch: $path reaction=$col state=$state_index old=$old new=$new")
+            main === new || error("forward current-main mismatch: $path reaction=$col state=$state_index main=$main candidate=$new")
+            current_main_forward += 1
             forward_count += 1
 
             if reaction.is_reversible[col]
@@ -137,16 +182,20 @@ function check_mass_action_mechanism(path)
                     product_entries, col, pr)
                 new_reverse = Arrhenius._mass_action_product(C, product_species, product_orders,
                     product_entries, col, pr)
-                old_reverse === new_reverse || error("reverse mismatch: $path reaction=$col state=$state_index old=$old_reverse new=$new_reverse")
+                main_reverse = current_main_mass_action_product(C, product_species, product_orders,
+                    product_entries, col, pr)
+                old_reverse === new_reverse || error("reverse PR-base mismatch: $path reaction=$col state=$state_index old=$old_reverse new=$new_reverse")
+                main_reverse === new_reverse || error("reverse current-main mismatch: $path reaction=$col state=$state_index main=$main_reverse candidate=$new_reverse")
+                current_main_reverse += 1
                 reverse_count += 1
             end
         end
     end
-    println("MASS_ACTION_MECHANISM path=$path species=$(solution.n_species) reactions=$(reaction.n_reactions) states=$(length(vectors)) forward=$forward_count reversible_reverse=$reverse_count")
-    return (forward_count, reverse_count)
+    println("MASS_ACTION_MECHANISM path=$path species=$(solution.n_species) reactions=$(reaction.n_reactions) states=$(length(vectors)) forward=$forward_count reversible_reverse=$reverse_count current_main_forward=$current_main_forward current_main_reverse=$current_main_reverse")
+    return (forward_count, reverse_count, current_main_forward, current_main_reverse)
 end
 
-@testset "fused mass-action scan is bit-identical to PR-base helper" begin
+@testset "fused mass-action scan is bit-identical to current main and PR-base helper" begin
     @testset "synthetic repeated stoichiometric terms and sign patterns" begin
         check_synthetic_mass_action()
     end
@@ -162,8 +211,9 @@ end
             )
             for (C, orders, stoich) in cases
                 entries = 1:length(species)
-                @test Arrhenius._mass_action_product(C, species, orders, stoich, 1, entries) ===
-                    old_mass_action_product(C, species, orders, stoich, 1, entries)
+                candidate = Arrhenius._mass_action_product(C, species, orders, stoich, 1, entries)
+                @test candidate === old_mass_action_product(C, species, orders, stoich, 1, entries)
+                @test candidate === current_main_mass_action_product(C, species, orders, stoich, 1, entries)
             end
         end
     else
@@ -171,11 +221,16 @@ end
         @test all(isfile, paths)
         forward_total = 0
         reverse_total = 0
+        current_main_forward_total = 0
+        current_main_reverse_total = 0
         for path in paths
-            forward, reverse = check_mass_action_mechanism(path)
+            forward, reverse, main_forward, main_reverse = check_mass_action_mechanism(path)
             forward_total += forward
             reverse_total += reverse
+            current_main_forward_total += main_forward
+            current_main_reverse_total += main_reverse
         end
         println("MASS_ACTION_TOTAL mechanisms=$(length(paths)) forward=$forward_total reversible_reverse=$reverse_total")
+        println("MASS_ACTION_CURRENT_MAIN_TOTAL mechanisms=$(length(paths)) forward=$current_main_forward_total reversible_reverse=$current_main_reverse_total exact=true")
     end
 end

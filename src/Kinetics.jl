@@ -327,7 +327,7 @@ end
         negative_factors = 0
         @inbounds for j in entries
             c = C[species[j]]
-            for _ in 1:Int(stoich[species[j], column])
+            for _ in 1:Int(orders[j])
                 negative_factors += c < 0
                 multiplier *= c
             end

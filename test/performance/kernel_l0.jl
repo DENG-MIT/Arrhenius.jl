@@ -1,4 +1,4 @@
-using Arrhenius, YAML, LinearAlgebra, Statistics, InteractiveUtils, SHA, NPZ
+using Arrhenius, YAML, LinearAlgebra, Statistics, InteractiveUtils, SHA, NPZ, SparseArrays
 BLAS.set_num_threads(1)
 
 function measure(label, f; reps=9, n=1000)
@@ -55,12 +55,58 @@ function main()
     report_measure(label,f) = measure(label, () -> composition_perturb!(f))
     uncached!() = Arrhenius.wdot!(out,gas.reaction,T,C,sm,hm,kw;pressure=P,get_rate_constants=true)
 
+    reactant_species, reactant_orders = rowvals(gas.reaction.reactant_orders), nonzeros(gas.reaction.reactant_orders)
+    product_species, product_orders = rowvals(gas.reaction.product_stoich_coeffs), nonzeros(gas.reaction.product_stoich_coeffs)
+    forward_products!() = begin
+        total = 0.0
+        @inbounds for i in 1:gas.reaction.n_reactions
+            total += Arrhenius._mass_action_product(C, reactant_species, reactant_orders,
+                gas.reaction.reactant_stoich_coeffs, i, nzrange(gas.reaction.reactant_orders, i))
+        end
+        total
+    end
+    reverse_products!() = begin
+        total = 0.0
+        @inbounds for i in eachindex(gas.reaction.is_reversible)
+            gas.reaction.is_reversible[i] || continue
+            total += Arrhenius._mass_action_product(C, product_species, product_orders,
+                gas.reaction.product_stoich_coeffs, i, nzrange(gas.reaction.product_stoich_coeffs, i))
+        end
+        total
+    end
+    scatter!() = begin
+        fill!(out, 0.0)
+        rows, coefficients = rowvals(gas.reaction.vk), nonzeros(gas.reaction.vk)
+        @inbounds for i in eachindex(kw.rates_of_progress)
+            q = kw.rates_of_progress[i]
+            for slot in nzrange(gas.reaction.vk, i)
+                out[rows[slot]] = muladd(coefficients[slot], q, out[rows[slot]])
+            end
+        end
+        out
+    end
+    collider_efficiencies!() = begin
+        total = 0.0
+        @inbounds for i in gas.reaction.index_three_body
+            total += dot(view(gas.reaction.efficiencies_coeffs, :, i), C)
+        end
+        @inbounds for i in gas.reaction.index_falloff
+            total += dot(view(gas.reaction.efficiencies_coeffs, :, i), C)
+        end
+        total
+    end
+
     println("L0 mechanism=",mechanism," nspecies=",n," nreactions=",gas.reaction.n_reactions," T=",T," P=",P," state_index=",state_index)
     measure("thermo_h_cp_s",thermo!)
     report_measure("rate_factors_cached",rates!)
     report_measure("mass_action_qdot_cached",qdot!)
     report_measure("net_production_cached",net!)
     measure("rate_factors_uncached",uncached!)
+    qdot!()
+    measure("forward_concentration_products",forward_products!)
+    measure("reverse_concentration_products",reverse_products!)
+    measure("qdot_to_wdot_scatter",scatter!)
+    measure("third_body_and_falloff_efficiency_sums",collider_efficiencies!)
     println("checksums h=",sum(h)," cp=",sum(cp)," s=",sum(s)," kf=",sum(kw.kf)," kr=",sum(kw.kr)," wdot=",sum(out))
     println("output_sha256=",bytes2hex(sha256(reinterpret(UInt8,out))))
     @code_warntype Arrhenius._mass_action!(kw,gas.reaction,C)
