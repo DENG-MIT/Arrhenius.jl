@@ -1,6 +1,6 @@
 # Arrhenius.jl
 
-Arrhenius.jl is a Julia package for reacting-flow and combustion calculations. It provides native chemistry, thermodynamics, transport, reactors, and one-dimensional flame solvers; Cantera YAML mechanisms are preprocessed into sidecar data files.
+Arrhenius.jl is a Julia package for reacting-flow and combustion calculations. It provides native chemistry, thermodynamics, transport, reactors, and one-dimensional flame solvers; Gas-phase Cantera YAML mechanisms are read directly in Julia; optional sidecars provide fitted transport data.
 
 ## Key capabilities
 
@@ -33,7 +33,7 @@ solution = solve_reactor(reactor, (0.0, 0.001); integrator=native_bdf,
 
 ## Quick start: freely propagating flame
 
-The repository includes the H₂/O₂ mechanism and its preprocessed sidecar. Run from the repository root with <code>julia --project=.</code>:
+The repository includes the H₂/O₂ mechanism. Gas chemistry is read directly from YAML; the optional sidecar supplies fitted transport data. Run from the repository root with <code>julia --project=.</code>:
 
 ~~~julia
 using Arrhenius

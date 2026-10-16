@@ -1,6 +1,6 @@
 # Arrhenius.jl
 
-Arrhenius.jl provides Julia-native tools for chemical kinetics and reacting-flow calculations. It reads Cantera YAML mechanisms and uses preprocessed sidecar files for kinetic and transport data. Cantera is not required at calculation time.
+Arrhenius.jl provides Julia-native tools for chemical kinetics and reacting-flow calculations. It reads gas-phase chemistry, species thermodynamics, and reaction rates directly from Cantera YAML. Optional NPZ sidecars provide transport fits. Cantera is not required at calculation time.
 
 ## Start here
 

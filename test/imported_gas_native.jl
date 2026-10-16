@@ -7,12 +7,13 @@ using Arrhenius, Test, YAML, NPZ, SHA
         definitions = [Dict("name"=>name,"composition"=>Dict("Ar"=>1),
             "thermo"=>Dict("model"=>"constant-cp","cp0"=>cp*Arrhenius.R))
             for (name,cp) in (("A",2.5),("B",3.5))]
-        YAML.write_file(imported,Dict("species"=>definitions))
+        reaction=Dict("equation"=>"B => A","rate-constant"=>Dict("A"=>1.0,"b"=>0.0,"Ea"=>0.0))
+        YAML.write_file(imported,Dict("species"=>definitions,"declared-species"=>Any[],"reactions"=>[reaction]))
         # Receiving-file units must not reinterpret the imported SI thermo.
         root = Dict("units"=>Dict("energy"=>"kJ","quantity"=>"mol","pressure"=>"bar"),
             "phases"=>[Dict("name"=>"selected","thermo"=>"ideal-gas","elements"=>["Ar"],
                 "species"=>[Dict("shared.yaml/species"=>["B","A"])],
-                "reactions"=>[Dict("shared.yaml/reactions"=>"declared-species")])],
+                "reactions"=>[Dict("shared.yaml/reactions"=>"all")])],
             "reactions"=>[Dict("type"=>"pressure-dependent-Arrhenius"),Dict("type"=>"Blowers-Masel")])
         YAML.write_file(path,root)
         selection = Dict("species_names"=>["B","A"],"n_reactions"=>1,
@@ -29,7 +30,7 @@ using Arrhenius, Test, YAML, NPZ, SHA
             "Arrhenius_coeffs"=>reshape([1.,0.,0.],1,3))
         save(data=payload) = npzwrite(path*".npz",data)
         save()
-        gas = CreateSolution(path)
+        gas = CreateSolution(path;kinetics_reader=:sidecar)
         @test gas.species_names == ["B","A"]
         @test gas.n_reactions == 1
         @test gas.ele_matrix == ones(1,2)
@@ -39,30 +40,30 @@ using Arrhenius, Test, YAML, NPZ, SHA
         @test set_states(gas,1000.,one_atm,[.5,.5]) ≈ [-1.,1.] .* (one_atm/Arrhenius.R/1000/2)
 
         bad=copy(payload); delete!(bad,"phase_selection_utf8"); save(bad)
-        @test_throws ArgumentError CreateSolution(path)
+        @test_throws ArgumentError CreateSolution(path;kinetics_reader=:sidecar)
         bad=copy(payload); bad["is_reversible"]=[false,false]; save(bad)
-        @test_throws ArgumentError CreateSolution(path)
+        @test_throws ArgumentError CreateSolution(path;kinetics_reader=:sidecar)
         bad=copy(payload); bad["index_three_body"]=[2]; save(bad)
-        @test_throws ArgumentError CreateSolution(path)
+        @test_throws ArgumentError CreateSolution(path;kinetics_reader=:sidecar)
         for change in (Dict("species_names"=>["A","B"]),Dict("n_reactions"=>2),
                 Dict("dependencies"=>Dict()),Dict("n_reactions"=>true))
             bad=copy(payload)
             bad["phase_selection_utf8"]=encoded(YAML.write(merge(selection,change))); save(bad)
-            @test_throws ArgumentError CreateSolution(path)
+            @test_throws ArgumentError CreateSolution(path;kinetics_reader=:sidecar)
         end
         bad=copy(payload); bad["sidecar_format_utf8"]=encoded("arrhenius-sidecar-v2"); save(bad)
-        @test_throws ArgumentError CreateSolution(path)
+        @test_throws ArgumentError CreateSolution(path;kinetics_reader=:sidecar)
         save()
         original = read(imported,String)
         write(imported,replace(original,"\n"=>"\r\n"))
-        @test CreateSolution(path).species_names == ["B","A"]
+        @test CreateSolution(path;kinetics_reader=:sidecar).species_names == ["B","A"]
         write(imported,original*"\n# changed dependency\n")
-        @test_throws ArgumentError CreateSolution(path)
+        @test_throws ArgumentError CreateSolution(path;kinetics_reader=:sidecar)
         write(imported,original)
         searchdir=joinpath(dir,"data"); mkdir(searchdir)
         mv(imported,joinpath(searchdir,"shared.yaml"))
-        @test_throws ArgumentError CreateSolution(path)
-        @test CreateSolution(path;data_paths=[searchdir]).n_species == 2
+        @test_throws ArgumentError CreateSolution(path;kinetics_reader=:sidecar)
+        @test CreateSolution(path;data_paths=[searchdir],kinetics_reader=:sidecar).n_species == 2
 
         # No reaction arrays are emitted for a selected inert phase.
         inert=copy(payload)
@@ -72,7 +73,7 @@ using Arrhenius, Test, YAML, NPZ, SHA
         end
         inert["phase_selection_utf8"]=encoded(YAML.write(merge(selection,Dict("n_reactions"=>0))))
         save(inert)
-        gas=CreateSolution(path;data_paths=[searchdir])
+        gas=CreateSolution(path;data_paths=[searchdir],kinetics_reader=:sidecar)
         @test gas.n_reactions == 0
         @test set_states(gas,1000.,one_atm,[.5,.5]) == [0.,0.]
     end
