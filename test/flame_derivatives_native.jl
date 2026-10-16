@@ -51,8 +51,8 @@ end
             (:free,:multicomponent,:mole,true,:positive,true),
             (:free,:multicomponent,:mole,true,:mixed,true))
         grid=collect(range(0.,.03;length=5))
-        f=kind==:free ? FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid) :
-            BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.07)
+        f=kind==:free ? FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid,discretization=:conservative) :
+            BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.07,discretization=:conservative)
         set_transport!(f,model;data,soret,flux_gradient_basis=basis)
         n,N=gas.n_species,length(grid);B=n+2
         for j in 1:N
@@ -106,7 +106,7 @@ end
     mechanism=joinpath(@__DIR__,"..","mechanism","h2o2.yaml")
     gas=CreateSolution(mechanism)
     data=MultiTransportData(mechanism*".multicomponent.npz",gas)
-    f=FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid=collect(range(0.,.01;length=5)))
+    f=FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid=collect(range(0.,.01;length=5)),discretization=:conservative)
     set_transport!(f,:multicomponent;data)
     k=findfirst(==("H2O2"),gas.species_names)
     q=findfirst(==("H2"),gas.species_names)
@@ -158,9 +158,9 @@ end
     mechanism=joinpath(@__DIR__,"..","mechanism","h2o2.yaml")
     gas=CreateSolution(mechanism)
     grid=collect(range(0.,.03;length=5))
-    free=FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid)
-    burner=BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.07)
-    imposed=BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.07)
+    free=FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid,discretization=:conservative)
+    burner=BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.07,discretization=:conservative)
+    imposed=BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.07,discretization=:conservative)
     set_temperature_profile!(imposed,grid,temperature(imposed);relative=false)
     @test Arrhenius._flame_correction_enabled(free)
     @test Arrhenius._flame_correction_enabled(burner)
