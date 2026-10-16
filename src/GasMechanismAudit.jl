@@ -189,3 +189,101 @@ function refit_nasa7_continuity(path, output; phase=nothing, samples=80)
     YAML.write_file(output,root)
     (species_changed=length(changes),changes=changes,output=String(output)),String(output)
 end
+"""Refit all eligible NASA7 species to a single selected midpoint.
+The output retains each species' temperature endpoints, fits both cp segments by
+constrained least squares, enforces cp and d(cp)/dT continuity, and anchors h/s.
+"""
+function refit_nasa7_common_tmid(path, output; phase=nothing, Tmid=nothing, samples=80)
+    samples >= 12 || throw(ArgumentError("samples must be at least 12"))
+    root=YAML.load_file(path)
+    idx=phase===nothing ? 1 : findfirst(p->get(p,"name","")==String(phase),root["phases"])
+    idx===nothing && throw(ArgumentError("phase $phase not found"))
+    chosen=root["phases"][idx]
+    tmp=copy(root); tmp["phases"]=vcat([chosen],deleteat!(copy(root["phases"]),idx))
+    root=_solution_species_yaml(tmp,String(path),String[])
+    ph=root["phases"][1]
+    names=String.(ph["species"]); defs=Dict(String(s["name"])=>s for s in root["species"])
+    eligible=String[]; skipped=String[]; bounds=Tuple{Float64,Float64}[]
+    for name in names
+        th=get(defs[name],"thermo",nothing)
+        th isa AbstractDict && lowercase(String(get(th,"model","")))=="nasa7" || continue
+        ranges=Float64.(get(th,"temperature-ranges",Float64[])); data=get(th,"data",Any[])
+        if length(data)==2 && length(ranges)==3
+            push!(eligible,name); push!(bounds,(ranges[1],ranges[end]))
+        elseif length(data)==1 && length(ranges)==2
+            push!(eligible,name); push!(bounds,(ranges[1],ranges[end]))
+        else
+            push!(skipped,name)
+        end
+    end
+    isempty(eligible) && throw(ArgumentError("selected phase has no supported NASA7 species"))
+    lower=maximum(first.(bounds)); upper=minimum(last.(bounds))
+    lower < upper || throw(ArgumentError("NASA7 species have no shared open temperature interval"))
+    tm=Tmid===nothing ? sqrt(lower*upper) : Float64(Tmid)
+    isfinite(tm) && lower < tm < upper ||
+        throw(ArgumentError("common Tmid $tm must lie strictly inside shared interval ($lower, $upper)"))
+    changes=NamedTuple[]
+    cp(a,T)=a[1]+a[2]*T+a[3]*T^2+a[4]*T^3+a[5]*T^4
+    h(a,T)=a[1]+a[2]*T/2+a[3]*T^2/3+a[4]*T^3/4+a[5]*T^4/5+a[6]/T
+    s(a,T)=a[1]*log(T)+a[2]*T+a[3]*T^2/2+a[4]*T^3/3+a[5]*T^4/4+a[7]
+    for name in eligible
+        th=defs[name]["thermo"]; ranges=Float64.(th["temperature-ranges"]); data=th["data"]
+        loT,hiT=ranges[1],ranges[end]
+        oldlo=Float64.(data[1]); oldhi=length(data)==1 ? oldlo : Float64.(data[end])
+        oldmid=length(data)==1 ? hiT : ranges[2]
+        oldcp(T)=cp(T<=oldmid ? oldlo : oldhi,T)
+        oldh(T)=h(T<=oldmid ? oldlo : oldhi,T)
+        olds(T)=s(T<=oldmid ? oldlo : oldhi,T)
+        if length(data)==1
+            low=copy(oldlo); high=copy(oldlo)
+        else
+            ts=vcat(collect(range(loT,tm,length=samples)),collect(range(tm,hiT,length=samples))[2:end])
+            design=zeros(length(ts),10); target=zeros(length(ts))
+            for (i,T) in enumerate(ts)
+                z=T/1000; basis=(1.0,z,z^2,z^3,z^4)
+                offset=T<=tm ? 0 : 5
+                design[i,offset+1:offset+5].=basis
+                target[i]=oldcp(T)
+            end
+            z=tm/1000
+            C=zeros(2,10)
+            C[1,1:5].=(1,z,z^2,z^3,z^4); C[1,6:10].=-C[1,1:5]
+            C[2,2:5].=(1,2z,3z^2,4z^3); C[2,7:10].=-C[2,2:5]
+            null=nullspace(C)
+            x0=C' * ((C*C') \ [0.0,0.0])
+            x=x0+null*((design*null) \ (target-design*x0))
+            low=vcat([x[k]/1000.0^(k-1) for k in 1:5],oldlo[6:7])
+            high=vcat([x[k]/1000.0^(k-6) for k in 6:10],oldhi[6:7])
+        end
+        low[6]=(oldh(loT)-(low[1]+low[2]*loT/2+low[3]*loT^2/3+low[4]*loT^3/4+low[5]*loT^4/5))*loT
+        low[7]=olds(loT)-(low[1]*log(loT)+low[2]*loT+low[3]*loT^2/2+low[4]*loT^3/3+low[5]*loT^4/4)
+        if length(data)>1
+            high[6]=(h(low,tm)-(high[1]+high[2]*tm/2+high[3]*tm^2/3+high[4]*tm^3/4+high[5]*tm^4/5))*tm
+            high[7]=s(low,tm)-(high[1]*log(tm)+high[2]*tm+high[3]*tm^2/2+high[4]*tm^3/3+high[5]*tm^4/4)
+        else
+            high=copy(low)
+        end
+        newcp(T)=cp(T<tm ? low : high,T)
+        newh(T)=h(T<tm ? low : high,T)
+        news(T)=s(T<tm ? low : high,T)
+        grid=range(loT,hiT,length=4samples)
+        dcp=maximum(abs(newcp(T)-oldcp(T)) for T in grid)
+        dh=maximum(abs(newh(T)-oldh(T)) for T in grid)
+        ds=maximum(abs(news(T)-olds(T)) for T in grid)
+        dg=maximum(abs((newh(T)-news(T))-(oldh(T)-olds(T))) for T in grid)
+        th["temperature-ranges"]=[loT,tm,hiT]; th["data"]=[low,high]
+        push!(changes,(species=name,old_Tmid=oldmid,Tmid=tm,max_abs_delta_cp_R=dcp,
+            max_abs_delta_h_RT=dh,max_abs_delta_s_R=ds,max_abs_delta_g_RT=dg))
+    end
+    function strip_notes!(x)
+        if x isa AbstractDict
+            pop!(x,"note",nothing); foreach(strip_notes!,values(x))
+        elseif x isa AbstractVector
+            foreach(strip_notes!,x)
+        end
+        x
+    end
+    strip_notes!(root); YAML.write_file(output,root)
+    (species_changed=length(changes),skipped_species=skipped,Tmid=tm,
+        shared_interval=(lower,upper),changes=changes,output=String(output)),String(output)
+end

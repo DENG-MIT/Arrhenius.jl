@@ -331,3 +331,5 @@ function _gas_molecular_weight(root,phase,name)
     end
     total
 end
+
+_read_gas_kinetics(root,phase,names;kwargs...)=_native_gas_arrays(root,phase,names;kwargs...)

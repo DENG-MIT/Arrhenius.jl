@@ -1,27 +1,3 @@
-function read_species_basics(yaml)
-    n_species = length(yaml["phases"][1]["species"])
-    n_reactions = length(get(yaml,"reactions",Any[]))
-    species_names = yaml["phases"][1]["species"]
-    elements = yaml["phases"][1]["elements"]
-    n_elements = length(elements)
-
-    ele_matrix = zeros(n_elements, n_species)
-
-    _species_names =
-        [yaml["species"][i]["name"] for i = 1:length(yaml["species"])]
-
-    for (i, species) in enumerate(species_names)
-        spec = yaml["species"][findfirst(x -> x == species, _species_names)]
-        for j = 1:n_elements
-            if haskey(spec["composition"], elements[j])
-                ele_matrix[j, i] = spec["composition"][elements[j]]
-            end
-        end
-    end
-
-    return n_species, n_reactions, species_names, elements, n_elements, ele_matrix
-end
-
 function _sidecar_string(npz, key)
     return String(vec(UInt8.(npz[key])))
 end
@@ -189,24 +165,12 @@ function CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reade
     end
     yaml = _solution_species_yaml(yaml,mech,data_paths)
 
-    #### Basics
-    n_species, n_reactions, species_names,
-    elements, n_elements, ele_matrix = read_species_basics(yaml)
+    #### Thermo and species metadata
+    thermo, n_species, n_reactions, species_names, elements, n_elements, ele_matrix = _read_gas_thermo(yaml)
     if selection !== nothing
         species_names == selection["species_names"] || throw(ArgumentError("sidecar species order does not match the phase"))
         n_reactions = Int(selection["n_reactions"])
     end
-
-    #### Thermo
-    if yaml["phases"][1]["thermo"] == "ideal-gas" # switch to work with Cantera standard
-        thermo = IdealGasThermo(yaml)
-    else
-        model = lowercase(String(yaml["phases"][1]["thermo"]))
-        constructorThermo = model == "redlich-kwong" ? :RedlichKwongThermo :
-            Symbol(replace(model,"-"=>"_"), :Thermo)
-        thermo = @eval($constructorThermo)(yaml)
-    end
-
 
     #### Kinetic data
 
@@ -214,7 +178,7 @@ function CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reade
     # and currently supplies only transport fits, whose YAML polynomial fit path
     # is separate from gas kinetics.
     native_arrays = kinetics_reader === :native ?
-        _native_gas_arrays(yaml, yaml["phases"][1], species_names; mechanism=String(mech), data_paths) : nothing
+        _read_gas_kinetics(yaml, yaml["phases"][1], species_names; mechanism=String(mech), data_paths) : nothing
     npz = if kinetics_reader === :sidecar
         sidecar === nothing && throw(ArgumentError("kinetics_reader=:sidecar requires $sidecar_path"))
         sidecar
@@ -222,11 +186,7 @@ function CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reade
         native_arrays
     end
     n_reactions = selection === nothing ? size(npz["Arrhenius_coeffs"],1) : Int(selection["n_reactions"])
-    if sidecar !== nothing && kinetics_reader === :native
-        for key in ("transport_model_utf8","species_viscosities_poly","thermal_conductivity_poly","binary_diff_coeffs_poly")
-            haskey(sidecar,key) && (npz[key]=sidecar[key])
-        end
-    end
+    npz = _read_gas_transport(npz, sidecar, kinetics_reader)
 
     # Inert phases have no reaction arrays. Empty NPZ entries are omitted by the
     # exporter for compatibility with NPZ.jl; restore their unambiguous shapes.
