@@ -2,6 +2,12 @@
 import re
 
 
+def latest_stat(stats, key):
+    """Read Cantera's cumulative Jacobian counter snapshot at the last save."""
+    values = stats.get(key, [])
+    return int(values[-1]) if values else 0
+
+
 def cantera_attempt_trace(path):
     rows = []
     current = None
@@ -9,7 +15,7 @@ def cantera_attempt_trace(path):
     pending_refreshes = 0
     with open(path, encoding="utf-8", errors="replace") as stream:
         for line in stream:
-            match = re.search(r"Timestep \(0\) dt=\s*([0-9.eE+-]+)", line)
+            match = re.search(r"Timestep \(\d+\) dt=\s*([0-9.eE+-]+)", line)
             if match:
                 if current is not None:
                     rows.append(current)
@@ -44,9 +50,9 @@ def cantera_attempt_trace(path):
                 continue
             if "Resetting negative species" in line:
                 current["reset_after"] = True
-            if "Timestep (0) failed" in line:
+            if re.search(r"Timestep \(\d+\) failed", line):
                 current["accepted"] = False
-            elif "Timestep (0) succeeded" in line:
+            elif re.search(r"Timestep \(\d+\) succeeded", line):
                 current["accepted"] = True
                 rows.append(current)
                 current = None

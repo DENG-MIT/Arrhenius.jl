@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 ## Replay each captured Cantera transition on the same native grid/state.
 
-## Usage: julia --project=WORKTREE replay.jl spec.json capture_dir report.json
+## Usage: julia --project=WORKTREE replay.jl spec.json capture_dir report.csv [max_transitions] [first_transition]
 ## Runs native solve! from each captured input stage with grid refinement disabled,
 ## then compares the result with the corresponding Cantera output snapshot.
 
@@ -50,16 +50,16 @@ function state_matrix(f)
     return f.state
 end
 function total_stat(stage, key)
-    stats=get(stage,"solver_stats",Dict())
-    return sum(Int.(get(stats,key,Int[])); init=0)
+    return cantera_stat_total(get(stage,"solver_stats",Dict()), key)
 end
-function main(specfile, dir, reportfile, max_transitions=typemax(Int))
+function main(specfile, dir, reportfile, max_transitions=typemax(Int), first_transition=1)
     spec=YAML.load_file(specfile); manifest=YAML.load_file(joinpath(dir,"manifest.json"))
     stages=manifest["stages"]
     mechanism=normpath(joinpath(@__DIR__, "../../..", spec["mechanism"]*".yaml"))
     gas=CreateSolution(mechanism)
     rows=Any[]; firstdiv=nothing
-    for i in 1:min(length(stages)-1,max_transitions)
+    first_transition >= 1 || error("first_transition must be positive")
+    for i in first_transition:min(length(stages)-1,first_transition+max_transitions-1)
         a=stages[i]; b=stages[i+1]
         input=npzread(joinpath(dir,a["file"])); target=npzread(joinpath(dir,b["file"]))
         f=build_state(spec,input,gas); tic=time()
@@ -174,12 +174,20 @@ function main(specfile, dir, reportfile, max_transitions=typemax(Int))
         relative=max(dy,dT,dU,dV,dL)
         same_grid=refine_grid_equal
         ct_steps=max(0,total_stat(b,"steps")-total_stat(a,"steps"))
-        ct_jacobians=max(0,total_stat(b,"jacobian_evals")-total_stat(a,"jacobian_evals"))
+        jac_a=total_stat(a,"jacobian_evals")
+        jac_b=total_stat(b,"jacobian_evals")
+        same_grid_stats=length(input_grid)==length(target_grid) && maximum(abs.(input_grid.-target_grid))<=1e-12
+        ct_jacobians=same_grid_stats ? max(0,jac_b-jac_a) : jac_b
         native_jacobians=solver_stats(f).jacobians
         native_steps=attempted_dt===nothing || err!==nothing ? 0 : 1
         decisions_equal=ct_steps==native_steps && ct_jacobians==native_jacobians
         decision_first=""
         if ct_attempt!==nothing
+            # Whole-stage stats also include the failed steady solve. Use the
+            # per-attempt log count for the first transient comparison.
+            ct_jacobians=ct_attempt.jacobians
+            native_attempt_jacobians=max(0,solver_stats(f).jacobians-native_jac_before)
+            decisions_equal=ct_steps==native_steps && ct_jacobians==native_attempt_jacobians
             cantera_accept=ct_attempt.accepted
             native_accept=err===nothing
             decisions_equal &= cantera_accept==native_accept
@@ -197,7 +205,6 @@ function main(specfile, dir, reportfile, max_transitions=typemax(Int))
             cdamp=ct_attempt.damping
             !isempty(cdamp) && (ct_first_damping=first(cdamp))
             !isempty(ndamp) && (native_first_damping=first(ndamp))
-            native_attempt_jacobians=max(0,solver_stats(f).jacobians-native_jac_before)
             if native_attempt_jacobians != ct_attempt.jacobians && isempty(decision_first)
                 decision_first="Jacobian refresh count: Cantera=$(ct_attempt.jacobians), native=$(native_attempt_jacobians), dt=$(attempted_dt)"
                 decisions_equal=false
@@ -258,4 +265,5 @@ function main(specfile, dir, reportfile, max_transitions=typemax(Int))
 
     println("replayed transitions=$(length(rows)) first_divergence=$firstdiv report=$reportfile")
 end
-main(ARGS[1],ARGS[2],ARGS[3],length(ARGS)>=4 ? parse(Int,ARGS[4]) : typemax(Int))
+main(ARGS[1],ARGS[2],ARGS[3],length(ARGS)>=4 ? parse(Int,ARGS[4]) : typemax(Int),
+    length(ARGS)>=5 ? parse(Int,ARGS[5]) : 1)
