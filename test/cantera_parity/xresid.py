@@ -28,7 +28,7 @@ plus the common relative norm
 the same S for both codes, so the norms are comparable across codes.
 Cross-code agreement per row is max_j |r_native - r_cantera| / S over
 row/point pairs where both codes solve the same equation type; structural
-differences (native dependent-species closure row, the vacuous Cantera
+differences (native boundary excess-species closure row, the vacuous Cantera
 free-flame inlet mass-flux row, anchor index disagreement, twin-wall species
 form) are listed and excluded from the agreement, never silently dropped.
 """

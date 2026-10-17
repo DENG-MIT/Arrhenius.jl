@@ -183,9 +183,10 @@ function row_eqtypes(f, spec)
         boundary = j == 1 || j == N
         if is_counterflow(spec)
             types[1, j] = boundary ? code("T_bc") : code("energy")
+            excess=argmax(@view f.state[2:n+1,j])
             for k in 1:n
-                k == f.dependent_species && continue   # sum(Y)-1 everywhere (dep: 1-based)
-                types[k+1, j] = boundary ? code("flux_bc") : code("species")
+                boundary && k==excess && continue
+                types[k+1,j]=boundary ? code("flux_bc") : code("species")
             end
             types[n+2, j] = boundary ? code("zg_V") : code("momentum")
             types[n+3, j] = j == 1 ? code("lambda_left") : code("lambda")
@@ -212,8 +213,9 @@ function row_eqtypes(f, spec)
         # Wall overrides (PremixedCounterflowFlames.jl:222-241): zero-gradient
         # Y/V/T rows replace the flux forms at the symmetry plane.
         types[1, N] = isempty(f.fixed_temperature) ? code("zg_T") : code("T_bc")
+        excess=argmax(@view f.state[2:n+1,N])
         for k in 1:n
-            k == f.dependent_species || (types[k+1, N] = code("zg_Y"))
+            k == excess || (types[k+1,N] = code("zg_Y"))
         end
         types[n+2, N] = code("zg_V")
     end

@@ -309,6 +309,8 @@ mutable struct CounterflowWorkspace{F}
     jac_dt::Float64
     jac_valid::Bool
     jac_evals::Int
+    excess_left::Int
+    excess_right::Int
 end
 function CounterflowWorkspace(f::CounterflowDiffusionFlame)
     adapter=_CounterflowPropertyAdapter(f.gas,f.grid,f.transport_model,
@@ -318,7 +320,8 @@ function CounterflowWorkspace(f::CounterflowDiffusionFlame)
     return CounterflowWorkspace(FlameWorkspace(adapter),zeros(N-1),zeros(6B-2,B*N),
         zeros(B,N),zeros(B,N),zeros(N),zeros(N),zeros(N),
         _ConservativeFlameDerivatives(f.gas,N),zeros(n,n+1),
-        zeros(6B-2,B*N),LinearAlgebra.BlasInt[],0,Inf,false,0)
+        zeros(6B-2,B*N),LinearAlgebra.BlasInt[],0,Inf,false,0,
+        argmax(@view f.state[2:n+1,1]),argmax(@view f.state[2:n+1,N]))
 end
 
 # Solve diagnostics: resettable counters comparing solver work against
@@ -388,7 +391,7 @@ end
 "Evaluate continuity, radial momentum, pressure curvature, species and energy."
 function counterflow_residual!(residual,f::CounterflowDiffusionFlame,u=f.state,
         w=CounterflowWorkspace(f);previous=nothing,dt=Inf,update_transport=true,
-        nodes=eachindex(f.grid),freeze_source=false)
+        nodes=eachindex(f.grid),freeze_source=false,update_excess=nodes==eachindex(f.grid))
     _counterflow_stats(f).residual_evals+=1; COUNTERFLOW_STATS.residual_evals+=1
     p=w.properties
     # Mixture-averaged face viscosities come from the same transport evaluation.
@@ -397,6 +400,10 @@ function counterflow_residual!(residual,f::CounterflowDiffusionFlame,u=f.state,
         viscosity=shared_viscosity ? w.viscosity : nothing)
     _counterflow_radiation!(w.radiative_heat_loss,w.planck_absorption,f,u,p.X)
     n,N=f.gas.n_species,length(f.grid)
+    if update_excess
+        w.excess_left=argmax(@view u[2:n+1,1])
+        w.excess_right=argmax(@view u[2:n+1,N])
+    end
     z,MW=f.grid,f.gas.MW
     ctrl=f.control_points
     iq=isnothing(ctrl) ? 0 : n+2
@@ -488,7 +495,10 @@ function counterflow_residual!(residual,f::CounterflowDiffusionFlame,u=f.state,
         if !isempty(f.fixed_temperature)
             residual[1,j]=u[1,j]-f.fixed_temperature[j]/1000
         end
-        residual[f.dependent_species+1,j]=sum(@view(u[2:n+1,j]))-1
+        if j==1 || j==N
+            excess=j==1 ? w.excess_left : w.excess_right
+            residual[excess+1,j]=sum(@view(u[2:n+1,j]))-1
+        end
     end
     return residual
 end
@@ -512,9 +522,9 @@ function _counterflow_jacobian!(f,u,w,r;previous=nothing,dt=Inf,analytic=true)
             w.perturbed[k,j]=u[k,j]+w.steps[j]
         end
         hybrid ? counterflow_residual!(w.residual_perturbed,f,w.perturbed,w;
-                previous,dt,update_transport=false,nodes=color:3:N,freeze_source=true) :
+                previous,dt,update_transport=false,nodes=color:3:N,freeze_source=true,update_excess=false) :
             counterflow_residual!(w.residual_perturbed,f,w.perturbed,w;
-                previous,dt,update_transport=false,nodes=color:3:N)
+                previous,dt,update_transport=false,nodes=color:3:N,update_excess=false)
         for j in color:3:N
             column=(j-1)*B+k
             for jj in max(1,j-1):min(N,j+1),kk in 1:B
@@ -560,7 +570,6 @@ function _counterflow_chemistry_jacobian!(f,u,w)
                 _flame_band_add!(w.band,B,j,1,j,l,energy*heat)
             end
             for k in 1:n
-                k==f.dependent_species && continue
                 _flame_band_add!(w.band,B,j,k+1,j,l,species*MW[k]*G[k,l])
             end
         end
@@ -581,10 +590,14 @@ function _counterflow_residual_scales!(scales,J,u,bw)
     scales
 end
 
-function _counterflow_constraints_converged(f,r,tol)
+function _counterflow_constraints_converged(f,r,tol,w)
     B,N=size(r)
     maximum(abs,@view(r[B-1:B,:]))<=tol || return false
-    maximum(abs,@view(r[f.dependent_species+1,:]))<=min(tol,1e-9) || return false
+    n=f.gas.n_species
+    excess_left=w.excess_left
+    excess_right=w.excess_right
+    abs(r[excess_left+1,1])<=min(tol,1e-9) || return false
+    abs(r[excess_right+1,N])<=min(tol,1e-9) || return false
     maximum(abs,@view(r[:,1]))<=tol && maximum(abs,@view(r[:,N]))<=tol || return false
     isnothing(f.control_points) || maximum(abs,@view(r[f.gas.n_species+2,:]))<=tol
 end
@@ -593,7 +606,7 @@ end
 # evaluation: only interior T/species(/spread-rate) diagonal entries carry
 # -_flame_timescale/dt, so a dt change is a constant diagonal shift plus a
 # refactorization (SteadyStateSystem::initTimeInteg / updateTransient).
-function _counterflow_transient_update!(J,f,dt_old,dt_new,skip_dependent=true)
+function _counterflow_transient_update!(J,f,dt_old,dt_new,skip_dependent=false)
     dt_old==dt_new && return J
     B,N=size(f.state); n=f.gas.n_species
     kmax=isnothing(f.control_points) ? n+2 : n+1
@@ -601,7 +614,8 @@ function _counterflow_transient_update!(J,f,dt_old,dt_new,skip_dependent=true)
     delta=_flame_timescale*(1/dt_old-1/dt_new)
     diag=4B-1
     for j in 2:N-1, k in k0:kmax
-        # The eliminated species is sum(Y)=1, an algebraic row at every node.
+        # Interior species PDE rows, including the former dependent species, all
+        # carry the pseudo-time diagonal. Closure is applied only at boundaries.
         skip_dependent && k==f.dependent_species+1 && continue
         J[diag,(j-1)*B+k]+=delta
     end
@@ -631,7 +645,7 @@ _counterflow_retry_steady(successful_steps) =
 end
 
 function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1e-8,loglevel=0,
-        analytic=true,iterations=Ref(0),skip_dependent_transient=true,
+        analytic=true,iterations=Ref(0),skip_dependent_transient=false,
         transient_update! = _counterflow_transient_update!)
     u=f.state; r=similar(u); trial=similar(u); rt=similar(u)
     n=f.gas.n_species; bandwidth=2*size(u,1)-1
@@ -719,7 +733,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
         # A fresh small correction and componentwise backward error can certify
         # a root when the absolute residual is limited by state resolution.
         if correction_enabled && refreshed && within_bounds && step_merit<1 &&
-                _counterflow_constraints_converged(f,r,tolerance) &&
+                _counterflow_constraints_converged(f,r,tolerance,w) &&
                 all(i->abs(r[i])<=tolerance*residual_scales[i],eachindex(r))
             return true
         end
@@ -733,7 +747,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
             # stiff trace species.
             for backtrack in 1:7
                 @. trial=u+alpha*step
-                counterflow_residual!(rt,f,trial,w;previous,dt)
+                counterflow_residual!(rt,f,trial,w;previous,dt,update_excess=false)
                 contracts=false
                 if all(isfinite,rt)
                     # Cantera accepts a damping when the next weighted correction
@@ -764,7 +778,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
                         " weight=",weights[k]," u=",u[k,j]," ratio=",ci)
                 end
             end
-            weighted_converged && _counterflow_constraints_converged(f,r,tolerance) && return true
+            weighted_converged && _counterflow_constraints_converged(f,r,tolerance,w) && return true
             # Cantera retries a failed damped step with a fresh Jacobian when
             # the current one is stale (age>1), at most four times per solve; a
             # failure with a fresh Jacobian fails the solve (MultiNewton.cpp:271-283).
@@ -790,13 +804,13 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
         correction_enabled && trial_merit<1 && (w.jac_age=21)
     end
     counterflow_residual!(r,f,u,w;previous,dt)
-    return weighted_converged && _counterflow_constraints_converged(f,r,tolerance)
+    return weighted_converged && _counterflow_constraints_converged(f,r,tolerance,w)
 end
 
 function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
         newton_maxiters=0,transient_newton_maxiters=0,
-        skip_dependent_transient=true,transient_update! = _counterflow_transient_update!)
+        skip_dependent_transient=false,transient_update! = _counterflow_transient_update!)
     # One entry in both the flame's own stats and the family global.
     owned=_counterflow_stats(f)
     objs=(owned,COUNTERFLOW_STATS)
@@ -821,8 +835,8 @@ end
 _counterflow_growth_residual!(r,f,x,w;previous=nothing,dt=Inf) =
     counterflow_residual!(r,f,x,w;previous,dt)
 
-function _counterflow_growth_residual!(r,f::CounterflowDiffusionFlame,x,w;previous=nothing,dt=Inf)
-    counterflow_residual!(r,f,x,w;previous,dt)
+function _counterflow_growth_residual!(r,f::CounterflowDiffusionFlame,x,w;previous=nothing,dt=Inf,update_excess=true)
+    counterflow_residual!(r,f,x,w;previous,dt,update_excess)
     # Two-point control has different auxiliary/boundary equations.
     isnothing(f.control_points) || return r
     n,N=f.gas.n_species,length(f.grid)
@@ -843,19 +857,12 @@ function _counterflow_growth_residual!(r,f::CounterflowDiffusionFlame,x,w;previo
                 r[k+1,j]=j==1 ? flux*yin[k]-x[im,j]*x[k+1,j]-p.flux[k,1] :
                     p.flux[k,N-1]+x[im,j]*x[k+1,j]+flux*yin[k]
             end
-            excess=argmax(@view x[2:n+1,j])
+            excess=j==1 ? w.excess_left : w.excess_right
             r[excess+1,j]=1-sum(@view x[2:n+1,j])
         else
             for k in 1:n
                 r[k+1,j]/=_flame_timescale
             end
-            # Restore the interior species PDE replaced by native sum(Y)=1.
-            k=f.dependent_species
-            jm,jp=x[im,j]>0 ? (j-1,j) : (j,j+1)
-            cell=.5*(z[j+1]-z[j-1]); dz=z[jp]-z[jm]
-            r[k+1,j]=(f.gas.MW[k]*p.source[k,j]-(p.flux[k,j]-p.flux[k,j-1])/cell-
-                x[im,j]*(x[k+1,jp]-x[k+1,jm])/dz)/p.rho[j]
-            previous===nothing || (r[k+1,j]-=(x[k+1,j]-previous[k+1,j])/dt)
         end
     end
     return r
@@ -864,7 +871,7 @@ end
 function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
         newton_maxiters=0,transient_newton_maxiters=0,
-        skip_dependent_transient=true,transient_update! = _counterflow_transient_update!)
+        skip_dependent_transient=false,transient_update! = _counterflow_transient_update!)
     w=CounterflowWorkspace(f)
     cs=_counterflow_stats(f)
     # A failed steady trial must not replace the pseudo-time state; Cantera
@@ -970,11 +977,11 @@ automatic reinitialization; call `set_two_point_control!` to choose new targets.
 Time-step controls (`time_step_growth_factor`, `time_step_growth_strategy`,
 `time_step_callback`, `time_step_regrid`, `jacobian_mode`) are as for premixed flames.
 
-Diffusion solves use the same success-counted steady retries and dependent-row
-transient skip as the other counterflow kinds, matching Cantera's algebraic-row
-handling. The Nakamura diffusion case is substantially more expensive with this
-correct handling; performance work is tracked separately. See `audit.md` and
-`verify.md` for source references and measured validation.
+Diffusion solves evolve every species equation at interior nodes and enforce
+species closure only at the boundary excess species, matching Cantera's
+algebraic-row handling. The Nakamura diffusion case is substantially more
+expensive with this correct handling; performance work is tracked separately.
+See `audit.md` and `verify.md` for source references and measured validation.
 `:residual_ratio` growth is supported for this diffusion kind only among the
 counterflow kinds; premixed, twin-premixed, and stagnation require Cantera
 boundary-residual parity before using it.

@@ -159,7 +159,7 @@ end
     @test bound(upper+1e-7,1e-6,lower,upper)==0.0
 end
 
-@testset "counterflow transient Jacobian algebraic mask" begin
+@testset "counterflow transient Jacobian differential mask" begin
     gas=CreateSolution(joinpath(@__DIR__,"..","mechanism","h2o2.yaml"))
     f=CounterflowDiffusionFlame(gas;fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",
         mdot_fuel=.24,mdot_oxidizer=.72,grid=collect(range(0.,.02;length=7)))
@@ -168,11 +168,11 @@ end
     old=copy(Arrhenius._counterflow_jacobian!(f,f.state,w,r;previous,dt=1e-5,analytic=false))
     updated=copy(old)
     Arrhenius._counterflow_transient_update!(updated,f,1e-5,Inf)
-    B,N=size(f.state); diagonal=4B-1; dep=f.dependent_species+1
-    # Cantera shifts only differential rows. The eliminated species is an
-    # algebraic sum(Y)=1 constraint in native coordinates, including interiors.
+    B,N=size(f.state); diagonal=4B-1
+    # Every interior species equation is differential; closure rows exist only
+    # at boundaries and therefore receive no pseudo-time shift.
     for j in 1:N,k in 1:B
-        shift=1<j<N && k<=gas.n_species+2 && k!=dep ? 10. : 0.
+        shift=1<j<N && k<=gas.n_species+2 ? 10. : 0.
         @test updated[diagonal,(j-1)*B+k]-old[diagonal,(j-1)*B+k]≈shift atol=1e-10
     end
     counterflow_residual!(r,f,f.state,w)
