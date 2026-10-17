@@ -300,8 +300,9 @@ mutable struct PremixedStats
     steady_failures::Int
     regrids::Int
     grids::Vector{Int}
+    last_solve_options::Any
 end
-PremixedStats()=PremixedStats(0,0,0,0,0,0,0,0,0,Int[])
+PremixedStats()=PremixedStats(0,0,0,0,0,0,0,0,0,Int[],nothing)
 
 mutable struct _FlamePropertyNodes
     indices::Vector{Int}
@@ -2062,7 +2063,7 @@ const FLAME_STATS=WeakKeyDict{Any,Any}()
 function reset!(s::PremixedStats)
     for name in fieldnames(PremixedStats)
         v=getfield(s,name)
-        v isa Vector ? empty!(v) : setfield!(s,name,0)
+        v isa Vector ? empty!(v) : setfield!(s,name,name===:last_solve_options ? nothing : 0)
     end
     return s
 end
@@ -2116,6 +2117,8 @@ Exact semantics:
   call `Arrhenius.reset!` on them manually for per-run attribution.
 """
 solver_stats(f::AbstractPremixedFlame)=_premixed_stats(f)
+"""Return the resolved keyword settings recorded by the latest `solve!` call."""
+solver_options(f::AbstractPremixedFlame)=_premixed_stats(f).last_solve_options
 # WeakKeyDict keys must be mutable; immutable shim objects (property adapters,
 # test fixtures driving the helpers directly) share the family global.
 _premixed_stats(f)=Base.ismutable(f) ? get!(() -> PremixedStats(), FLAME_STATS, f) : PREMIXED_STATS
@@ -2159,6 +2162,10 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     analytic = jacobian_mode !== :finite_difference
     controls = (;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic,cantera_omission=(jacobian_mode === :auto),newton_options)
+    _premixed_stats(f).last_solve_options=(;jacobian_mode,newton_options,
+        staged_ladder=cantera_compatible,auto,refine_grid,ratio,slope,curve,prune,
+        max_points,max_time_steps,loglevel,initial_time_step,domain_check,
+        time_step_growth_factor,time_step_growth_strategy,time_step_callback,time_step_regrid)
     timestep = Ref(Float64(initial_time_step))
     (auto || cantera_compatible) && return _solve_auto!(f; refine_grid,ratio,slope,curve,prune,max_points,
         max_time_steps,loglevel,domain_check,timestep,controls,ts_regrid=time_step_regrid,
@@ -2235,4 +2242,4 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     end
     error("flame refinement did not converge after 40 passes")
 end
-export FreeFlame, BurnerFlame, set_transport!, set_temperature_profile!, solve!, temperature, mass_fractions, velocity, flame_speed, flame_residual!, solver_stats, PremixedStats, PREMIXED_STATS, NewtonPolicyOptions
+export FreeFlame, BurnerFlame, set_transport!, set_temperature_profile!, solve!, temperature, mass_fractions, velocity, flame_speed, flame_residual!, solver_stats, solver_options, PremixedStats, PREMIXED_STATS, NewtonPolicyOptions

@@ -347,9 +347,10 @@ mutable struct CounterflowStats
     # m_steps={10} successes accumulate (SteadyStateSystem::timeStep), so the
     # successes-cadence wiring records (10, >=10) at every retry.
     steady_retries::Vector{NTuple{2,Int}}
+    last_solve_options::Any
 end
 CounterflowStats()=CounterflowStats(0,0,0,0,0,0,0,0,0,0,0,Int[],NTuple{8,Float64}[],
-    NTuple{2,Int}[])
+    NTuple{2,Int}[],nothing)
 const COUNTERFLOW_STATS=CounterflowStats()
 # Per-flame view (FLAME_STATS in Flames.jl); the global keeps the accumulated
 # family total for main's existing consumers.
@@ -369,6 +370,7 @@ get their `grids` entry only (catalytic jets record `grids` but never
 which delegate here.
 """
 solver_stats(f::CounterflowDiffusionFlame)=_counterflow_stats(f)
+solver_options(f::CounterflowDiffusionFlame)=_counterflow_stats(f).last_solve_options
 # Premixed-counterflow kinds (and the catalytic jet) are immutable wrappers
 # around their mutable flow, so their counters are keyed on - and shared
 # with - that flow.
@@ -383,7 +385,7 @@ end
 function reset!(s::CounterflowStats)
     for name in fieldnames(CounterflowStats)
         v=getfield(s,name)
-        v isa Vector ? empty!(v) : setfield!(s,name,0)
+        v isa Vector ? empty!(v) : setfield!(s,name,name===:last_solve_options ? nothing : 0)
     end
     return s
 end
@@ -1037,6 +1039,10 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
     newton_options = _newton_policy(newton_options,cantera_compatible)
     reset!(_counterflow_stats(f))  # per-flame counters report this solve only
+    _counterflow_stats(f).last_solve_options=(;jacobian_mode,newton_options,
+        staged_ladder=false,auto,refine_grid,ratio,slope,curve,prune,max_points,
+        max_time_steps,loglevel,initial_time_step,time_step_growth_factor,
+        time_step_growth_strategy,time_step_callback,time_step_regrid)
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode!==:finite_difference,newton_options)
     timestep=Ref(Float64(initial_time_step))

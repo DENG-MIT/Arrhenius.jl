@@ -30,6 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 abstract type AbstractPremixedCounterflow end
 solver_stats(f::AbstractPremixedCounterflow)=solver_stats(f.flow)
+solver_options(f::AbstractPremixedCounterflow)=solver_stats(f).last_solve_options
 
 "Premixed reactants opposed by a prescribed product stream."
 struct CounterflowPremixedFlame{F,C} <: AbstractPremixedCounterflow
@@ -413,6 +414,10 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
         throw(ArgumentError("residual-ratio growth is unsupported for $(typeof(f)) until Cantera boundary-residual parity is validated"))
     newton_options=Arrhenius._newton_policy(newton_options,cantera_compatible)
     reset!(_counterflow_stats(f))  # per-flame counters report this solve only
+    _counterflow_stats(f).last_solve_options=(;jacobian_mode,newton_options,
+        staged_ladder=false,auto,refine_grid,ratio,slope,curve,prune,grid_min,max_points,
+        max_time_steps,loglevel,initial_time_step,time_step_growth_factor,
+        time_step_growth_strategy,time_step_callback,time_step_regrid,refinement_interpolation)
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic=jacobian_mode!==:finite_difference,newton_options)
     # The shared counterflow driver counts only successful time steps toward
