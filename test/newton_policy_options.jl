@@ -63,13 +63,13 @@ using Arrhenius, Test
     @test !Arrhenius._cantera_damped_step_converged(false,0.9)
     @test !Arrhenius._cantera_damped_step_converged(true,1.000001)
 
-    # A five-point startup can fail to converge, but its bound-rejection path
-    # must return the solver's ordinary failure instead of reading an undefined
-    # correction merit (the regression that arose while preparing these traces).
+    # With the combined compatible ladder and Newton preset, this small startup
+    # now converges through a later ladder rung instead of throwing on the first.
     bound_failure_flame=FreeFlame(gas;X,grid=collect(range(0.,1.;length=5)),
         discretization=:finite_difference)
-    @test_throws ErrorException solve!(bound_failure_flame;refine_grid=false,auto=false,
-        max_time_steps=100,cantera_compatible=true)
+    @test solve!(bound_failure_flame;refine_grid=false,auto=false,
+        max_time_steps=100,cantera_compatible=true) === bound_failure_flame
+    @test bound_failure_flame.converged && all(isfinite,bound_failure_flame.state)
 
     # Cantera 4.0.0a2 FreeFlame bounds probe (Flow1D::setBounds):
     #                    Cantera T       Arrhenius T (stored in kK)
@@ -116,7 +116,10 @@ using Arrhenius, Test
     # center temperature by 2% so the Newton call must accept a damped step and
     # subsequently report convergence under Cantera's weighted-step rule.
     premixed=FreeFlame(gas;X,grid=collect(range(0.,1.;length=17)),discretization=:finite_difference)
-    solve!(premixed;refine_grid=false,auto=false,max_time_steps=100,cantera_compatible=true)
+    # Use the Newton preset alone for the reference starting state so this
+    # direct trace isolates the policy from the automatic ladder.
+    solve!(premixed;refine_grid=false,auto=false,max_time_steps=100,jacobian_mode=:auto,
+        newton_options=NewtonPolicyOptions(cantera_compatible=true))
     @test premixed.converged
     premixed.state[1,9] *= 1.02
     premixed_trace=Tuple{Bool,Float64,Float64,Bool}[]
