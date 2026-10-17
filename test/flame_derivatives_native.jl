@@ -256,6 +256,7 @@ end
         optimized_nodes=stats.property_nodes-node_start
         legacy=copy(Arrhenius._flame_jacobian(f,f.state,w,r;analytic=true,local_property_updates=false))
         legacy_nodes=stats.property_nodes-node_start-optimized_nodes
+        auto_jacobian=copy(Arrhenius._flame_jacobian(f,f.state,w,r;analytic=true,cantera_omission=true))
         @test analytic==legacy
         @test optimized_nodes==length(grid)+4n
         @test legacy_nodes>optimized_nodes
@@ -274,11 +275,34 @@ end
         end
         @info "burner analytic species Jacobian versus ForwardDiff" prescribed_temperature worst worst_entry
         @test worst < 2e-4
-        # The native burner inlet balance includes the face flux, so keep
-        # the adjacent species-column boundary entry finite-differenced.
+        # :auto mirrors Cantera's zero endpoint blocks; :analytic retains the
+        # residual derivative, and finite differences remain unchanged.
         col=B+2; inlet_row=2
-        @test analytic[2kl+1+inlet_row-col,col] ≈ automatic[inlet_row,col] rtol=2e-4
+        residual=flame_residual!(similar(f.state),f,f.state,w)
+        finite_difference=Arrhenius._flame_jacobian(f,f.state,w,residual;analytic=false)
+        @test auto_jacobian[2kl+1+inlet_row-col,col] == 0.0
+        @test analytic[2kl+1+inlet_row-col,col] ≈ finite_difference[2kl+1+inlet_row-col,col] rtol=2e-4
+        @test finite_difference[2kl+1+inlet_row-col,col] ≈ automatic[inlet_row,col] rtol=2e-4
+        @test finite_difference == Arrhenius._flame_jacobian(f,f.state,w,residual;analytic=false,cantera_omission=false)
         @test automatic[inlet_row,col] ≈ 0.02936003949483076 rtol=1e-8
+        for component in 2:B-1
+            inlet_col=B+component
+            outlet_col=(length(grid)-2)*B+component
+            for rowcomponent in 1:B
+                inlet_boundary_row=rowcomponent
+                outlet_boundary_row=(length(grid)-1)*B+rowcomponent
+                @test auto_jacobian[2kl+1+inlet_boundary_row-inlet_col,inlet_col] == 0.0
+                @test auto_jacobian[2kl+1+outlet_boundary_row-outlet_col,outlet_col] == 0.0
+                @test analytic[2kl+1+inlet_boundary_row-inlet_col,inlet_col] ≈
+                    finite_difference[2kl+1+inlet_boundary_row-inlet_col,inlet_col] rtol=2e-4 atol=1e-8
+                @test analytic[2kl+1+outlet_boundary_row-outlet_col,outlet_col] ≈
+                    finite_difference[2kl+1+outlet_boundary_row-outlet_col,outlet_col] rtol=2e-4 atol=1e-8
+                @test finite_difference[2kl+1+inlet_boundary_row-inlet_col,inlet_col] ≈
+                    automatic[inlet_boundary_row,inlet_col] rtol=2e-4 atol=1e-8
+                @test finite_difference[2kl+1+outlet_boundary_row-outlet_col,outlet_col] ≈
+                    automatic[outlet_boundary_row,outlet_col] rtol=2e-4 atol=1e-8
+            end
+        end
         if prescribed_temperature
             for point in 2:length(grid)-1,component in 2:B-1
                 col=(point-1)*B+component
@@ -338,6 +362,15 @@ end
         @info "Cantera Jacobian block" name rel
     end
     @test full_jacobian_relative_error < 2e-10
+    boundary_rows=vcat(collect(1:B),collect((N-1)*B+1:N*B))
+    interior_species_cols=[j*B+k for j in 1:N-2 for k in 2:B-1]
+    expected_boundary_block=expected_full[boundary_rows,interior_species_cols]
+    actual_boundary_block=dense_jac[boundary_rows,interior_species_cols]
+    boundary_block_relative_error=norm(actual_boundary_block-expected_boundary_block)/
+        max(norm(expected_boundary_block),1e-300)
+    @info "Cantera free-flame boundary rows by interior species columns" boundary_block_relative_error expected_nonzeros=count(x -> x != 0.0,expected_boundary_block)
+    @test maximum(abs,expected_boundary_block)>0.0
+    @test boundary_block_relative_error < 1e-8
     d=Arrhenius._ConservativeFlameDerivatives(gas,N)
     G=zeros(n,n+1)
     maxrel=0.0

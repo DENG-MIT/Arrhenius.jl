@@ -871,7 +871,7 @@ _cantera_flame_velocity_bounds() = (-1e20,1e20)
 # Three grid colors exploit the nearest-neighbor block stencil. Each residual
 # evaluation perturbs one component at every third point without overlap.
 function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=nothing,analytic=true,
-        update_transport=false,local_property_updates=true)
+        update_transport=false,local_property_updates=true,cantera_omission=false)
     if analytic && !update_transport && _conservative_flame(f) && _conservative_flame_jacobian!(f,u,w,r;previous,dt,previous_enthalpy)
         return w.band
     end
@@ -939,6 +939,11 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
             end
             column = (j-1)*B+k
             for jj in max(1,j-1):min(N,j+1), kk in 1:B
+                cantera_boundary_species_omission = cantera_omission && !update_transport &&
+                    f isa BurnerFlame && f.transport_model == :mixture_averaged &&
+                    !f.soret_enabled && f.flux_gradient_basis == :mole &&
+                    2 <= k <= B-1 && ((j == 2 && jj == 1) || (j == N-1 && jj == N))
+                cantera_boundary_species_omission && continue
                 if auto_species_column &&
                         !((j == 2 && jj == 1) || (j == N-1 && jj == N))
                     continue
@@ -958,8 +963,9 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
         _flame_auto_species_jacobian!(band,f,u,w,r;previous,dt) || begin
             # Unsupported chemistry derivative metadata falls back to full FD.
             fill!(band,0)
-            return _flame_jacobian(f,u,w,r;previous,dt,previous_enthalpy,
-                analytic=false,update_transport)
+            fallback=_flame_jacobian(f,u,w,r;previous,dt,previous_enthalpy,
+                analytic=false,update_transport,cantera_omission)
+            return fallback
         end
     end
     return band
@@ -1152,7 +1158,7 @@ _flame_correction_enabled(f) = _conservative_flame(f) &&
 
 function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         require_positive=false,minimum_iterations=0,loglevel=0,analytic=true,iterations=Ref(0),
-        iteration_callback=nothing,newton_options=NewtonPolicyOptions(),step_trace=nothing)
+        iteration_callback=nothing,newton_options=NewtonPolicyOptions(),step_trace=nothing,cantera_omission=false)
     newton_options=_newton_policy(newton_options,newton_options.cantera_compatible)
     unlimited_iterations=maxiters<=0
     _premixed_stats(f).newton_calls+=1; PREMIXED_STATS.newton_calls+=1
@@ -1242,13 +1248,13 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
                     # Jacobian (rdt = 0); the transient diagonal enters at
                     # factorization (SystemJacobian::updateTransient).
                     flame_residual!(rt,f,u,w)
-                    J = _flame_jacobian(f,u,w,rt; analytic)
+                    J = _flame_jacobian(f,u,w,rt; analytic,cantera_omission)
                     copyto!(w.steady_jacobian,J)
                     w.jacobian_evals[] += 1
                     _premixed_stats(f).jacobians+=1; PREMIXED_STATS.jacobians+=1
                     pivots = _flame_factorize!(f,w,rdt)
                 else
-                    J = _flame_jacobian(f,u,w,r; previous,dt,previous_enthalpy,analytic)
+                    J = _flame_jacobian(f,u,w,r; previous,dt,previous_enthalpy,analytic,cantera_omission)
                     _premixed_stats(f).jacobians+=1; PREMIXED_STATS.jacobians+=1
                     _,pivots = LinearAlgebra.LAPACK.gbtrf!(bandwidth,bandwidth,length(u),J)
                 end
@@ -1408,12 +1414,12 @@ end
 
 function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
         clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,
-        analytic=true,steady_callback=nothing,newton_options=NewtonPolicyOptions())
+        analytic=true,steady_callback=nothing,cantera_omission=false,newton_options=NewtonPolicyOptions())
     newton_options=_newton_policy(newton_options,newton_options.cantera_compatible)
     w = _take_flame_workspace(f)
     try
         return _flame_steady_with_workspace!(f,w;loglevel,max_time_steps,timestep,tolerance,
-            clip_species,growth_factor,growth_strategy,step_callback,analytic,steady_callback,newton_options)
+            clip_species,growth_factor,growth_strategy,step_callback,analytic,steady_callback,cantera_omission,newton_options)
 
     finally
         _return_flame_workspace!(f,w)
@@ -1422,7 +1428,7 @@ end
 
 function _flame_steady_with_workspace!(f,w; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
         clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,
-        analytic=true,steady_callback=nothing,newton_options=NewtonPolicyOptions())
+        analytic=true,steady_callback=nothing,cantera_omission=false,newton_options=NewtonPolicyOptions())
     newton_options=_newton_policy(newton_options,newton_options.cantera_compatible)
     if w isa FlameWorkspace
         w.stats[] = _premixed_stats(f)
@@ -1442,14 +1448,14 @@ function _flame_steady_with_workspace!(f,w; loglevel=0,max_time_steps=500,timest
     # Cantera time-steps from the state before the failed steady attempt
     # (MultiNewton::solve leaves its input untouched on failure).
     steady_state = _flame_checkpoint_steady(f) || policy ? copy(f.state) : nothing
-    steady_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,newton_options,
+    steady_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,cantera_omission,newton_options,
         maxiters=newton_options.premixed_steady_maxiters,iteration_callback=steady_callback)
     steady_ok && return true
     _premixed_stats(f).steady_failures+=1; PREMIXED_STATS.steady_failures+=1
     # A failed steady trial must not replace the accepted pseudo-time state.
     steady_state === nothing || copyto!(f.state,steady_state)
     policy && return _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,
-        timestep,tolerance,growth_factor,growth_strategy,step_callback,analytic,steady_callback,newton_options)
+        timestep,tolerance,growth_factor,growth_strategy,step_callback,analytic,steady_callback,cantera_omission,newton_options)
     dt = timestep[]
     previous = similar(f.state)
     failures = 0
@@ -1459,7 +1465,7 @@ function _flame_steady_with_workspace!(f,w; loglevel=0,max_time_steps=500,timest
     for step in 1:max_time_steps
         copyto!(previous,f.state)
         if _flame_newton!(f,w; previous,dt,maxiters=newton_options.premixed_transient_maxiters,
-                loglevel=0,analytic,iterations,newton_options)
+                loglevel=0,analytic,cantera_omission,iterations,newton_options)
             _premixed_stats(f).time_steps+=1; PREMIXED_STATS.time_steps+=1
             failures = 0
             dt = min(dt*_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
@@ -1469,7 +1475,7 @@ function _flame_steady_with_workspace!(f,w; loglevel=0,max_time_steps=500,timest
             if step % 10 == 0
                 loglevel > 0 && println("Transient step ",step," dt=",dt)
                 steady_state === nothing || copyto!(steady_state,f.state)
-                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,newton_options,
+                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,cantera_omission,newton_options,
                     iteration_callback=steady_callback)
                 trial_ok && return true
                 steady_state === nothing || copyto!(f.state,steady_state)
@@ -1501,7 +1507,7 @@ end
 # from the state before the attempt.
 function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timestep,
         tolerance,growth_factor,growth_strategy,step_callback,analytic,steady_callback=nothing,
-        newton_options=NewtonPolicyOptions())
+        cantera_omission=false,newton_options=NewtonPolicyOptions())
     dt = timestep[]
     previous = similar(f.state)
     iterations = Ref(0)
@@ -1518,7 +1524,7 @@ function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timeste
         # 200 is a safety valve only; age refreshes every 21 iterations exit
         # via convergence or damping failure long before it.
         if _flame_newton!(f,w; previous,dt,maxiters=newton_options.premixed_policy_transient_maxiters,
-                loglevel=0,analytic,iterations,newton_options,iteration_callback=steady_callback)
+                loglevel=0,analytic,cantera_omission,iterations,newton_options,iteration_callback=steady_callback)
             successive_failures = 0
             successes += 1
             _premixed_stats(f).time_steps+=1; PREMIXED_STATS.time_steps+=1
@@ -1535,7 +1541,7 @@ function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timeste
                 batch = 0
                 loglevel > 0 && println("Transient step ",successes," dt=",dt)
                 copyto!(steady_state,f.state)
-                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,newton_options,
+                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,cantera_omission,newton_options,
                     iteration_callback=steady_callback)
                 trial_ok && return true
                 copyto!(f.state,steady_state)
@@ -2032,7 +2038,7 @@ function _solve_auto!(f; refine_grid,ratio,slope,curve,prune,max_points,
             end
             _flame_newton!(f, FlameWorkspace(f); require_positive = true,
                 minimum_iterations = 1, loglevel,
-                analytic = controls.analytic) ||
+                analytic = controls.analytic,cantera_omission=controls.cantera_omission) ||
                 error("flame final species polishing failed on $(length(f.grid)) points")
             refine_grid && _refine_flame!(f; ratio, slope, curve, prune, max_points) ||
                 break
@@ -2129,7 +2135,7 @@ a too-narrow domain; burner flames detect blowoff and return a nonreacting solut
 `time_step_growth_factor`, `time_step_growth_strategy` (`:fixed_growth`,
 `:steady_norm`, `:transient_residual`, `:residual_ratio`, `:newton_iterations`),
 `time_step_callback(dt)`, `time_step_regrid` and `jacobian_mode` (`:finite_difference` by default,
-`:analytic` to enable analytic species columns, or `:auto` as an alias). `cantera_compatible=true` selects `jacobian_mode=:auto` for this solve; it does not change other defaults. `prune` is Cantera's fourth refine criterion: grid
+`:analytic` to enable residual-faithful analytic species columns, or `:auto` to additionally match Cantera's omitted Burner boundary blocks). `cantera_compatible=true` selects `jacobian_mode=:auto` for this solve; it does not change other defaults. `prune` is Cantera's fourth refine criterion: grid
 points whose slope/curve indicators fall below it are removed on each
 refinement pass (0 disables pruning; it must not exceed `slope` or `curve`).
 """
@@ -2152,7 +2158,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     cantera_compatible && (jacobian_mode = :auto)
     analytic = jacobian_mode !== :finite_difference
     controls = (;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
-        step_callback=time_step_callback,analytic,newton_options)
+        step_callback=time_step_callback,analytic,cantera_omission=(jacobian_mode === :auto),newton_options)
     timestep = Ref(Float64(initial_time_step))
     (auto || cantera_compatible) && return _solve_auto!(f; refine_grid,ratio,slope,curve,prune,max_points,
         max_time_steps,loglevel,domain_check,timestep,controls,ts_regrid=time_step_regrid,
@@ -2219,7 +2225,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
                     f.state[dominant,j] -= correction
                 end
                 _flame_newton!(f,FlameWorkspace(f);require_positive=true,
-                    minimum_iterations=1,loglevel,analytic,newton_options) ||
+                    minimum_iterations=1,loglevel,analytic,cantera_omission=(jacobian_mode === :auto),newton_options) ||
                     error("flame final species polishing failed on $(length(f.grid)) points")
                 refine_grid && _refine_flame!(f;ratio,slope,curve,prune,max_points) && continue
             end
