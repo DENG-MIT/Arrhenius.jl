@@ -8,6 +8,7 @@ const A=Arrhenius
         f=FreeFlame(gas;T=900.,X="Ar:0.7,He:0.3",grid=[0,.001,.003,.007,.01])
         n=gas.n_species;B=n+3;N=length(f.grid)
         @test f isa IonizedFlame
+        @test !A._flame_auto_species_jacobian!(nothing,f,nothing,nothing,nothing)
         @test A.solver_stats(f) isa A.PremixedStats  # per-flame dispatch on the premixed path
         @test !f.field_enabled
         u=f.state

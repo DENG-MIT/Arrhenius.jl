@@ -290,13 +290,24 @@ mutable struct PremixedStats
     newton_iterations::Int
     jacobians::Int
     residual_evals::Int
+    property_nodes::Int
     time_steps::Int
     time_step_failures::Int
     steady_failures::Int
     regrids::Int
     grids::Vector{Int}
 end
-PremixedStats()=PremixedStats(0,0,0,0,0,0,0,0,Int[])
+PremixedStats()=PremixedStats(0,0,0,0,0,0,0,0,0,Int[])
+
+mutable struct _FlamePropertyNodes
+    indices::Vector{Int}
+    count::Int
+end
+Base.IteratorSize(::Type{_FlamePropertyNodes}) = Base.HasLength()
+Base.eltype(::Type{_FlamePropertyNodes}) = Int
+Base.length(nodes::_FlamePropertyNodes) = nodes.count
+@inline Base.iterate(nodes::_FlamePropertyNodes,state=1) =
+    state > nodes.count ? nothing : (nodes.indices[state],state+1)
 
 struct FlameWorkspace{K}
     kinetics::K
@@ -319,6 +330,7 @@ struct FlameWorkspace{K}
     perturbed::Matrix{Float64}
     residual_perturbed::Matrix{Float64}
     steps::Vector{Float64}
+    property_nodes::_FlamePropertyNodes
     correction::Vector{Float64}
     base_X::Matrix{Float64}
     base_rho::Vector{Float64}
@@ -352,7 +364,7 @@ function FlameWorkspace(f::AbstractPremixedFlame)
     return FlameWorkspace(KineticsWorkspace(f.gas.reaction),TransportWorkspace(f.gas),Ref(_premixed_stats(f)),
         zeros(n,N),zeros(N),zeros(n,N),zeros(n,N),zeros(n,N),zeros(n),zeros(n,N-1),zeros(N-1),
         zeros(n,N-1),zeros(n),zeros(n),zeros(n),zeros(n),
-        zeros(6*(n+2)-2,(n+2)*N),zeros(n+2,N),zeros(n+2,N),zeros(N),zeros((n+2)*N),
+        zeros(6*(n+2)-2,(n+2)*N),zeros(n+2,N),zeros(n+2,N),zeros(N),_FlamePropertyNodes(Vector{Int}(undef,N),0),zeros((n+2)*N),
         zeros(n,N),zeros(N),zeros(n,N),zeros(n,N),zeros(n,N),
         f.transport_model == :multicomponent ? MultiTransportWorkspace(f.multicomponent_data) : nothing,
         zeros(n,n,f.transport_model == :multicomponent ? N-1 : 0),zeros(n,N-1),
@@ -437,11 +449,19 @@ end
     return meanMW
 end
 
+@inline _flame_property_stats(w::FlameWorkspace,f::Union{FreeFlame,BurnerFlame}) = w.stats[]
+@inline _flame_property_stats(w,f) = nothing
+
 function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid),freeze_source=false,
         viscosity=nothing)
     gas, n, N = f.gas, f.gas.n_species, length(f.grid)
     conservative = _conservative_flame(f)
+    stats = _flame_property_stats(w,f)
     @inbounds for j in nodes
+        if stats !== nothing
+            stats.property_nodes += 1
+            PREMIXED_STATS.property_nodes += 1
+        end
         T = 1000*u[1,j]
         # Node thermochemistry uses signed mass fractions, as Cantera's flow
         # residual does; only transport inputs at faces are clipped below.
@@ -802,6 +822,11 @@ end
 _flame_previous_enthalpy(f,w,previous) = _conservative_flame(f) ?
     _flame_previous_enthalpy!(w.conservative,f,previous) : nothing
 _flame_perturbation(f,u,k,j)=1e-7*max(abs(u[k,j]),k==1 ? .1 : 1e-5)
+@inline function _flame_cantera_species_perturbation(u,k,j)
+    x=u[k,j]
+    h=1e-5*abs(x)+1e-10
+    return x<0 ? -h : h
+end
 # Fraction of the forward derivative that a positive finite-difference step of
 # `_flame_perturbation` samples on a clipped face-midpoint species value: one
 # at nonnegative values, the chord fraction within one step below zero.
@@ -826,7 +851,7 @@ end
 # Three grid colors exploit the nearest-neighbor block stencil. Each residual
 # evaluation perturbs one component at every third point without overlap.
 function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=nothing,analytic=true,
-        update_transport=false)
+        update_transport=false,local_property_updates=true)
     if analytic && !update_transport && _conservative_flame(f) && _conservative_flame_jacobian!(f,u,w,r;previous,dt,previous_enthalpy)
         return w.band
     end
@@ -846,16 +871,58 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
     if _conservative_flame(f) && previous !== nothing && previous_enthalpy === nothing
         previous_enthalpy = _flame_previous_enthalpy!(w.conservative,f,previous)
     end
+    # Burner inlet/outlet residuals include face-flux terms from the adjacent
+    # interior node. Keep only those endpoint-row finite differences; the
+    # analytic helper fills the interior stencil. FreeFlame follows Cantera
+    # auto mode and omits the corresponding endpoint entries.
     for k in 1:B, color in 1:3
+        perturbed_any=false
+        node_count=0
         for j in color:3:N
-            steps[j] = _flame_perturbation(f,u,k,j)
+            auto_species_column = analytic && !update_transport && f isa Union{FreeFlame,BurnerFlame} &&
+                f.transport_model == :mixture_averaged && !f.soret_enabled &&
+                f.flux_gradient_basis == :mole && 2 <= k <= B-1 && 2 <= j < N
+            if auto_species_column && !(f isa BurnerFlame && (j == 2 || j == N-1))
+                continue
+            end
+            cantera_fd = analytic && !update_transport && f isa Union{FreeFlame,BurnerFlame} &&
+                f.transport_model == :mixture_averaged && !f.soret_enabled &&
+                f.flux_gradient_basis == :mole &&
+                2 <= k <= B-1 && (j == 1 || j == N ||
+                    f isa BurnerFlame && (j == 2 || j == N-1))
+            steps[j] = cantera_fd ? _flame_cantera_species_perturbation(u,k,j) : _flame_perturbation(f,u,k,j)
             perturbed[k,j] = u[k,j]+steps[j]
+            perturbed_any=true
+            if local_property_updates && f isa Union{FreeFlame,BurnerFlame} &&
+                    (update_transport || k != B) && perturbed[k,j] != u[k,j]
+                node_count += 1
+                w.property_nodes.indices[node_count] = j
+            end
         end
+        perturbed_any || continue
         # Transport stays frozen for Newton; adjoint sensitivities update it.
-        flame_residual!(rp,f,perturbed,w; previous,dt,previous_enthalpy,update_transport,nodes=color:3:N)
+        nodes = if !local_property_updates || !(f isa Union{FreeFlame,BurnerFlame})
+            color:3:N
+        elseif !update_transport && k == B
+            ()
+        else
+            w.property_nodes.count = node_count
+            w.property_nodes
+        end
+        flame_residual!(rp,f,perturbed,w; previous,dt,previous_enthalpy,update_transport,nodes)
         for j in color:3:N
+            auto_species_column = analytic && !update_transport && f isa Union{FreeFlame,BurnerFlame} &&
+                f.transport_model == :mixture_averaged && !f.soret_enabled &&
+                f.flux_gradient_basis == :mole && 2 <= k <= B-1 && 2 <= j < N
+            if auto_species_column && !(f isa BurnerFlame && (j == 2 || j == N-1))
+                continue
+            end
             column = (j-1)*B+k
             for jj in max(1,j-1):min(N,j+1), kk in 1:B
+                if auto_species_column &&
+                        !((j == 2 && jj == 1) || (j == N-1 && jj == N))
+                    continue
+                end
                 row = (jj-1)*B+kk
                 band[kl+ku+1+row-column,column] = (rp[kk,jj]-r[kk,jj])/steps[j]
             end
@@ -866,6 +933,14 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
         copyto!(w.cp,w.base_cp)
         copyto!(w.h,w.base_h)
         copyto!(w.source,w.base_source)
+    end
+    if analytic && !update_transport && f isa Union{FreeFlame,BurnerFlame}
+        _flame_auto_species_jacobian!(band,f,u,w,r;previous,dt) || begin
+            # Unsupported chemistry derivative metadata falls back to full FD.
+            fill!(band,0)
+            return _flame_jacobian(f,u,w,r;previous,dt,previous_enthalpy,
+                analytic=false,update_transport)
+        end
     end
     return band
 end
@@ -1137,7 +1212,7 @@ function _check_timestep_controls(growth,strategy,regrid,jacobian_mode)
     isfinite(growth) && growth >= 1 || throw(ArgumentError("time step growth factor must be finite and at least 1"))
     strategy in _timestep_growth_strategies || throw(ArgumentError("unknown time step growth strategy $strategy"))
     regrid isa Integer && regrid >= 0 || throw(ArgumentError("time_step_regrid must be a nonnegative integer"))
-    jacobian_mode in (:auto,:finite_difference) || throw(ArgumentError("unknown jacobian_mode $jacobian_mode"))
+    jacobian_mode in (:auto,:finite_difference,:analytic) || throw(ArgumentError("unknown jacobian_mode $jacobian_mode"))
     return nothing
 end
 
@@ -1668,8 +1743,10 @@ they never influence solver decisions.
 
 Counted fields per kind (a field a kind never increments stays zero):
 - premixed kinds (`FreeFlame`, `BurnerFlame`, `IonizedFlame`): `newton_calls`,
-  `newton_iterations`, `jacobians`, `residual_evals`, `time_steps`,
-  `time_step_failures`, `steady_failures`, `regrids`, `grids`;
+  `newton_iterations`, `jacobians`, `residual_evals`, `property_nodes`, `time_steps`,
+  `time_step_failures`, `steady_failures`, `regrids`, `grids`; `property_nodes`
+  counts node-property refreshes for `FreeFlame` and `BurnerFlame` and stays zero
+  for `IonizedFlame`;
 - counterflow kinds (`CounterflowDiffusionFlame`, the premixed-counterflow
   wrappers, impinging and catalytic jets): all of the above plus
   `fd_jacobians`, `chem_jac_failures`, `recoveries` and per-attempt `calls`
@@ -1721,8 +1798,8 @@ restored — all wrapped in the domain-expansion loop that doubles a too-narrow
 domain and restarts the ladder. Cantera's time-step controls:
 `time_step_growth_factor`, `time_step_growth_strategy` (`:fixed_growth`,
 `:steady_norm`, `:transient_residual`, `:residual_ratio`, `:newton_iterations`),
-`time_step_callback(dt)`, `time_step_regrid` and `jacobian_mode` (`:auto` or
-`:finite_difference`). `prune` is Cantera's fourth refine criterion: grid
+`time_step_callback(dt)`, `time_step_regrid` and `jacobian_mode` (`:finite_difference` by default,
+`:analytic` to enable analytic species columns, or `:auto` as an alias). `cantera_compatible=true` selects `jacobian_mode=:auto` for this solve; it does not change other defaults. `prune` is Cantera's fourth refine criterion: grid
 points whose slope/curve indicators fall below it are removed on each
 refinement pass (0 disables pruning; it must not exceed `slope` or `curve`).
 """
@@ -1730,13 +1807,15 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
         max_points=1000,max_time_steps=500,loglevel=0,
         initial_time_step=1e-5,domain_check=f isa FreeFlame,
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
-        time_step_callback=nothing,time_step_regrid=3,jacobian_mode=:auto,auto=false)
+        time_step_callback=nothing,time_step_regrid=3,jacobian_mode=:finite_difference,auto=false,
+        cantera_compatible=false)
     isfinite(ratio) && ratio > 1 && 0 < slope <= 1 && 0 < curve <= 1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(prune) && prune <= min(slope,curve) || throw(ArgumentError("prune must be finite and no greater than slope or curve"))
     isfinite(initial_time_step) && initial_time_step > 0 || throw(ArgumentError("initial time step must be finite and positive"))
+    cantera_compatible && (jacobian_mode = :auto)
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
     reset!(_premixed_stats(f))  # per-flame counters report this solve only
-    analytic = jacobian_mode === :auto
+    analytic = jacobian_mode !== :finite_difference
     controls = (;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
         step_callback=time_step_callback,analytic)
     timestep = Ref(Float64(initial_time_step))

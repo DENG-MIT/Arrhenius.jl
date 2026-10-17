@@ -170,6 +170,187 @@ end
 end
 
 
+@testset "auto finite-difference flame interior species Jacobian" begin
+    mechanism=joinpath(@__DIR__,"..","mechanism","h2o2.yaml")
+    gas=CreateSolution(mechanism)
+    grid=collect(range(0.,.01;length=5))
+    f=FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid,discretization=:finite_difference)
+    n=gas.n_species;B=n+2
+    for j in eachindex(grid)
+        f.state[1,j]=.7+.08j
+        f.state[2:n+1,j].=.01 .+ .001 .* (1:n) .+ .0002j
+        f.state[2:n+1,j]./=sum(@view(f.state[2:n+1,j]))
+        f.state[end,j]=.08+.003j
+    end
+    previous=.997 .* f.state
+    dt=.004
+    w=Arrhenius.FlameWorkspace(f)
+    r=flame_residual!(similar(f.state),f,f.state,w;previous,dt)
+    stats=solver_stats(f)
+    node_start=stats.property_nodes; residual_start=stats.residual_evals
+    band=copy(Arrhenius._flame_jacobian(f,f.state,w,r;previous,dt,analytic=true))
+    optimized_nodes=stats.property_nodes-node_start
+    optimized_calls=stats.residual_evals-residual_start
+    node_start=stats.property_nodes; residual_start=stats.residual_evals
+    legacy=copy(Arrhenius._flame_jacobian(f,f.state,w,r;previous,dt,analytic=true,local_property_updates=false))
+    legacy_nodes=stats.property_nodes-node_start
+    legacy_calls=stats.residual_evals-residual_start
+    @test band==legacy
+    @test optimized_nodes==length(grid)+2n
+    @test legacy_nodes>optimized_nodes
+    @test optimized_calls==legacy_calls
+    node_start=stats.property_nodes; residual_start=stats.residual_evals
+    fd=copy(Arrhenius._flame_jacobian(f,f.state,w,r;previous,dt,analytic=false))
+    fd_nodes=stats.property_nodes-node_start
+    fd_calls=stats.residual_evals-residual_start
+    node_start=stats.property_nodes; residual_start=stats.residual_evals
+    fd_legacy=copy(Arrhenius._flame_jacobian(f,f.state,w,r;previous,dt,analytic=false,local_property_updates=false))
+    fd_legacy_nodes=stats.property_nodes-node_start
+    @test fd==fd_legacy
+    @test fd_nodes==(B-1)*length(grid)
+    @test fd_legacy_nodes==B*length(grid)
+    @test fd_calls==stats.residual_evals-residual_start
+    J=zeros(B*length(grid),B*length(grid))
+    for col in 1:B*length(grid),row in max(1,col-2B+1):min(B*length(grid),col+2B-1)
+        J[row,col]=band[4B-1+row-col,col]
+    end
+    Jad=flame_test_automatic_jacobian(f,w;previous,dt)
+    maxerr=0.0;worst=(0,0,0,0,0.0,0.0)
+    family=zeros(3)
+    for point in 2:length(grid)-1,component in 2:B-1
+        col=(point-1)*B+component
+        for rowpoint in 2:length(grid)-1, rowcomponent in 1:B
+            row=(rowpoint-1)*B+rowcomponent
+            err=abs(J[row,col]-Jad[row,col])/max(abs(Jad[row,col]),1e-8)
+            fam=rowcomponent==1 ? 1 : rowcomponent==B ? 3 : 2
+            family[fam]=max(family[fam],err)
+            if err>maxerr
+                maxerr=err;worst=(rowcomponent,rowpoint,point,component,J[row,col],Jad[row,col])
+            end
+        end
+    end
+    @info "analytic Jacobian derivative diagnostic" maxerr worst family
+    @test maxerr < 2e-7
+
+end
+
+@testset "auto analytic burner interior species Jacobian" begin
+    mechanism=joinpath(@__DIR__,"..","mechanism","h2o2.yaml")
+    gas=CreateSolution(mechanism)
+    grid=collect(range(0.,.01;length=5))
+    for prescribed_temperature in (false,true)
+        f=BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid,mdot=.08,
+            discretization=:finite_difference)
+        prescribed_temperature && set_temperature_profile!(f,[grid[1],grid[end]],[f.inlet_temperature,900.];relative=false)
+        n=gas.n_species;B=n+2
+        for j in eachindex(grid)
+            f.state[1,j]=.7+.04j
+            f.state[2:n+1,j].=.01 .+ .001 .* (1:n) .+ .0002j
+            f.state[2:n+1,j]./=sum(@view(f.state[2:n+1,j]))
+            f.state[end,j]=.08
+        end
+        w=Arrhenius.FlameWorkspace(f)
+        r=flame_residual!(similar(f.state),f,f.state,w)
+        stats=solver_stats(f); node_start=stats.property_nodes
+        analytic=copy(Arrhenius._flame_jacobian(f,f.state,w,r;analytic=true))
+        optimized_nodes=stats.property_nodes-node_start
+        legacy=copy(Arrhenius._flame_jacobian(f,f.state,w,r;analytic=true,local_property_updates=false))
+        legacy_nodes=stats.property_nodes-node_start-optimized_nodes
+        @test analytic==legacy
+        @test optimized_nodes==length(grid)+4n
+        @test legacy_nodes>optimized_nodes
+        automatic=flame_test_automatic_jacobian(f,w)
+        kl=2B-1
+        worst=0.0;worst_entry=(0,0,0.0,0.0)
+        for point in 2:length(grid)-1,component in 2:B-1
+            col=(point-1)*B+component
+            for rowpoint in max(2,point-1):min(length(grid)-1,point+1),rowcomponent in 1:B
+                row=(rowpoint-1)*B+rowcomponent
+                a=analytic[2kl+1+row-col,col]
+                d=automatic[row,col]
+                error=abs(a-d)/max(abs(d),1e-6)
+                if error>worst; worst=error; worst_entry=(row,col,a,d); end
+            end
+        end
+        @info "burner analytic species Jacobian versus ForwardDiff" prescribed_temperature worst worst_entry
+        @test worst < 2e-4
+        # The native burner inlet balance includes the face flux, so keep
+        # the adjacent species-column boundary entry finite-differenced.
+        col=B+2; inlet_row=2
+        @test analytic[2kl+1+inlet_row-col,col] ≈ automatic[inlet_row,col] rtol=2e-4
+        @test automatic[inlet_row,col] ≈ 0.02936003949483076 rtol=1e-8
+        if prescribed_temperature
+            for point in 2:length(grid)-1,component in 2:B-1
+                col=(point-1)*B+component
+                for rowpoint in 2:length(grid)-1
+                    row=(rowpoint-1)*B+1
+                    @test analytic[2kl+1+row-col,col] == 0.0
+                end
+            end
+        end
+    end
+end
+
+@testset "Cantera auto Jacobian fixture: free flame source species columns" begin
+    root=joinpath(@__DIR__,"data","cantera")
+    ref=Arrhenius.npzread(joinpath(root,"free_auto_stagni.npz"))
+    expected=Arrhenius.npzread(joinpath(root,"free_auto_stagni_source.npz"))["source_jacobian"]
+    mechanism=joinpath(@__DIR__,"..","mechanism","stagni_2023.yaml")
+    gas=CreateSolution(mechanism); grid=vec(ref["grid"])
+    f=FreeFlame(gas;T=300.0,P=one_atm,X="NH3:0.7,H2:0.3,O2:0.5625,N2:2.115",
+        grid,width=grid[end]-grid[1],transport_model=:mixture_averaged,
+        discretization=:finite_difference)
+    n,N=gas.n_species,length(grid)
+    f.anchor=4
+    f.state[1,:].=vec(ref["values/T"])./1000
+    for (k,name) in enumerate(gas.species_names)
+        f.state[k+1,:].=vec(ref["values/"*name])
+    end
+    for j in 1:N
+        rho=Arrhenius._flame_density(f,1000f.state[1,j],@view(f.state[2:n+1,j])).density
+        f.state[end,j]=rho*ref["values/velocity"][j]
+    end
+    w=Arrhenius.FlameWorkspace(f)
+    r=similar(f.state); flame_residual!(r,f,f.state,w)
+    boundary_jac=Arrhenius._flame_jacobian(f,f.state,w,r;analytic=true)
+    @test Arrhenius._flame_cantera_species_perturbation(f.state,2,1) ==
+        1e-5*abs(f.state[2,1])+1e-10
+    B=n+2; halfband=2B-1; h_index=findfirst(==("H"),gas.species_names)
+    left_row=B; left_col=B+h_index+1
+    right_row=(N-1)*B+B; right_col=(N-2)*B+h_index+1
+    left_entry=boundary_jac[2halfband+1+left_row-left_col,left_col]
+    right_entry=boundary_jac[2halfband+1+right_row-right_col,right_col]
+    @test left_entry ≈ 24.0162922725 rtol=2e-8
+    @test right_entry ≈ -23.1400344324 rtol=2e-8
+    # Full Cantera auto matrix transformed to native (T/1000,Y,m) coordinates.
+    # Regenerate with validation/generate_free_auto_jacobian_fixture.py.
+    expected_full=Arrhenius.npzread(joinpath(root,"free_auto_stagni_jacobian_reference.npz"))["jacobian"]
+    dense_jac=zeros(N*B,N*B)
+    for col in 1:N*B, row in max(1,col-halfband):min(N*B,col+halfband)
+        dense_jac[row,col]=boundary_jac[2halfband+1+row-col,col]
+    end
+    full_jacobian_relative_error=norm(dense_jac-expected_full)/norm(expected_full)
+    @info "Cantera full auto Jacobian fixture comparison" full_jacobian_relative_error
+    for (name,cols) in (("interior species",[j*B+k for j in 1:N-2 for k in 2:B-1]),
+            ("boundary species",[j*B+k for j in (0,N-1) for k in 2:B-1]),
+            ("temperature",[j*B+1 for j in 0:N-1]),("mass flux",[j*B+B for j in 0:N-1]))
+        rel=norm(dense_jac[:,cols]-expected_full[:,cols])/norm(expected_full[:,cols])
+        @info "Cantera Jacobian block" name rel
+    end
+    @test full_jacobian_relative_error < 2e-10
+    d=Arrhenius._ConservativeFlameDerivatives(gas,N)
+    G=zeros(n,n+1)
+    maxrel=0.0
+    for j in 2:N-1
+        ok=Arrhenius._flame_source_jacobian!(G,d,gas,f.pressure,1000f.state[1,j],
+            @view(f.state[2:n+1,j]),@view(w.X[:,j]),@view(w.h[:,j]),w.rate_caches[j])
+        @test ok
+        diff=G[:,2:end]-expected[:,:,j]
+        maxrel=max(maxrel,norm(diff)/max(norm(expected[:,:,j]),1e-300))
+    end
+    @info "Cantera source derivative fixture comparison" maxrel
+    @test maxrel < 1e-12
+end
 @testset "fixed-temperature finite-difference Newton merit" begin
     mechanism=joinpath(@__DIR__,"..","mechanism","h2o2.yaml")
     gas=CreateSolution(mechanism)

@@ -5,7 +5,7 @@ using Arrhenius,Test
     gas=CreateSolution(mechanism)
     X="H2:1.1,O2:1,AR:5"
     defaults=(;time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
-        time_step_callback=nothing,time_step_regrid=3,jacobian_mode=:auto)
+        time_step_callback=nothing,time_step_regrid=3,jacobian_mode=:finite_difference)
     reference=solve!(FreeFlame(gas;X))
     explicit=solve!(FreeFlame(gas;X);defaults...)
     @test explicit.grid==reference.grid && explicit.state==reference.state
@@ -18,10 +18,14 @@ using Arrhenius,Test
         @test !isempty(steps) && all(>(0),steps)
     end
     fd=solve!(FreeFlame(gas;X);jacobian_mode=:finite_difference)
-    @test fd.converged && isapprox(flame_speed(fd),speed;rtol=1e-6)
+    @test fd.converged && fd.grid==reference.grid && fd.state==reference.state
+    analytic=solve!(FreeFlame(gas;X);jacobian_mode=:analytic)
+    @test analytic.converged && isapprox(flame_speed(analytic),speed;rtol=1e-6)
+    compatible=solve!(FreeFlame(gas;X);jacobian_mode=:finite_difference,cantera_compatible=true)
+    @test compatible.converged && compatible.state==analytic.state
     @test solve!(FreeFlame(gas;X);time_step_regrid=3).state==reference.state
     for bad in ((;time_step_growth_factor=.5),(;time_step_growth_factor=Inf),
-            (;time_step_growth_strategy=:invalid),(;time_step_regrid=-1),(;jacobian_mode=:analytic))
+            (;time_step_growth_strategy=:invalid),(;time_step_regrid=-1),(;jacobian_mode=:unknown))
         @test_throws ArgumentError solve!(FreeFlame(gas;X);bad...)
         @test_throws ArgumentError solve!(CounterflowDiffusionFlame(gas;fuel="H2:1",oxidizer="O2:1",
             mdot_fuel=.24,mdot_oxidizer=.72);bad...)
@@ -29,8 +33,11 @@ using Arrhenius,Test
 
     kwargs=(fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",mdot_fuel=.24,mdot_oxidizer=.72)
     counterflow=solve!(CounterflowDiffusionFlame(gas;kwargs...);slope=.2,curve=.3)
-    explicit=solve!(CounterflowDiffusionFlame(gas;kwargs...);slope=.2,curve=.3,defaults...)
+    counterflow_defaults=merge(defaults,(;jacobian_mode=:auto))
+    explicit=solve!(CounterflowDiffusionFlame(gas;kwargs...);slope=.2,curve=.3,counterflow_defaults...)
     @test explicit.grid==counterflow.grid && explicit.state==counterflow.state
+    compatible_cf=solve!(CounterflowDiffusionFlame(gas;kwargs...);slope=.2,curve=.3,cantera_compatible=true)
+    @test compatible_cf.grid==counterflow.grid && compatible_cf.state==counterflow.state
     Tmax=maximum(temperature(counterflow))
     for options in ((;time_step_growth_strategy=:residual_ratio),(;time_step_growth_strategy=:newton_iterations),
             (;jacobian_mode=:finite_difference))

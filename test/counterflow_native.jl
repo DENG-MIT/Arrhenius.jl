@@ -27,6 +27,7 @@ end
         # solver_stats: per-flame counters; the exported global mirrors the family.
         cstats=solver_stats(f)
         @test cstats isa CounterflowStats && solver_stats(f)===cstats
+        @test !hasproperty(cstats,:property_nodes)
         @test cstats.jacobians>0 && !isempty(cstats.grids)
         @test cstats.newton_iterations>=cstats.jacobians
         @test last(cstats.grids)==length(f.grid)

@@ -12,6 +12,7 @@ end
     @test_throws ArgumentError Arrhenius.CounterflowTwinPremixedFlame(gas;reactants=composition,mdot=-.1)
     @test_throws ArgumentError Arrhenius.ImpingingJet(gas;reactants=composition,mdot=.06,T_surface=0.)
     f=Arrhenius.CounterflowPremixedFlame(gas;kwargs...)
+    @test !Arrhenius._flame_auto_species_jacobian!(nothing,f,nothing,nothing,nothing)
     solve!(f;slope=.1,curve=.2)
     @test f.converged
     @test 2000<maximum(temperature(f))<2100

@@ -399,11 +399,12 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
         initial_time_step=Arrhenius._COUNTERFLOW_FD_INITIAL_TIME_STEP,auto=true,
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto,
-        refinement_interpolation=:velocity)
+        refinement_interpolation=:velocity,cantera_compatible=false)
     isfinite(ratio)&&ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step)&&initial_time_step>0 || throw(ArgumentError("positive initial time step required"))
     isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 ||
         throw(ArgumentError("finite prune <= min(slope,curve) and positive grid_min required"))
+    cantera_compatible && (jacobian_mode = :auto)
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
     refinement_interpolation in (:mass_flux,:velocity) ||
         throw(ArgumentError("refinement_interpolation must be :mass_flux or :velocity"))
@@ -412,7 +413,7 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
         throw(ArgumentError("residual-ratio growth is unsupported for $(typeof(f)) until Cantera boundary-residual parity is validated"))
     reset!(_counterflow_stats(f))  # per-flame counters report this solve only
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
-        step_callback=time_step_callback,analytic=jacobian_mode===:auto)
+        step_callback=time_step_callback,analytic=jacobian_mode!==:finite_difference)
     # The shared counterflow driver counts only successful time steps toward
     # Cantera's steady-retry cadence (SteadyStateSystem::timeStep).
     steady!(flow)=_premixed_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...)
