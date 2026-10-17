@@ -6,28 +6,6 @@ This page records numerical choices visible in audited Arrhenius.jl and Cantera 
 
 Many original Cantera constants predate surviving issue/PR records. Where motivation cannot be established, it is stated as unknown rather than inferred. Cantera's original 1-D solver cites Kee, Coltrin, and Glarborg’s *Chemically Reacting Flow* ([publisher record](https://onlinelibrary.wiley.com/doi/book/10.1002/0471461296)). Cantera line links are pinned to the source SHA. Tests are those identified in the audits; “none found” means no dedicated test was located.
 
-## Know-why records
-
-The tables below record *what* each code does and *where*. Matching a rule is not knowing why it is there, and a batched GPU or reduced-precision solve will have to change several of them (per-sample refinement, damping trials, transient fallback, Jacobian reuse age, negative-species handling). Before such a rule is changed, it gets a record here:
-
-- **Protects against:** the failure the rule prevents, from source history, a fixture, or an ablation.
-- **Evidence:** the command that produced it (baseline vs candidate from pinned revisions), the cases it covered, and the prediction written before the run.
-- **Couplings:** rules whose effect changed when this one was removed; substitutable safeguards are ablated in pairs as well as alone.
-- **GPU implication:** keep, replace (with what), or drop.
-- **Status:** *load-bearing* (removal breaks a named case), *cost-only* (removal changes counts, not solutions, on the tested cases), *unexercised* (no effect on the tested cases, which is not proof it is unnecessary), *interpretation* (mechanism proposed, not isolated), or *unknown*.
-
-Ablations on adaptive solves run at two levels: snapshot replay or a fixed grid for the local effect, then the adaptive run for the total effect, since grid changes are part of that effect.
-
-### Pilot: Newton rules (section 4)
-
-| Rule | Protects against | Evidence | Couplings | GPU implication | Status |
-|---|---|---|---|---|---|
-| Damping: seven trials, factor `sqrt(2)`, accept `s1<1 \|\| s1<s0` | Not established; constants date to 2003. | Adopting the acceptance for fixed-temperature burner flames lowered Jacobians 61→49, 65→38, 42→31 (alzueta, creck, nakamura) with solutions unchanged to round-off ([#63](https://github.com/Subsapce-Lab/Arrhenius.jl/pull/63)). No ablation yet. | Norm weights and denominator define `s0` and `s1`. | Per-sample trial counts diverge across a batch. | cost-only on 3 cases; otherwise unknown |
-| Step bounds (T, Y, flow) | Not established; Cantera tightened the species bound in 2016. | None yet. | Negative-species handling (section 7). | Clamps are branch-free. | unknown |
-| Norm weights and denominator | Not established. | None yet. | Damping and convergence decisions. | A batch-wide norm is a reduction over samples. | unknown |
-| Steady convergence test and iteration cap | Not established. | None yet. | Transient fallback cadence (section 5). | Fixed iteration counts suit batching. | unknown |
-| Tolerances (`rtol=1e-4`, steady `atol=1e-9`, transient `atol=1e-11`) | Cantera history: loosened for typical convergence while keeping resolved results. | None yet. | Norm weights. | Must be re-derived for an FP32 state. | interpretation |
-
 ## 1. Unknowns and scaling
 
 | Choice | Arrhenius.jl (mode) | Cantera | Other public codes | Why / source | Status | Test that pins it |
