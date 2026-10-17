@@ -57,4 +57,20 @@ solve!(flame)
 
 ## Citation and license
 
-If you use Arrhenius.jl in published work, cite [“Arrhenius.jl: A Differentiable Combustion Simulation Package”](https://arxiv.org/abs/2107.06172). The package is released under the [MIT License](LICENSE).
+If you use Arrhenius.jl in published work, please cite:
+
+W. Ji, X. Su, B. Pang, S. J. Cassady, A. M. Ferris, Y. Li, Z. Ren, R. Hanson, S. Deng, “Arrhenius.jl: A Differentiable Combustion Simulation Package,” arXiv:2107.06172 [physics.chem-ph], 2021. https://arxiv.org/abs/2107.06172
+
+```bibtex
+@misc{ji2021arrhenius,
+  title         = {Arrhenius.jl: A Differentiable Combustion Simulation Package},
+  author        = {Ji, Weiqi and Su, Xingyu and Pang, Bin and Cassady, Sean Joseph and Ferris, Alison M. and Li, Yujuan and Ren, Zhuyin and Hanson, Ronald and Deng, Sili},
+  year          = {2021},
+  eprint        = {2107.06172},
+  archivePrefix = {arXiv},
+  primaryClass  = {physics.chem-ph},
+  url           = {https://arxiv.org/abs/2107.06172}
+}
+```
+
+Related publications are listed in the [documentation](https://deng-mit.github.io/Arrhenius.jl/dev/concepts/#Publications). The package is released under the [MIT License](LICENSE).
