@@ -52,10 +52,12 @@ end
 function total_stat(stage, key)
     return cantera_stat_total(get(stage,"solver_stats",Dict()), key)
 end
-function main(specfile, dir, reportfile, max_transitions=typemax(Int), first_transition=1)
+function main(specfile, dir, reportfile, max_transitions=typemax(Int), first_transition=1,
+        newton_options=NewtonPolicyOptions())
     spec=YAML.load_file(specfile); manifest=YAML.load_file(joinpath(dir,"manifest.json"))
     stages=manifest["stages"]
-    mechanism=normpath(joinpath(@__DIR__, "../../..", spec["mechanism"]*".yaml"))
+    mechanism=normpath(get(spec,"mechanism_path",
+        joinpath(@__DIR__, "../../..", spec["mechanism"]*".yaml")))
     gas=CreateSolution(mechanism)
     rows=Any[]; firstdiv=nothing
     first_transition >= 1 || error("first_transition must be positive")
@@ -118,27 +120,27 @@ function main(specfile, dir, reportfile, max_transitions=typemax(Int), first_tra
                 previous=copy(f.state)
                 if b["event"]=="time_step" && a["event"]=="initial_guess"
                     steady_input=copy(f.state)
-                    steady_ok=Arrhenius._counterflow_newton!(f,w;loglevel=3,iterations=steady_iterations)
+                    steady_ok=Arrhenius._counterflow_newton!(f,w;loglevel=3,iterations=steady_iterations,newton_options)
                     println("STAGE steady success=",steady_ok," iterations=",steady_iterations[])
                     steady_ok || copyto!(f.state,steady_input)
                 end
                 native_jac_before=solver_stats(f).jacobians
                 println("STAGE transient attempt dt=",attempted_dt)
-                ok=attempted_dt===nothing ? Arrhenius._counterflow_newton!(f,w;loglevel=0,iterations) :
-                    Arrhenius._counterflow_newton!(f,w;previous,dt=Float64(attempted_dt),maxiters=20,loglevel=3,iterations)
+                ok=attempted_dt===nothing ? Arrhenius._counterflow_newton!(f,w;loglevel=0,iterations,newton_options) :
+                    Arrhenius._counterflow_newton!(f,w;previous,dt=Float64(attempted_dt),maxiters=20,loglevel=3,iterations,newton_options)
             else
                 w=Arrhenius.FlameWorkspace(f)
                 previous=copy(f.state)
                 if b["event"]=="time_step" && a["event"]=="initial_guess"
                     steady_input=copy(f.state)
-                    steady_ok=Arrhenius._flame_newton!(f,w;loglevel=3,iterations=steady_iterations)
+                    steady_ok=Arrhenius._flame_newton!(f,w;loglevel=3,iterations=steady_iterations,newton_options)
                     println("STAGE steady success=",steady_ok," iterations=",steady_iterations[])
                     steady_ok || copyto!(f.state,steady_input)
                 end
                 native_jac_before=solver_stats(f).jacobians
                 println("STAGE transient attempt dt=",attempted_dt)
-                ok=attempted_dt===nothing ? Arrhenius._flame_newton!(f,w;loglevel=0,iterations) :
-                    Arrhenius._flame_newton!(f,w;previous,dt=Float64(attempted_dt),maxiters=20,loglevel=3,iterations)
+                ok=attempted_dt===nothing ? Arrhenius._flame_newton!(f,w;loglevel=0,iterations,newton_options) :
+                    Arrhenius._flame_newton!(f,w;previous,dt=Float64(attempted_dt),maxiters=20,loglevel=3,iterations,newton_options)
             end
             ok || error("native stage Newton solve failed")
         catch e
@@ -264,6 +266,10 @@ function main(specfile, dir, reportfile, max_transitions=typemax(Int), first_tra
 
 
     println("replayed transitions=$(length(rows)) first_divergence=$firstdiv report=$reportfile")
+    return rows
 end
-main(ARGS[1],ARGS[2],ARGS[3],length(ARGS)>=4 ? parse(Int,ARGS[4]) : typemax(Int),
-    length(ARGS)>=5 ? parse(Int,ARGS[5]) : 1)
+if abspath(PROGRAM_FILE)==@__FILE__
+    options=length(ARGS)>=6 && ARGS[6]=="cantera" ? Arrhenius._newton_policy(nothing,true) : NewtonPolicyOptions()
+    main(ARGS[1],ARGS[2],ARGS[3],length(ARGS)>=4 ? parse(Int,ARGS[4]) : typemax(Int),
+        length(ARGS)>=5 ? parse(Int,ARGS[5]) : 1,options)
+end

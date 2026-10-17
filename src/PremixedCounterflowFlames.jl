@@ -399,7 +399,7 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
         initial_time_step=Arrhenius._COUNTERFLOW_FD_INITIAL_TIME_STEP,auto=true,
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto,
-        refinement_interpolation=:velocity,cantera_compatible=false)
+        refinement_interpolation=:velocity,newton_options=nothing,cantera_compatible::Bool=false)
     isfinite(ratio)&&ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step)&&initial_time_step>0 || throw(ArgumentError("positive initial time step required"))
     isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 ||
@@ -411,12 +411,15 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
     interpolate_velocity=refinement_interpolation===:velocity
     time_step_growth_strategy===:residual_ratio &&
         throw(ArgumentError("residual-ratio growth is unsupported for $(typeof(f)) until Cantera boundary-residual parity is validated"))
+    newton_options=Arrhenius._newton_policy(newton_options,cantera_compatible)
     reset!(_counterflow_stats(f))  # per-flame counters report this solve only
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
-        step_callback=time_step_callback,analytic=jacobian_mode!==:finite_difference)
+        step_callback=time_step_callback,analytic=jacobian_mode!==:finite_difference,newton_options)
     # The shared counterflow driver counts only successful time steps toward
     # Cantera's steady-retry cadence (SteadyStateSystem::timeStep).
-    steady!(flow)=_premixed_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...)
+    steady!(flow)=_premixed_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...,
+        newton_maxiters=newton_options.premixed_counterflow_steady_maxiters,
+        transient_newton_maxiters=newton_options.counterflow_transient_maxiters)
     f.converged=false
     timestep=Ref(Float64(initial_time_step))
     initial_N=length(f.grid)

@@ -292,6 +292,14 @@ end
     twin=CounterflowTwinPremixedFlame(gas;reactants=composition,mdot=.12,T=373.,P,width=.2)
     jet=ImpingingJet(gas;reactants=composition,mdot=.06,T_inlet=373.,T_surface=500.,P,width=.2)
     flames=(diffusion,premixed,twin,jet)
+    # The shared Cantera-coordinate bounds convert correctly for all four kinds.
+    for flame in flames
+        n=gas.n_species; j=2; state=flame.state
+        physical_u_scale=Arrhenius.R*(1000state[1,j])*sum(state[k+1,j]/gas.MW[k] for k in 1:n)/flame.pressure
+        @test collect(Arrhenius._cantera_counterflow_state_bounds(flame,state,j,n+4).*physical_u_scale) ≈ [-1e20,1e20] rtol=eps(Float64)
+        @test Arrhenius._counterflow_Vscale .* collect(Arrhenius._cantera_counterflow_state_bounds(flame,state,j,n+2)) == [-1e20,1e20]
+        @test Arrhenius._counterflow_Lscale .* collect(Arrhenius._cantera_counterflow_state_bounds(flame,state,j,n+3)) == [-1e20,1e20]
+    end
     @test all(f -> solver_stats(f) isa CounterflowStats, flames)
     stats=solver_stats.(flames)
     @test all(stats[i]!==stats[j] for i in 1:4 for j in i+1:4)

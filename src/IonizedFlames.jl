@@ -103,6 +103,9 @@ end
 
 
 _flame_node_mass_flux(f::IonizedFlame,u,w,j)=w.rho[j]*u[end,j]
+@inline _flame_state_velocity(f::IonizedFlame,u,j)=u[end,j]
+@inline _flame_step_velocity(f::IonizedFlame,u,step,j)=u[end,j]+step[end,j]
+@inline _cantera_flame_flow_state_bounds(f::IonizedFlame,u,j)=_cantera_flame_velocity_bounds()
 _flame_previous_enthalpy(f::IonizedFlame,w,previous)=w.conservative===nothing ? nothing :
     _flame_previous_enthalpy!(w.conservative,f,previous)
 _flame_correction_enabled(f::IonizedFlame)=true

@@ -26,6 +26,10 @@ const A=Arrhenius
         @test electric_field(f)==1000 .* vec(u[end-1,:])
         @test mass_fractions(f)==u[2:n+1,:]
         @test velocity(f)==vec(u[end,:])
+        @test A._flame_state_velocity(f,u,1)==u[end,1]
+        ion_step=zeros(size(u)); ion_step[end,1]=.125
+        @test A._flame_step_velocity(f,u,ion_step,1)==u[end,1]+.125
+        @test A._cantera_flame_flow_state_bounds(f,u,1)==(-1e20,1e20)
         @test A._flame_bounds(f,5,B)==(-1e-14,1.)
         @test A._flame_bounds(f,4,B)==(-1e-10,1.)
         for transient in (false,true)

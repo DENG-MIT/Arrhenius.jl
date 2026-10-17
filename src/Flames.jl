@@ -836,7 +836,6 @@ end
     return max(y+h,0.0)/h
 end
 _flame_species_forward(y)=_flame_species_weight(y)>0
-_flame_correction_weights(f,u,transient)=_flame_correction_weights(u,transient)
 _flame_needs_correction_check(f)=false
 _flame_step_sequencing(f)=_conservative_flame(f)
 _flame_checkpoint_steady(f)=_conservative_flame(f)
@@ -847,6 +846,13 @@ function _flame_bounds(f,k,B)
     high=k==1 ? 6.0 : k==B ? 100.0 : 1.00001
     return low,high
 end
+# IdealGasThermo stores each species maximum temperature in the third Trange column.
+# Cantera bounds T by twice the minimum species maximum.
+_cantera_flame_temperature_bounds(f) = (0.2,2*minimum(@view(f.gas.thermo.Trange[:,end]))/1000)
+_cantera_flame_species_bounds() = (-1e-7,1e5)
+_cantera_flame_velocity_bounds() = (-1e20,1e20)
+@inline _cantera_flame_flow_state_bounds(f,u,j) =
+    _cantera_flame_velocity_bounds() .* _flame_state_density(f,u,j)
 
 # Three grid colors exploit the nearest-neighbor block stencil. Each residual
 # evaluation perturbs one component at every third point without overlap.
@@ -967,6 +973,121 @@ function _flame_active_region!(region::BitMatrix,u::AbstractMatrix)
 end
 
 # Frozen outer-state component weights; temperature is stored as T/1000.
+"""
+    NewtonPolicyOptions(; kwargs...)
+
+Immutable controls for Newton damping, bounds, weighted correction norms,
+convergence, iteration caps, and Jacobian refresh policy. The defaults preserve
+Arrhenius' current behavior. Pass `cantera_compatible=true` to `solve!` to select
+the corresponding Cantera policy values, or pass a `NewtonPolicyOptions` value
+to select individual settings.
+"""
+Base.@kwdef struct NewtonPolicyOptions
+    cantera_compatible::Bool = false
+    damping_trials::Union{Nothing,Int} = nothing
+    damping_factor::Union{Nothing,Float64} = nothing
+    damping_acceptance::Union{Nothing,Symbol} = nothing
+    step_bounds::Union{Nothing,Symbol} = nothing
+    norm_denominator::Union{Nothing,Symbol} = nothing
+    flow_weight::Union{Nothing,Symbol} = nothing
+    steady_convergence::Union{Nothing,Symbol} = nothing
+    premixed_steady_maxiters::Union{Nothing,Int} = nothing
+    counterflow_steady_maxiters::Union{Nothing,Int} = nothing
+    premixed_counterflow_steady_maxiters::Union{Nothing,Int} = nothing
+    premixed_transient_maxiters::Union{Nothing,Int} = nothing
+    premixed_policy_transient_maxiters::Union{Nothing,Int} = nothing
+    counterflow_transient_maxiters::Union{Nothing,Int} = nothing
+    jacobian_age::Union{Nothing,Int} = nothing
+    jacobian_reevaluations::Union{Nothing,Int} = nothing
+end
+
+function _newton_policy(options, cantera_compatible)
+    options === nothing || options isa NewtonPolicyOptions ||
+        throw(ArgumentError("newton_options must be a NewtonPolicyOptions"))
+    cantera_compatible = cantera_compatible || (options !== nothing && options.cantera_compatible)
+    base = options === nothing ? NewtonPolicyOptions() : options
+    defaults = (damping_trials=7,damping_factor=sqrt(2.0),
+        damping_acceptance=:current,step_bounds=:current,
+        norm_denominator=:current,flow_weight=:current,
+        steady_convergence=:residual_inf,premixed_steady_maxiters=35,
+        counterflow_steady_maxiters=45,premixed_counterflow_steady_maxiters=0,
+        premixed_transient_maxiters=20,premixed_policy_transient_maxiters=200,
+        counterflow_transient_maxiters=100,jacobian_age=20,
+        jacobian_reevaluations=4)
+    compatible = cantera_compatible || base.cantera_compatible
+    cantera = (damping_trials=7,damping_factor=sqrt(2.0),
+        damping_acceptance=:step_or_reduction,step_bounds=:cantera,
+        norm_denominator=:cantera,flow_weight=:velocity,
+        steady_convergence=:weighted_step,premixed_steady_maxiters=0,
+        counterflow_steady_maxiters=0,premixed_counterflow_steady_maxiters=0,
+        premixed_transient_maxiters=0,premixed_policy_transient_maxiters=0,
+        counterflow_transient_maxiters=0,jacobian_age=20,
+        jacobian_reevaluations=4)
+    resolved = NamedTuple{keys(defaults)}(map(keys(defaults)) do name
+        supplied = getfield(base,name)
+        supplied === nothing ? (compatible ? getfield(cantera,name) : getfield(defaults,name)) : supplied
+    end)
+    base = NewtonPolicyOptions(cantera_compatible=compatible; resolved...)
+    base.damping_trials>0 && isfinite(base.damping_factor) && base.damping_factor>1 ||
+        throw(ArgumentError("Newton damping requires positive trials and a finite factor greater than one"))
+    base.damping_acceptance in (:current,:step_or_reduction,:correction_reduction,:residual_merit) ||
+        throw(ArgumentError("unsupported damping acceptance policy"))
+    base.step_bounds in (:current,:cantera) || throw(ArgumentError("unsupported Newton step bounds"))
+    base.norm_denominator in (:current,:cantera) || throw(ArgumentError("unsupported Newton norm denominator"))
+    base.flow_weight in (:current,:velocity) || throw(ArgumentError("unsupported Newton flow weight"))
+    base.steady_convergence in (:residual_inf,:weighted_step) ||
+        throw(ArgumentError("unsupported Newton steady convergence policy"))
+    all(>=(0),(base.premixed_steady_maxiters,base.counterflow_steady_maxiters,
+        base.premixed_counterflow_steady_maxiters,base.premixed_transient_maxiters,
+        base.premixed_policy_transient_maxiters,base.counterflow_transient_maxiters,
+        base.jacobian_age,base.jacobian_reevaluations)) ||
+        throw(ArgumentError("Newton iteration caps and Jacobian ages must be nonnegative"))
+    return base
+end
+
+@inline _cantera_damped_step_converged(accepted, s1) = accepted && s1 <= 1
+@inline _rejected_small_step(accepted, s1) = !accepted && s1 <= 1
+@inline _damping_failure_fallback(accepted, s1, fallback) = fallback && !_rejected_small_step(accepted, s1)
+
+@inline function _newton_merit_accepts(options,s1,s0,allow_converged)
+    options.damping_acceptance === :step_or_reduction && return s1<1 || s1<s0
+    options.damping_acceptance === :correction_reduction && return s1<s0
+    return allow_converged ? s1<1 || s1<s0 : s1<s0
+end
+
+function _flame_correction_weights(f,u,transient,options=NewtonPolicyOptions())
+    weights=_flame_correction_weights(u,transient)
+    if options.flow_weight === :velocity
+        absolute=transient ? 1e-11 : 1e-9
+        velocity_sum=0.0
+        for j in axes(u,2)
+            velocity_sum+=abs(_flame_state_velocity(f,u,j))
+        end
+        weights[end]=1e-4*velocity_sum/size(u,2)+absolute
+    end
+    return weights
+end
+
+@inline function _flame_state_density(f,u,j)
+    n=f.gas.n_species
+    inv_molecular_weight=0.0
+    @inbounds for k in 1:n
+        inv_molecular_weight+=u[k+1,j]/f.gas.MW[k]
+    end
+    return f.pressure/(R*(1000*u[1,j])*inv_molecular_weight)
+end
+@inline _flame_state_velocity(f,u,j) = u[end,j]/_flame_state_density(f,u,j)
+@inline function _flame_step_velocity(f,u,step,j)
+    n=f.gas.n_species
+    inv_molecular_weight=0.0
+    @inbounds for k in 1:n
+        inv_molecular_weight+=(u[k+1,j]+step[k+1,j])/f.gas.MW[k]
+    end
+    density=f.pressure/(R*(1000*(u[1,j]+step[1,j]))*inv_molecular_weight)
+    return (u[end,j]+step[end,j])/density
+end
+
+# Frozen outer-state component weights; temperature is stored as T/1000.
 function _flame_correction_weights(u,transient)
     absolute=transient ? 1e-11 : 1e-9
     weights=Vector{Float64}(undef,size(u,1))
@@ -975,12 +1096,32 @@ function _flame_correction_weights(u,transient)
     end
     return weights
 end
-function _flame_correction_norm(step,weights)
+function _flame_correction_norm(step,weights,denominator=length(step))
     total=0.0
     for j in axes(step,2),k in axes(step,1)
         total += (step[k,j]/weights[k])^2
     end
-    return sqrt(total/length(step))
+    return sqrt(total/denominator)
+end
+function _flame_policy_correction_norm(step,weights,f,options,state=f.state)
+    denominator=length(step)
+    if options.norm_denominator === :cantera
+        denominator=(f.gas.n_species+6)*size(step,2)
+    end
+    if options.flow_weight === :velocity
+        total=0.0
+        B=size(step,1)
+        for j in axes(step,2),k in 1:B-1
+            total+=(step[k,j]/weights[k])^2
+        end
+        for j in axes(step,2)
+            u0=_flame_state_velocity(f,state,j)
+            u1=_flame_step_velocity(f,state,step,j)
+            total+=((u1-u0)/weights[end])^2
+        end
+        return sqrt(total/denominator)
+    end
+    return _flame_correction_norm(step,weights,denominator)
 end
 
 function _flame_solve_correction!(correction,band,pivots,residual,bandwidth)
@@ -996,7 +1137,10 @@ _flame_correction_enabled(f) = _conservative_flame(f) &&
     !(f isa BurnerFlame && !isempty(f.imposed_temperature))
 
 function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
-        require_positive=false,minimum_iterations=0,loglevel=0,analytic=true,iterations=Ref(0))
+        require_positive=false,minimum_iterations=0,loglevel=0,analytic=true,iterations=Ref(0),
+        newton_options=NewtonPolicyOptions(),step_trace=nothing)
+    newton_options=_newton_policy(newton_options,newton_options.cantera_compatible)
+    unlimited_iterations=maxiters<=0
     _premixed_stats(f).newton_calls+=1; PREMIXED_STATS.newton_calls+=1
     u = f.state
     r,trial,rt = similar(u),similar(u),similar(u)
@@ -1005,7 +1149,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     policy = _flame_persistent_jacobian(f)
     # Cantera keeps the Jacobian age on the solver across calls (MultiNewton's
     # Jacobian is owned by SteadyStateSystem); other flames refresh per call.
-    age = policy ? w.jacobian_age : Ref(20)
+    age = policy ? w.jacobian_age : Ref(newton_options.jacobian_age)
     force_new_jacobian = false
     jacobian_reevals = 0
     rdt = 0.0
@@ -1042,14 +1186,18 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     fixed_temperature = f isa BurnerFlame && !isempty(f.imposed_temperature)
     cantera_transient = previous !== nothing && !_flame_correction_enabled(f) &&
         (!fixed_temperature || !_conservative_flame(f))
-    policy_merit = policy && (!fixed_temperature || !_conservative_flame(f))
-    correction_enabled = _flame_correction_enabled(f) || cantera_transient || policy_merit
-    correction_weights = correction_enabled ? _flame_correction_weights(f,u,previous !== nothing) : Float64[]
+    policy_merit = (policy && (!fixed_temperature || !_conservative_flame(f))) || newton_options.cantera_compatible
+    correction_enabled = _flame_correction_enabled(f) || cantera_transient || policy_merit ||
+        newton_options.steady_convergence===:weighted_step ||
+        newton_options.damping_acceptance in (:step_or_reduction,:correction_reduction)
+    correction_weights = correction_enabled ? _flame_correction_weights(f,u,previous !== nothing,newton_options) : Float64[]
     trial_correction = correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     current_region = falses(size(u,1)-2,2size(u,2)-1)
     factored_region = similar(current_region)
     region_valid = false
-    for iteration in 1:maxiters
+    iteration = 0
+    while unlimited_iterations || iteration < maxiters
+        iteration += 1
         iterations[] = iteration
         _premixed_stats(f).newton_iterations+=1; PREMIXED_STATS.newton_iterations+=1
         if !residual_valid
@@ -1059,7 +1207,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         residual_norm = norm(r,Inf)
         # Final-grid polishing also checks the physical species criterion.
         # Intermediate grids retain the existing equation-residual criterion.
-        if !_flame_needs_correction_check(f) && iteration > minimum_iterations && residual_norm < tolerance && (!require_positive ||
+        if newton_options.steady_convergence !== :weighted_step && !_flame_needs_correction_check(f) && iteration > minimum_iterations && residual_norm < tolerance && (!require_positive ||
                 minimum(@view(u[2:end-1,:])) > -1e-12)
             return true
         end
@@ -1070,8 +1218,8 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         end
         # Cantera MultiNewton::solve refreshes the Jacobian only past its
         # maximum age (m_maxAge = 20) or on demand after a damping failure.
-        refresh = policy ? force_new_jacobian || !w.jacobian_valid[] || age[] > 20 :
-            age[] >= 20 || region_changed
+        refresh = policy ? force_new_jacobian || !w.jacobian_valid[] || age[] > newton_options.jacobian_age :
+            age[] >= newton_options.jacobian_age || region_changed
         step = try
             if refresh
                 if policy
@@ -1105,21 +1253,26 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
         all(isfinite,step) || return false
         # MultiNewton::solve increments the Jacobian age after every step.
         policy && (age[] += 1)
-        if _flame_needs_correction_check(f) && iteration > minimum_iterations &&
-                residual_norm < tolerance && _flame_correction_norm(step,correction_weights) < 1
+        if newton_options.steady_convergence !== :weighted_step && _flame_needs_correction_check(f) && iteration > minimum_iterations &&
+                residual_norm < tolerance && _flame_policy_correction_norm(step,correction_weights,f,newton_options) < 1
             return true
         end
         # The strict final-grid tolerance can lie below the residual's round-off
         # floor. If Newton stalls there, accept Cantera's criterion: a fresh
         # Newton correction below one in the steady weighted norm.
-        at_floor = previous === nothing && refresh && tolerance <= 1e-8 && !require_positive &&
+        at_floor = newton_options.steady_convergence !== :weighted_step && previous === nothing && refresh && tolerance <= 1e-8 && !require_positive &&
             iteration > minimum_iterations && residual_norm < 10tolerance &&
-            _flame_correction_norm(step,_flame_correction_weights(f,u,false)) < 1
+            _flame_policy_correction_norm(step,_flame_correction_weights(f,u,false,newton_options),f,newton_options) < 1
         alpha = 1.0
         for j in axes(u,2), k in axes(u,1)
             # Small negative species values are permitted in Newton iterates;
             # thermodynamic and kinetic evaluations use the nonnegative state.
             low,high = _flame_bounds(f,k,size(u,1))
+            if newton_options.step_bounds === :cantera
+                low,high = k==1 ? _cantera_flame_temperature_bounds(f) :
+                    k==size(u,1) ? _cantera_flame_flow_state_bounds(f,u,j) :
+                    _cantera_flame_species_bounds()
+            end
             a = Inf
             if step[k,j] < 0
                 a = (u[k,j]-low)/(-step[k,j])
@@ -1128,14 +1281,18 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             end
             alpha = min(alpha,a)
         end
+        # Compute the current correction merit before the bound rejection path
+        # so its trace and failure fallback have a defined s0 as well.
+        step_merit = correction_enabled ? _flame_policy_correction_norm(step,correction_weights,f,newton_options) : 0.0
         # Cantera MultiNewton::boundStep lands exactly on its bounds, and
         # dampStep rejects a bound factor no greater than 1e-10.
         if alpha <= 1e-10
-            at_floor && return true
+            step_trace === nothing || push!(step_trace,(false,step_merit,Inf,false))
+            _damping_failure_fallback(false,step_merit,at_floor) && return true
             if policy
                 # MultiNewton::solve: a damping failure re-evaluates an old
                 # Jacobian (at most four times) and fails with a fresh one.
-                if age[] > 1 && jacobian_reevals <= 3
+                if age[] > 1 && jacobian_reevals < newton_options.jacobian_reevaluations
                     jacobian_reevals += 1
                     force_new_jacobian = true
                     continue
@@ -1147,25 +1304,27 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             continue
         end
         # Trial correction merit uses the already factored (lagged) Newton J.
-        step_merit = correction_enabled ? _flame_correction_norm(step,correction_weights) : 0.0
         accepted = false
+        trial_merit = Inf
         # Cantera's MultiNewton::dampStep: at most seven trials, each sqrt(2)
         # shorter, before the Jacobian is refreshed or the step fails.
-        for backtrack in 1:7
+        for backtrack in 1:newton_options.damping_trials
             @. trial = u + alpha*step
             flame_residual!(rt,f,trial,w; previous,dt,previous_enthalpy)
             trial_contracts = false
-            trial_merit = Inf
             if all(isfinite,rt)
                 if correction_enabled
                     copyto!(trial_correction,vec(rt))
                     LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,trial_correction)
-                    trial_merit = _flame_correction_norm(reshape(trial_correction,size(u)),correction_weights)
+                    trial_merit = _flame_policy_correction_norm(reshape(trial_correction,size(u)),correction_weights,f,newton_options)
                     # Cantera dampStep accepts s1 < 1 or s1 < s0 and treats
                     # s1 < 1 as convergence of the Newton solve.
-                    trial_contracts = (cantera_transient || policy_merit) ?
-                        trial_merit < 1 || trial_merit < step_merit :
-                        trial_merit < step_merit
+                    trial_contracts = if newton_options.damping_acceptance === :residual_merit
+                        norm(rt) < norm(r)*(1-1e-4*alpha)
+                    else
+                        _newton_merit_accepts(newton_options,trial_merit,step_merit,
+                            cantera_transient || policy_merit)
+                    end
                 else
                     trial_contracts = norm(rt) < norm(r)*(1-1e-4*alpha)
                 end
@@ -1173,18 +1332,21 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
             if trial_contracts
                 u .= trial
                 accepted = true
-                # s1 < 1 converges a time step (Cantera dampStep); the steady
-                # solve continues to the residual tolerance instead.
-                cantera_transient && trial_merit < 1 && return true
                 break
             end
-            alpha /= sqrt(2)
+            alpha /= newton_options.damping_factor
         end
+        cantera_converged = _cantera_damped_step_converged(accepted,trial_merit)
+        step_trace === nothing || push!(step_trace,(accepted,step_merit,trial_merit,cantera_converged))
         loglevel > 1 && println("Newton ",iteration," residual=",residual_norm," damping=",alpha)
+        if accepted && ((newton_options.steady_convergence === :weighted_step && cantera_converged) ||
+                (newton_options.steady_convergence !== :weighted_step && cantera_transient && trial_merit <= 1))
+            return true
+        end
         if !accepted || alpha <= 1e-10
-            at_floor && return true
+            _damping_failure_fallback(false,step_merit,at_floor) && return true
             if policy
-                if age[] > 1 && jacobian_reevals <= 3
+                if age[] > 1 && jacobian_reevals < newton_options.jacobian_reevaluations
                     jacobian_reevals += 1
                     force_new_jacobian = true
                     continue
@@ -1230,18 +1392,22 @@ function _timestep_growth(residual!,r,strategy,growth,before,after,dt,iterations
 end
 
 function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
-        clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
+        clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
+        newton_options=NewtonPolicyOptions())
+    newton_options=_newton_policy(newton_options,newton_options.cantera_compatible)
     w = _take_flame_workspace(f)
     try
         return _flame_steady_with_workspace!(f,w;loglevel,max_time_steps,timestep,tolerance,
-            clip_species,growth_factor,growth_strategy,step_callback,analytic)
+            clip_species,growth_factor,growth_strategy,step_callback,analytic,newton_options)
     finally
         _return_flame_workspace!(f,w)
     end
 end
 
 function _flame_steady_with_workspace!(f,w; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
-        clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
+        clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
+        newton_options=NewtonPolicyOptions())
+    newton_options=_newton_policy(newton_options,newton_options.cantera_compatible)
     if w isa FlameWorkspace
         w.stats[] = _premixed_stats(f)
         w.jacobian_valid[] = false
@@ -1260,13 +1426,14 @@ function _flame_steady_with_workspace!(f,w; loglevel=0,max_time_steps=500,timest
     # Cantera time-steps from the state before the failed steady attempt
     # (MultiNewton::solve leaves its input untouched on failure).
     steady_state = _flame_checkpoint_steady(f) || policy ? copy(f.state) : nothing
-    steady_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
+    steady_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,newton_options,
+        maxiters=newton_options.premixed_steady_maxiters)
     steady_ok && return true
     _premixed_stats(f).steady_failures+=1; PREMIXED_STATS.steady_failures+=1
     # A failed steady trial must not replace the accepted pseudo-time state.
     steady_state === nothing || copyto!(f.state,steady_state)
     policy && return _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,
-        timestep,tolerance,growth_factor,growth_strategy,step_callback,analytic)
+        timestep,tolerance,growth_factor,growth_strategy,step_callback,analytic,newton_options)
     dt = timestep[]
     previous = similar(f.state)
     failures = 0
@@ -1275,7 +1442,8 @@ function _flame_steady_with_workspace!(f,w; loglevel=0,max_time_steps=500,timest
     residual_at!(r,x,previous,dt) = flame_residual!(r,f,x,w; previous,dt)
     for step in 1:max_time_steps
         copyto!(previous,f.state)
-        if _flame_newton!(f,w; previous,dt,maxiters=20,loglevel=0,analytic,iterations)
+        if _flame_newton!(f,w; previous,dt,maxiters=newton_options.premixed_transient_maxiters,
+                loglevel=0,analytic,iterations,newton_options)
             _premixed_stats(f).time_steps+=1; PREMIXED_STATS.time_steps+=1
             failures = 0
             dt = min(dt*_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
@@ -1285,7 +1453,7 @@ function _flame_steady_with_workspace!(f,w; loglevel=0,max_time_steps=500,timest
             if step % 10 == 0
                 loglevel > 0 && println("Transient step ",step," dt=",dt)
                 steady_state === nothing || copyto!(steady_state,f.state)
-                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
+                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,newton_options)
                 trial_ok && return true
                 steady_state === nothing || copyto!(f.state,steady_state)
             end
@@ -1315,7 +1483,7 @@ end
 # failures (resetBadValues). A failed steady attempt restarts time stepping
 # from the state before the attempt.
 function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timestep,
-        tolerance,growth_factor,growth_strategy,step_callback,analytic)
+        tolerance,growth_factor,growth_strategy,step_callback,analytic,newton_options)
     dt = timestep[]
     previous = similar(f.state)
     iterations = Ref(0)
@@ -1331,7 +1499,8 @@ function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timeste
         # stall is broken by the age-20 refresh, not by giving up the step.
         # 200 is a safety valve only; age refreshes every 21 iterations exit
         # via convergence or damping failure long before it.
-        if _flame_newton!(f,w; previous,dt,maxiters=200,loglevel=0,analytic,iterations)
+        if _flame_newton!(f,w; previous,dt,maxiters=newton_options.premixed_policy_transient_maxiters,
+                loglevel=0,analytic,iterations,newton_options)
             successive_failures = 0
             successes += 1
             _premixed_stats(f).time_steps+=1; PREMIXED_STATS.time_steps+=1
@@ -1348,7 +1517,7 @@ function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timeste
                 batch = 0
                 loglevel > 0 && println("Transient step ",successes," dt=",dt)
                 copyto!(steady_state,f.state)
-                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic)
+                trial_ok = _flame_newton!(f,w; loglevel,tolerance,analytic,newton_options)
                 trial_ok && return true
                 copyto!(f.state,steady_state)
             end
@@ -1791,6 +1960,8 @@ _premixed_stats(f)=Base.ismutable(f) ? get!(() -> PremixedStats(), FLAME_STATS, 
 
 Solve a native premixed flame using damped Newton iterations and implicit
 pseudo-time stepping. Failure raises an error and leaves `converged=false`.
+`newton_options` selects individual Newton policy values; `cantera_compatible=true`
+selects the Cantera-compatible policy values as a group.
 `auto=true` mirrors Cantera's `FreeFlame.solve(auto=True)` for `FreeFlame`: a
 staged ladder on uniform 12/24/48-point grids from fresh analytic guesses with
 Soret disabled, one refinement-enabled solve, then a final stage with Soret
@@ -1808,16 +1979,17 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
         initial_time_step=1e-5,domain_check=f isa FreeFlame,
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=3,jacobian_mode=:finite_difference,auto=false,
-        cantera_compatible=false)
+        newton_options=nothing,cantera_compatible::Bool=false)
     isfinite(ratio) && ratio > 1 && 0 < slope <= 1 && 0 < curve <= 1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(prune) && prune <= min(slope,curve) || throw(ArgumentError("prune must be finite and no greater than slope or curve"))
     isfinite(initial_time_step) && initial_time_step > 0 || throw(ArgumentError("initial time step must be finite and positive"))
     cantera_compatible && (jacobian_mode = :auto)
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
+    newton_options = _newton_policy(newton_options,cantera_compatible)
     reset!(_premixed_stats(f))  # per-flame counters report this solve only
     analytic = jacobian_mode !== :finite_difference
     controls = (;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
-        step_callback=time_step_callback,analytic)
+        step_callback=time_step_callback,analytic,newton_options)
     timestep = Ref(Float64(initial_time_step))
     auto && return _solve_auto!(f; refine_grid,ratio,slope,curve,prune,max_points,
         max_time_steps,loglevel,domain_check,timestep,controls,ts_regrid=time_step_regrid)
@@ -1883,7 +2055,7 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
                     f.state[dominant,j] -= correction
                 end
                 _flame_newton!(f,FlameWorkspace(f);require_positive=true,
-                    minimum_iterations=1,loglevel,analytic) ||
+                    minimum_iterations=1,loglevel,analytic,newton_options) ||
                     error("flame final species polishing failed on $(length(f.grid)) points")
                 refine_grid && _refine_flame!(f;ratio,slope,curve,prune,max_points) && continue
             end
@@ -1893,4 +2065,4 @@ function solve!(f::AbstractPremixedFlame; refine_grid=true,ratio=3.,slope=.06,cu
     end
     error("flame refinement did not converge after 40 passes")
 end
-export FreeFlame, BurnerFlame, set_transport!, set_temperature_profile!, solve!, temperature, mass_fractions, velocity, flame_speed, flame_residual!, solver_stats, PremixedStats, PREMIXED_STATS
+export FreeFlame, BurnerFlame, set_transport!, set_temperature_profile!, solve!, temperature, mass_fractions, velocity, flame_speed, flame_residual!, solver_stats, PremixedStats, PREMIXED_STATS, NewtonPolicyOptions

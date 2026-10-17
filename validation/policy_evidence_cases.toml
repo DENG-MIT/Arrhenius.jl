@@ -1,0 +1,17 @@
+[[case]]
+id = "h2o2_free_startup"
+transition = 73
+spec = "../test/cantera_parity/snapshots/specs/h2o2_free.json"
+capture_dir = "policy_evidence_captures/h2o2_free"
+
+[[case]]
+id = "h2o2_diffusion_near_extinction"
+transition = 101
+spec = "../test/cantera_parity/snapshots/specs/h2o2_diffusion_extinction.json"
+capture_dir = "policy_evidence_captures/h2o2_diffusion_extinction"
+
+[[case]]
+id = "h2o2_burner_startup"
+transition = 94
+spec = "../test/cantera_parity/snapshots/specs/h2o2_burner.json"
+capture_dir = "policy_evidence_captures/h2o2_burner"

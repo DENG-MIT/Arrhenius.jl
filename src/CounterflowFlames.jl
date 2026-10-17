@@ -644,9 +644,30 @@ _counterflow_retry_steady(successful_steps) =
     return 1.0
 end
 
+@inline function _cantera_counterflow_state_bounds(f,u,j,k)
+    n=f.gas.n_species
+    if k==1
+        return _cantera_flame_temperature_bounds(f)
+    elseif k<=n+1
+        return _cantera_flame_species_bounds()
+    elseif k==n+2
+        return (-1e20/_counterflow_Vscale,1e20/_counterflow_Vscale)
+    elseif k==n+3
+        return (-1e20/_counterflow_Lscale,1e20/_counterflow_Lscale)
+    end
+    inv_molecular_weight=0.0
+    @inbounds for m in 1:n
+        inv_molecular_weight+=u[m+1,j]/f.gas.MW[m]
+    end
+    velocity_scale=R*(1000*u[1,j])*inv_molecular_weight/f.pressure
+    return _cantera_flame_velocity_bounds()./velocity_scale
+end
+
 function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1e-8,loglevel=0,
         analytic=true,iterations=Ref(0),skip_dependent_transient=false,
-        transient_update! = _counterflow_transient_update!)
+        transient_update! = _counterflow_transient_update!,
+        newton_options=NewtonPolicyOptions(),step_trace=nothing)
+    newton_options=_newton_policy(newton_options,newton_options.cantera_compatible)
     u=f.state; r=similar(u); trial=similar(u); rt=similar(u)
     n=f.gas.n_species; bandwidth=2*size(u,1)-1
     correction_enabled=!isnothing(f.control_points)
@@ -654,7 +675,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
     correction_enabled && (w.jac_age=21)
     # Pseudo-time steps end on Cantera's weighted-correction criterion.
     step_converged=previous!==nothing
-    weights=_flame_correction_weights(u,previous!==nothing)
+    weights=_flame_correction_weights(f,u,previous!==nothing,newton_options)
     trial_correction=Vector{Float64}(undef,length(u))
     residual_scales=correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]
     residual_valid = false
@@ -671,12 +692,12 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
         end
         residual_valid = false
         residualnorm=norm(r,Inf)
-        residualnorm<tolerance && return true
+        residualnorm<tolerance && newton_options.steady_convergence !== :weighted_step && return true
         # Cantera reuses one Jacobian across a grid's Newton solves: re-evaluate
         # only when the cache is missing or older than 20 steps, and merely
         # refactorize when dt changes (MultiNewton.cpp:223-255,
         # SteadyStateSystem.cpp:117-121,426-428).
-        refresh=!w.jac_valid || w.jac_age>20
+        refresh=!w.jac_valid || w.jac_age>newton_options.jacobian_age
         loglevel>2 && println("Counterflow Jacobian decision: ",refresh ? "fresh" : "reuse",
             " age=",w.jac_age," dt=",dt)
         refreshed=false
@@ -713,7 +734,10 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
             # Enforcing strict positivity stalls initially absent hydrocarbon radicals.
             low=k==1 ? .2 : k<=n+1 ? -1e-7 : -1e5
             high=k==1 ? 6. : k<=n+1 ? 1.00001 : 1e5
-            if k==size(u,1)-1
+            if newton_options.step_bounds === :cantera
+                low,high=_cantera_counterflow_state_bounds(f,u,j,k)
+            end
+            if k==size(u,1)-1 && newton_options.step_bounds !== :cantera
                 # Cantera's physical Lambda bounds, converted to stored Lambda/Lscale.
                 low=-1e20/_counterflow_Lscale
                 high=1e20/_counterflow_Lscale
@@ -721,18 +745,19 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
             if !isnothing(f.control_points)
                 k==n+2 && (low=0.)
                 k==size(u,1)-2 && (low=-1e-5/_counterflow_Vscale)
+                newton_options.step_bounds === :cantera && k==n+2 && (low=-1e-5/_counterflow_Vscale)
             end
             within_bounds &= low<=u[k,j]<=high
             alpha=min(alpha,_counterflow_bound_fraction(u[k,j],step[k,j],low,high))
         end
-        if step_converged && alpha==1 && _flame_correction_norm(step,weights)<1
+        if newton_options.steady_convergence !== :weighted_step && step_converged && alpha==1 && _flame_policy_correction_norm(step,weights,f,newton_options)<1
             u .+= step
             return true
         end
-        step_merit=_flame_correction_norm(step,weights)
+        step_merit=_flame_policy_correction_norm(step,weights,f,newton_options)
         # A fresh small correction and componentwise backward error can certify
         # a root when the absolute residual is limited by state resolution.
-        if correction_enabled && refreshed && within_bounds && step_merit<1 &&
+        if newton_options.steady_convergence !== :weighted_step && correction_enabled && refreshed && within_bounds && step_merit<1 &&
                 _counterflow_constraints_converged(f,r,tolerance,w) &&
                 all(i->abs(r[i])<=tolerance*residual_scales[i],eachindex(r))
             return true
@@ -745,7 +770,7 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
             # Cantera's MultiNewton::dampStep: at most seven trials, each sqrt(2)
             # shorter. A deeper search only accepts round-off-level steps on
             # stiff trace species.
-            for backtrack in 1:7
+            for backtrack in 1:newton_options.damping_trials
                 @. trial=u+alpha*step
                 counterflow_residual!(rt,f,trial,w;previous,dt,update_excess=false)
                 contracts=false
@@ -754,17 +779,23 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
                     # s1 satisfies s1<1 or s1<s0 (MultiNewton.cpp).
                     copyto!(trial_correction,vec(rt))
                     LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,w.pivots,trial_correction)
-                    trial_merit=_flame_correction_norm(reshape(trial_correction,size(u)),weights)
-                    contracts=trial_merit<1 || trial_merit<step_merit
+                    trial_merit=_flame_policy_correction_norm(reshape(trial_correction,size(u)),weights,f,newton_options)
+                    contracts = if newton_options.damping_acceptance === :residual_merit
+                        norm(rt)<norm(r)*(1-1e-4*alpha)
+                    else
+                        _newton_merit_accepts(newton_options,trial_merit,step_merit,true)
+                    end
                 end
                 loglevel>2 && println("    backtrack ",backtrack," alpha=",alpha,
                     " trial_merit=",isfinite(trial_merit) ? trial_merit : -1.0)
                 if contracts
                     u .= trial; accepted=true; break
                 end
-                alpha/=sqrt(2)
+                alpha/=newton_options.damping_factor
             end
         end
+        cantera_converged=_cantera_damped_step_converged(accepted,trial_merit)
+        step_trace === nothing || push!(step_trace,(accepted,step_merit,trial_merit,cantera_converged))
         loglevel>1 && println("Counterflow Newton ",iteration," residual=",residualnorm," damping=",alpha)
         if !accepted
             if loglevel>2
@@ -778,14 +809,14 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
                         " weight=",weights[k]," u=",u[k,j]," ratio=",ci)
                 end
             end
-            weighted_converged && _counterflow_constraints_converged(f,r,tolerance,w) && return true
+            newton_options.steady_convergence !== :weighted_step && _damping_failure_fallback(accepted,trial_merit,weighted_converged && _counterflow_constraints_converged(f,r,tolerance,w)) && return true
             # Cantera retries a failed damped step with a fresh Jacobian when
             # the current one is stale (age>1), at most four times per solve; a
             # failure with a fresh Jacobian fails the solve (MultiNewton.cpp:271-283).
             if correction_enabled
                 refreshed && return false
             else
-                (w.jac_age<=1 || reevals>3) && return false
+                (w.jac_age<=1 || reevals>=newton_options.jacobian_reevaluations) && return false
                 reevals+=1
             end
             w.jac_age=21; continue
@@ -801,6 +832,9 @@ function _counterflow_newton!(f,w;previous=nothing,dt=Inf,maxiters=0,tolerance=1
         # identical state.
         copyto!(r, rt)
         residual_valid = true
+        if newton_options.steady_convergence === :weighted_step
+            _cantera_damped_step_converged(accepted,trial_merit) && return true
+        end
         correction_enabled && trial_merit<1 && (w.jac_age=21)
     end
     counterflow_residual!(r,f,u,w;previous,dt)
@@ -810,7 +844,9 @@ end
 function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
         newton_maxiters=0,transient_newton_maxiters=0,
-        skip_dependent_transient=false,transient_update! = _counterflow_transient_update!)
+        skip_dependent_transient=false,transient_update! = _counterflow_transient_update!,
+        newton_options=NewtonPolicyOptions())
+    newton_options=_newton_policy(newton_options,newton_options.cantera_compatible)
     # One entry in both the flame's own stats and the family global.
     owned=_counterflow_stats(f)
     objs=(owned,COUNTERFLOW_STATS)
@@ -821,7 +857,7 @@ function _counterflow_steady!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INI
     t0=time()
     converged=_counterflow_steady_impl!(f;max_time_steps,timestep,loglevel,
         growth_factor,growth_strategy,step_callback,analytic,newton_maxiters,
-        transient_newton_maxiters,skip_dependent_transient,transient_update!)
+        transient_newton_maxiters,skip_dependent_transient,transient_update!,newton_options)
     for (s,snap) in zip(objs,snaps)
         push!(s.calls,(length(f.grid),timestep[],s.newton_iterations-snap[1],
             s.jacobians-snap[2],s.time_steps-snap[3],s.time_step_failures-snap[4],
@@ -871,14 +907,15 @@ end
 function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLOW_INITIAL_TIME_STEP),loglevel=0,
         growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true,
         newton_maxiters=0,transient_newton_maxiters=0,
-        skip_dependent_transient=false,transient_update! = _counterflow_transient_update!)
+        skip_dependent_transient=false,transient_update! = _counterflow_transient_update!,
+        newton_options=NewtonPolicyOptions())
     w=CounterflowWorkspace(f)
     cs=_counterflow_stats(f)
     # A failed steady trial must not replace the pseudo-time state; Cantera
     # writes trials to a separate vector (SteadyStateSystem::solve).
     checkpoint=copy(f.state)
     _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters,
-        skip_dependent_transient,transient_update!) && return true
+        skip_dependent_transient,transient_update!,newton_options) && return true
     cs.steady_failures+=1; COUNTERFLOW_STATS.steady_failures+=1
     copyto!(f.state,checkpoint)
     dt=timestep[]; iterations=Ref(0); growth_residual=similar(f.state)
@@ -893,7 +930,7 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
         previous=copy(f.state)
         j0=w.jac_evals
         if _counterflow_newton!(f,w;previous,dt,analytic,iterations,
-                maxiters=transient_newton_maxiters,skip_dependent_transient,transient_update!)
+                maxiters=transient_newton_maxiters,skip_dependent_transient,transient_update!,newton_options)
             cs.time_steps+=1; COUNTERFLOW_STATS.time_steps+=1
             failures=0
             # Cantera grows dt only when the step evaluated no Jacobian
@@ -914,7 +951,7 @@ function _counterflow_steady_impl!(f;max_time_steps=800,timestep=Ref(_COUNTERFLO
                 loglevel>0 && println("Counterflow transient ",successful_steps," dt=",dt)
                 copyto!(checkpoint,f.state)
                 _counterflow_newton!(f,w;loglevel,analytic,maxiters=newton_maxiters,
-                    skip_dependent_transient,transient_update!) && return true
+                    skip_dependent_transient,transient_update!,newton_options) && return true
                 copyto!(f.state,checkpoint)
                 successful_steps=0
                 failures=0
@@ -991,20 +1028,21 @@ function solve!(f::CounterflowDiffusionFlame;refine_grid=true,ratio=4.,slope=.2,
         initial_time_step=_COUNTERFLOW_FD_INITIAL_TIME_STEP,auto=true,
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto,
-        cantera_compatible=false,
-        _transient_update! = _counterflow_transient_update!)
+        _transient_update! = _counterflow_transient_update!,
+        newton_options=nothing,cantera_compatible::Bool=false)
     isfinite(ratio) && ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(prune) && prune<=min(slope,curve) || throw(ArgumentError("invalid pruning criterion"))
     isfinite(initial_time_step) && initial_time_step>0 || throw(ArgumentError("positive finite initial time step required"))
     cantera_compatible && (jacobian_mode = :auto)
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
+    newton_options = _newton_policy(newton_options,cantera_compatible)
     reset!(_counterflow_stats(f))  # per-flame counters report this solve only
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
-        step_callback=time_step_callback,analytic=jacobian_mode!==:finite_difference)
+        step_callback=time_step_callback,analytic=jacobian_mode!==:finite_difference,newton_options)
     timestep=Ref(Float64(initial_time_step))
     steady!(flow)=_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...,
-        newton_maxiters=_COUNTERFLOW_FD_NEWTON_MAXITERS,
-        transient_newton_maxiters=_COUNTERFLOW_FD_TRANSIENT_NEWTON_MAXITERS,
+        newton_maxiters=newton_options.counterflow_steady_maxiters,
+        transient_newton_maxiters=newton_options.counterflow_transient_maxiters,
         transient_update! = _transient_update!)
     if !isnothing(f.control_points)
         isempty(f.fixed_temperature) || throw(ArgumentError("two-point control conflicts with fixed_temperature"))
