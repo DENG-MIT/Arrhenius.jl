@@ -121,22 +121,21 @@ def main() -> None:
     cantera_meta = json.loads(args.cantera_metadata.read_text())
     mobilities["native"] = float(native_meta["native_mobility_m2_V_s"])
     mobilities["cantera"] = float(cantera_meta["cantera_mobility_m2_V_s"])
-    summaries = {}
-    for name, (energy, f) in distributions.items():
-        summaries[name] = common_metrics(energy, f, tables, mobilities[name], n)
-    # Compare normalized distributions at the native grid's points. This is
-    # interpolation only; no solver output is rescaled except by its computed norm.
-    base_e, base_f = distributions["native"]
+    # Put all three outputs on one integration grid containing each solver's
+    # reported energy samples. This avoids bias from comparing edge quadrature
+    # (native/Cantera) with cell-center quadrature (LoKI).
+    common_e = np.unique(np.concatenate([e for e, _ in distributions.values()]))
+    common_f = {name: np.interp(common_e, e, f) for name, (e, f) in distributions.items()}
+    summaries = {name: common_metrics(common_e, common_f[name], tables, mobilities[name], n)
+                 for name in distributions}
     eedf_errors = {}
     for name in ("cantera", "loki"):
-        e, f = distributions[name]
-        f_on_base = np.interp(base_e, e, f)
-        f_on_base /= summaries[name]["normalization"]
-        base_normed = base_f / summaries["native"]["normalization"]
-        eedf_errors[name] = float(np.max(np.abs(f_on_base-base_normed)) /
+        f_normed = common_f[name] / summaries[name]["normalization"]
+        base_normed = common_f["native"] / summaries["native"]["normalization"]
+        eedf_errors[name] = float(np.max(np.abs(f_normed-base_normed)) /
                                    np.max(np.abs(base_normed)))
-        ion_tail = base_e >= 15.8
-        eedf_errors[name + "_ion_tail"] = float(np.max(np.abs(f_on_base[ion_tail]-base_normed[ion_tail])) /
+        ion_tail = common_e >= 15.8
+        eedf_errors[name + "_ion_tail"] = float(np.max(np.abs(f_normed[ion_tail]-base_normed[ion_tail])) /
                                                  np.max(np.abs(base_normed[ion_tail])))
     comparisons = {}
     for name in ("cantera", "loki"):
