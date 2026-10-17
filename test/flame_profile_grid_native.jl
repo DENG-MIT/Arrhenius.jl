@@ -9,7 +9,7 @@ function profile_grid_test_flame(gas;grid=[0.,.2,.6,.8,1.],discretization=:conse
     state[2:n+1,:].=Y
     state[end,:].=.04
     return BurnerFlame(gas,copy(grid),one_atm,300.,Y,state,2,300.,argmax(Y),false,.04,
-        Float64[],Float64[],Float64[],:full_knots,:mixture_averaged,false,nothing,:mole,discretization)
+        Float64[],Float64[],Float64[],:full_knots,:mixture_averaged,false,nothing,:mole,discretization,nothing)
 end
 
 function profile_grid_test_snapshot(f)

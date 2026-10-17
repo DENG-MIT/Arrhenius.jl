@@ -17,6 +17,7 @@ mutable struct FreeFlame{G<:Solution} <: AbstractPremixedFlame
     multicomponent_data::Union{Nothing,MultiTransportData}
     flux_gradient_basis::Symbol
     discretization::Symbol
+    workspace::Any
 end
 
 "A planar premixed flame with prescribed inlet mass flux."
@@ -41,6 +42,7 @@ mutable struct BurnerFlame{G<:Solution} <: AbstractPremixedFlame
     multicomponent_data::Union{Nothing,MultiTransportData}
     flux_gradient_basis::Symbol
     discretization::Symbol
+    workspace::Any
 end
 
 """
@@ -87,7 +89,7 @@ function FreeFlame(gas::Solution; T=300.0, P=one_atm, X, width=0.03, grid=nothin
     end
     anchor = clamp(argmin(abs.(state[1,:] .- (.75*T+.25*eq.T)/1000)),2,length(z)-1)
     flame = FreeFlame(gas,z,Float64(P),Float64(T),y,state,anchor,
-        1000*state[1,anchor],argmax(y),false,:mixture_averaged,false,nothing,:mole,discretization)
+        1000*state[1,anchor],argmax(y),false,:mixture_averaged,false,nothing,:mole,discretization,nothing)
     return set_transport!(flame,transport_model; data=multicomponent_data,soret,flux_gradient_basis)
 end
 
@@ -125,7 +127,7 @@ function BurnerFlame(gas::Solution; mdot,T=300.0,P=one_atm,X,width=.03,grid=noth
     return BurnerFlame(base.gas,base.grid,base.pressure,base.inlet_temperature,
         base.inlet_Y,base.state,base.anchor,base.fixed_temperature,
         base.dependent_species,false,Float64(mdot),Float64[],Float64[],Float64[],:full_knots,
-        base.transport_model,base.soret_enabled,base.multicomponent_data,base.flux_gradient_basis,base.discretization)
+        base.transport_model,base.soret_enabled,base.multicomponent_data,base.flux_gradient_basis,base.discretization,nothing)
 end
 
 """
@@ -283,14 +285,29 @@ end
 ConservativeFlameWorkspace(n,N,gas) = ConservativeFlameWorkspace(zeros(n,N-1),
     zeros(n,N),zeros(N),zeros(N),zeros(N),zeros(N),zeros(n),_ConservativeFlameDerivatives(gas,N))
 
+mutable struct PremixedStats
+    newton_calls::Int
+    newton_iterations::Int
+    jacobians::Int
+    residual_evals::Int
+    time_steps::Int
+    time_step_failures::Int
+    steady_failures::Int
+    regrids::Int
+    grids::Vector{Int}
+end
+PremixedStats()=PremixedStats(0,0,0,0,0,0,0,0,Int[])
+
 struct FlameWorkspace{K}
     kinetics::K
     transport::TransportWorkspace
+    stats::Base.RefValue{PremixedStats}
     X::Matrix{Float64}
     rho::Vector{Float64}
     cp::Matrix{Float64}
     h::Matrix{Float64}
     source::Matrix{Float64}
+    source_scratch::Vector{Float64}
     flux::Matrix{Float64}
     conductivity::Vector{Float64}
     diffusion_prefactor::Matrix{Float64}
@@ -302,6 +319,12 @@ struct FlameWorkspace{K}
     perturbed::Matrix{Float64}
     residual_perturbed::Matrix{Float64}
     steps::Vector{Float64}
+    correction::Vector{Float64}
+    base_X::Matrix{Float64}
+    base_rho::Vector{Float64}
+    base_cp::Matrix{Float64}
+    base_h::Matrix{Float64}
+    base_source::Matrix{Float64}
     multi_transport::Union{Nothing,MultiTransportWorkspace}
     multi_prefactor::Array{Float64,3}
     thermal_diffusion::Matrix{Float64}
@@ -322,21 +345,57 @@ struct FlameWorkspace{K}
     jacobian_valid::Base.RefValue{Bool}
     jacobian_rdt::Base.RefValue{Float64}
     jacobian_evals::Base.RefValue{Int}
+    configuration::Tuple
 end
 function FlameWorkspace(f::AbstractPremixedFlame)
     n, N = f.gas.n_species, length(f.grid)
-    return FlameWorkspace(KineticsWorkspace(f.gas.reaction),TransportWorkspace(f.gas),
-        zeros(n,N),zeros(N),zeros(n,N),zeros(n,N),zeros(n,N),zeros(n,N-1),zeros(N-1),
+    return FlameWorkspace(KineticsWorkspace(f.gas.reaction),TransportWorkspace(f.gas),Ref(_premixed_stats(f)),
+        zeros(n,N),zeros(N),zeros(n,N),zeros(n,N),zeros(n,N),zeros(n),zeros(n,N-1),zeros(N-1),
         zeros(n,N-1),zeros(n),zeros(n),zeros(n),zeros(n),
-        zeros(6*(n+2)-2,(n+2)*N),zeros(n+2,N),zeros(n+2,N),zeros(N),
+        zeros(6*(n+2)-2,(n+2)*N),zeros(n+2,N),zeros(n+2,N),zeros(N),zeros((n+2)*N),
+        zeros(n,N),zeros(N),zeros(n,N),zeros(n,N),zeros(n,N),
         f.transport_model == :multicomponent ? MultiTransportWorkspace(f.multicomponent_data) : nothing,
         zeros(n,n,f.transport_model == :multicomponent ? N-1 : 0),zeros(n,N-1),
         f.transport_model == :mixture_averaged && f.soret_enabled ?
             MixtureThermalDiffusionWorkspace(f.multicomponent_data) : nothing,
         [_KineticsTemperatureCache(f.gas.reaction) for _ in 1:N],
         _conservative_flame(f) ? ConservativeFlameWorkspace(n,N,f.gas) : nothing,Ref(false),
-        zeros(6*(n+2)-2,(n+2)*N),Ref(LinearAlgebra.BlasInt[]),Ref(100000),Ref(false),Ref(NaN),Ref(0))
+        zeros(6*(n+2)-2,(n+2)*N),Ref(LinearAlgebra.BlasInt[]),Ref(100000),Ref(false),Ref(NaN),Ref(0),_flame_workspace_configuration(f))
 end
+
+# A workspace contains mutable buffers and belongs to exactly one flame.
+# Keep its full structural configuration beside it; compare references directly.
+_flame_workspace_configuration(f) = (typeof(f), f.gas, f.gas.n_species, f.transport_model,
+    f.soret_enabled, f.multicomponent_data, f.flux_gradient_basis,
+    _conservative_flame(f), f.gas.species_names, f.gas.MW)
+
+function _flame_workspace_matches(w::FlameWorkspace, f)
+    c = w.configuration
+    return c[1] === typeof(f) && c[2] === f.gas && c[3] == f.gas.n_species &&
+        c[4] === f.transport_model && c[5] == f.soret_enabled &&
+        c[6] === f.multicomponent_data && c[7] === f.flux_gradient_basis &&
+        c[8] == _conservative_flame(f) && c[9] === f.gas.species_names && c[10] === f.gas.MW
+end
+
+function _take_flame_workspace(f)
+    hasproperty(f,:transport_model) || return FlameWorkspace(f)
+    pools = f.workspace
+    if !(pools isa Vector{FlameWorkspace})
+        pools = FlameWorkspace[]
+        f.workspace = pools
+    end
+    n, N = f.gas.n_species,length(f.grid)
+    idx = findfirst(w -> _flame_workspace_matches(w,f) && size(w.X)==(n,N),pools)
+    idx === nothing || return pools[idx]
+    # Keep a small flame-local set of grid sizes for retries and ladder stages.
+    filter!(w -> _flame_workspace_matches(w,f),pools)
+    w = FlameWorkspace(f)
+    push!(pools,w)
+    length(pools) > 4 && deleteat!(pools,1)
+    return w
+end
+
+_return_flame_workspace!(f,w) = nothing
 _flame_clipped(w) = w isa FlameWorkspace && w.clip_species[]
 # Node species value and derivative weight under the active species form.
 @inline _flame_node_species(w,y) = _flame_clipped(w) ? max(y,0.0) : y
@@ -401,8 +460,13 @@ function _flame_properties!(w,f,u; update_transport=true,nodes=eachindex(f.grid)
         @view(w.cp[:,j]) .*= R
         w.entropy .*= R
         # A frozen source keeps the base chemistry for hybrid Jacobian columns.
-        freeze_source || wdot!(@view(w.source[:,j]),gas.reaction,T,w.C,w.entropy,@view(w.h[:,j]),w.kinetics;
-            temperature_cache=w.rate_caches[j],pressure=f.pressure)
+        if !freeze_source
+            wdot!(w.source_scratch,gas.reaction,T,w.C,w.entropy,@view(w.h[:,j]),w.kinetics;
+                temperature_cache=w.rate_caches[j],pressure=f.pressure)
+            for k in 1:n
+                w.source[k,j] = w.source_scratch[k]
+            end
+        end
     end
     @inbounds for j in 1:N-1
         Tmid = 500*(u[1,j]+u[1,j+1])
@@ -497,6 +561,7 @@ const _flame_timescale = 1e-4
 # time step grows dt only when it evaluated no Jacobian
 # (SteadyStateSystem.cpp:309-311).
 _flame_persistent_jacobian(f) = false
+_flame_jacobian_count(w,f) = w isa FlameWorkspace ? w.jacobian_evals[] : _premixed_stats(f).jacobians
 _flame_persistent_jacobian(f::Union{FreeFlame,BurnerFlame}) =
     f.discretization == :finite_difference
 
@@ -664,7 +729,7 @@ function flame_residual!(residual, f::AbstractPremixedFlame, u=f.state, w=FlameW
         previous_enthalpy=nothing)
     # Counted at entry, before any work: every call to the public residual
     # evaluator increments residual_evals, mirroring counterflow_residual!.
-    _premixed_stats(f).residual_evals+=1; PREMIXED_STATS.residual_evals+=1
+    w.stats[].residual_evals+=1; PREMIXED_STATS.residual_evals+=1
     n,N = f.gas.n_species,length(f.grid)
     _flame_properties!(w,f,u; update_transport,nodes)
     if _conservative_flame(f)
@@ -773,7 +838,11 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
     perturbed .= u
     rp = w.residual_perturbed
     steps = w.steps
-    base_properties = (copy(w.X),copy(w.rho),copy(w.cp),copy(w.h),copy(w.source))
+    copyto!(w.base_X,w.X)
+    copyto!(w.base_rho,w.rho)
+    copyto!(w.base_cp,w.cp)
+    copyto!(w.base_h,w.h)
+    copyto!(w.base_source,w.source)
     if _conservative_flame(f) && previous !== nothing && previous_enthalpy === nothing
         previous_enthalpy = _flame_previous_enthalpy!(w.conservative,f,previous)
     end
@@ -792,11 +861,11 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
             end
             perturbed[k,j] = u[k,j]
         end
-        w.X .= base_properties[1]
-        w.rho .= base_properties[2]
-        w.cp .= base_properties[3]
-        w.h .= base_properties[4]
-        w.source .= base_properties[5]
+        copyto!(w.X,w.base_X)
+        copyto!(w.rho,w.base_rho)
+        copyto!(w.cp,w.base_cp)
+        copyto!(w.h,w.base_h)
+        copyto!(w.source,w.base_source)
     end
     return band
 end
@@ -837,6 +906,14 @@ function _flame_correction_norm(step,weights)
         total += (step[k,j]/weights[k])^2
     end
     return sqrt(total/length(step))
+end
+
+function _flame_solve_correction!(correction,band,pivots,residual,bandwidth)
+    @inbounds for i in eachindex(correction,residual)
+        correction[i] = -residual[i]
+    end
+    LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(residual),band,pivots,correction)
+    return correction
 end
 # Prescribed-temperature systems retain residual merit; correction merit helps
 # the coupled species and energy solve.
@@ -944,8 +1021,7 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
                 age[] = 0
                 force_new_jacobian = false
             end
-            correction = -vec(copy(r))
-            LinearAlgebra.LAPACK.gbtrs!('N',bandwidth,bandwidth,length(u),w.band,pivots,correction)
+            correction = _flame_solve_correction!(w.correction,w.band,pivots,r,bandwidth)
             reshape(correction,size(u))
         catch e
             _flame_recoverable_factorization_error(e) || rethrow()
@@ -1080,7 +1156,25 @@ end
 
 function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
         clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
-    w = FlameWorkspace(f)
+    w = _take_flame_workspace(f)
+    try
+        return _flame_steady_with_workspace!(f,w;loglevel,max_time_steps,timestep,tolerance,
+            clip_species,growth_factor,growth_strategy,step_callback,analytic)
+    finally
+        _return_flame_workspace!(f,w)
+    end
+end
+
+function _flame_steady_with_workspace!(f,w; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tolerance=1e-8,
+        clip_species=false,growth_factor=1.5,growth_strategy=:fixed_growth,step_callback=nothing,analytic=true)
+    if w isa FlameWorkspace
+        w.stats[] = _premixed_stats(f)
+        w.jacobian_valid[] = false
+        w.jacobian_age[] = 100000
+        w.jacobian_rdt[] = NaN
+        w.jacobian_evals[] = 0
+        empty!(w.jacobian_pivots[])
+    end
     push!(_premixed_stats(f).grids,length(f.grid)); push!(PREMIXED_STATS.grids,length(f.grid))
     # Species reset and clipping apply to neutral premixed flames only; ionized
     # flames keep signed charged species.
@@ -1106,8 +1200,8 @@ function _flame_steady!(f; loglevel=0,max_time_steps=500,timestep=Ref(1e-6),tole
     residual_at!(r,x,previous,dt) = flame_residual!(r,f,x,w; previous,dt)
     for step in 1:max_time_steps
         copyto!(previous,f.state)
-        _premixed_stats(f).time_steps+=1; PREMIXED_STATS.time_steps+=1
         if _flame_newton!(f,w; previous,dt,maxiters=20,loglevel=0,analytic,iterations)
+            _premixed_stats(f).time_steps+=1; PREMIXED_STATS.time_steps+=1
             failures = 0
             dt = min(dt*_timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
                 previous,f.state,dt,iterations[]),1.0)
@@ -1157,7 +1251,7 @@ function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timeste
     batch = 0
     while successes < max_time_steps
         copyto!(previous,f.state)
-        jacobians_before = w.jacobian_evals[]
+        jacobians_before = _flame_jacobian_count(w,f)
         # Cantera MultiNewton::solve has no iteration cap: a lagged Jacobian
         # stall is broken by the age-20 refresh, not by giving up the step.
         # 200 is a safety valve only; age refreshes every 21 iterations exit
@@ -1165,9 +1259,10 @@ function _flame_time_stepping!(f,w,steady_state; loglevel,max_time_steps,timeste
         if _flame_newton!(f,w; previous,dt,maxiters=200,loglevel=0,analytic,iterations)
             successive_failures = 0
             successes += 1
+            _premixed_stats(f).time_steps+=1; PREMIXED_STATS.time_steps+=1
             batch += 1
             # A step that refreshed the Jacobian does not grow dt.
-            if w.jacobian_evals[] == jacobians_before
+            if _flame_jacobian_count(w,f) == jacobians_before
                 dt *= _timestep_growth(residual_at!,growth_residual,growth_strategy,growth_factor,
                     previous,f.state,dt,iterations[])
             end
@@ -1551,18 +1646,6 @@ end
 # premixed counterpart of COUNTERFLOW_STATS. Stats live per flame object
 # (Cantera keeps solver_stats on the instance); the exported PREMIXED_STATS
 # mirrors the accumulated family total for whole-run consumers.
-mutable struct PremixedStats
-    newton_calls::Int
-    newton_iterations::Int
-    jacobians::Int
-    residual_evals::Int
-    time_steps::Int
-    time_step_failures::Int
-    steady_failures::Int
-    regrids::Int
-    grids::Vector{Int}
-end
-PremixedStats()=PremixedStats(0,0,0,0,0,0,0,0,Int[])
 const PREMIXED_STATS=PremixedStats()
 # Per-flame stats storage; entries die with their flame (weak keys).
 const FLAME_STATS=WeakKeyDict{Any,Any}()
