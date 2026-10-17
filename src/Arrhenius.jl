@@ -80,7 +80,7 @@ include("SignedEquilibrium.jl")
     export set_reduced_electric_field!, update_eedf!, plasma_thermodynamics, set_plasma_enthalpy!
     export PlasmaEnergyReactor, PlasmaEnergyRHS
     # Preserve the legacy Arrhenius.<name> bindings for every name formerly
-    # defined by direct includes, including private helpers used by Solution.jl.
+    # defined by direct includes, including private plasma helper names.
     for name in names(Plasma; all=true, imported=false)
         isdefined(@__MODULE__, name) && continue
         @eval const $(name) = Plasma.$(name)
