@@ -83,8 +83,8 @@ function build(spec, gas, grid; discretization=:finite_difference)
     elseif kind == "diffusion"
         return CounterflowDiffusionFlame(gas; fuel=spec["fuel"],
             oxidizer=spec["oxidizer"], mdot_fuel=spec["mdot_fuel"],
-            mdot_oxidizer=spec["mdot_oxidizer"], T_fuel=T_in, T_oxidizer=T_in,
-            P, width, grid)
+            mdot_oxidizer=spec["mdot_oxidizer"], T_fuel=T_in,
+            T_oxidizer=Float64(get(spec,"T_oxidizer",T_in)), P, width, grid)
     elseif kind == "premixed"
         return CounterflowPremixedFlame(gas; reactants=spec["X"],
             mdot_reactants=spec["mdot"], mdot_products=spec["mdot_products"],

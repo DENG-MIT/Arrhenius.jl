@@ -154,7 +154,7 @@ function _counterflow_crossing(T,z,target,fromleft)
     N=length(z)
     for j in (fromleft ? (1:N-1) : (N-1:-1:1))
         a=T[j]-target; b=T[j+1]-target
-        if a==0 || b==0 || a*b<0
+        if a*b<0  # Cantera Sim1D: strict sign change only (exact grid hits are not crossings)
             return fromleft ? (abs(a)<abs(b) ? j : j+1) : (abs(b)<abs(a) ? j+1 : j)
         end
     end

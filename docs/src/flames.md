@@ -10,7 +10,7 @@ BurnerFlame also supports measured temperature profiles through set_temperature_
 
 ## Counterflow and impinging flames
 
-- CounterflowDiffusionFlame models an axisymmetric fuel/oxidizer diffusion flame. Optional radiation models optically thin CO₂/H₂O loss; two-point control supports continuation on a selected branch.
+- CounterflowDiffusionFlame models an axisymmetric fuel/oxidizer diffusion flame. Optional radiation models optically thin CO₂/H₂O loss; two-point control supports continuation on a selected branch. [Pseudo-arclength continuation](counterflow_continuation.md) adds a fixed-grid bordered corrector and turning-point tracking.
 - CounterflowPremixedFlame models opposed premixed streams.
 - CounterflowTwinPremixedFlame models a symmetric twin flame from two premixed streams.
 - ImpingingJet models an axisymmetric premixed jet directed at an inert wall.

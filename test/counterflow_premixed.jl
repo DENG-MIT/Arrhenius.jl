@@ -27,6 +27,16 @@ end
     @test ps isa CounterflowStats && Arrhenius.solver_stats(f)===ps
     @test ps.jacobians>0 && ps.newton_iterations>=ps.jacobians
     @test !isempty(ps.grids) && last(ps.grids)==length(f.grid)
+    fc=pseudo_arclength!(f;parameter=:fuel_mass_flux,steps=1,ds=.005,tolerance=1e-7)
+    @test length(fc)==2 && all(p->p.residual_inf<1e-7,fc)
+    premixed_cp_dir=mktempdir(); premixed_cp=joinpath(premixed_cp_dir,"premixed.npz")
+    save_continuation_checkpoint(premixed_cp,f,fc[1];parameter=:fuel_mass_flux)
+    f_resume=Arrhenius.CounterflowPremixedFlame(gas;kwargs...)
+    fc_resume=pseudo_arclength!(f_resume;restart=premixed_cp,steps=1,tolerance=1e-7)
+    rm(premixed_cp_dir;recursive=true,force=true)
+    @test fc_resume[1].state==fc[1].state
+    @test fc_resume[2].parameter≈fc[2].parameter rtol=1e-12
+    @test fc_resume[2].state≈fc[2].state rtol=1e-9 atol=1e-10
 
     # Inert wall and symmetry are checked directly with signed trial traces.
     twin=Arrhenius.CounterflowTwinPremixedFlame(gas;reactants=composition,mdot=.12,T=373.,P=.05*one_atm,width=.2)
@@ -78,6 +88,16 @@ end
     @test twin.converged
     @test ts.jacobians>0 && ts.newton_iterations>=ts.jacobians
     @test !isempty(ts.grids) && last(ts.grids)==length(twin.grid)
+    tc=pseudo_arclength!(twin;parameter=:fuel_mass_flux,steps=1,ds=.005,tolerance=1e-7)
+    @test length(tc)==2 && all(p->p.residual_inf<1e-7,tc)
+    twin_cp_dir=mktempdir(); twin_cp=joinpath(twin_cp_dir,"twin.npz")
+    save_continuation_checkpoint(twin_cp,twin,tc[1];parameter=:fuel_mass_flux)
+    twin_resume=Arrhenius.CounterflowTwinPremixedFlame(gas;reactants=composition,mdot=.12,T=373.,P=.05*one_atm,width=.2)
+    tc_resume=pseudo_arclength!(twin_resume;restart=twin_cp,steps=1,tolerance=1e-7)
+    rm(twin_cp_dir;recursive=true,force=true)
+    @test tc_resume[1].state==tc[1].state
+    @test tc_resume[2].parameter≈tc[2].parameter rtol=1e-12
+    @test tc_resume[2].state≈tc[2].state rtol=1e-9 atol=1e-10
 
     cold=Arrhenius.ImpingingJet(gas;reactants="AR:1",mdot=.06,T_inlet=373.,
         T_surface=500.,P=.05*one_atm,width=.2,initial_products=:inlet)
