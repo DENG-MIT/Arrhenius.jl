@@ -886,10 +886,11 @@ function _flame_newton!(f,w; previous=nothing,dt=Inf,maxiters=35,tolerance=1e-8,
     # Cantera applies its weighted-step merit in every Newton solve
     # (MultiNewton::dampStep), independent of the spatial discretization and
     # of rdt: acceptance is s1 < 1 || s1 < s0 and s1 < 1 converges.
-    # Prescribed-temperature systems retain residual merit.
+    # Conservative prescribed-temperature systems retain residual merit (4d09446).
     fixed_temperature = f isa BurnerFlame && !isempty(f.imposed_temperature)
-    cantera_transient = previous !== nothing && !_flame_correction_enabled(f) && !fixed_temperature
-    policy_merit = policy && !fixed_temperature
+    cantera_transient = previous !== nothing && !_flame_correction_enabled(f) &&
+        (!fixed_temperature || !_conservative_flame(f))
+    policy_merit = policy && (!fixed_temperature || !_conservative_flame(f))
     correction_enabled = _flame_correction_enabled(f) || cantera_transient || policy_merit
     correction_weights = correction_enabled ? _flame_correction_weights(f,u,previous !== nothing) : Float64[]
     trial_correction = correction_enabled ? Vector{Float64}(undef,length(u)) : Float64[]

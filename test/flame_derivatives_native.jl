@@ -168,3 +168,29 @@ end
     legacy=FreeFlame(gas;X="H2:1.1,O2:1,AR:5",grid,discretization=:finite_difference)
     @test !Arrhenius._flame_correction_enabled(legacy)
 end
+
+
+@testset "fixed-temperature finite-difference Newton merit" begin
+    mechanism=joinpath(@__DIR__,"..","mechanism","h2o2.yaml")
+    gas=CreateSolution(mechanism)
+    burner=BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",mdot=.07,
+        grid=collect(range(0.,.03;length=5)),discretization=:finite_difference)
+    set_temperature_profile!(burner,[0.,.25,1.],[300.,1600.,300.])
+    solve!(burner;refine_grid=false)
+    stats=solver_stats(burner)
+    @info "fixed_t_h2o2_counts" jacobians=stats.jacobians newton_iterations=stats.newton_iterations
+    @test stats.jacobians == 6
+    @test stats.newton_iterations == 110
+    # Same discrete 5-node state from origin/main ad987042, used to guard solution changes.
+    expected_values=parse.(Float64,split(strip(read(joinpath(@__DIR__,"data","h2o2_fixed_t_main_state.csv"),String)),","))
+    expected_state=reshape(expected_values,size(burner.state))
+    state_difference=maximum(abs.(burner.state .- expected_state))
+    @info "fixed_t_h2o2_state_comparison" max_abs_difference=state_difference
+    @test state_difference <= 1e-7
+    @test burner.converged
+    @test maximum(heat_release_rate(burner)) > 0
+    @test stats.jacobians > 0 && stats.newton_iterations >= stats.jacobians
+    @test norm(flame_residual!(similar(burner.state),burner),Inf) < 1e-8
+    @test maximum(abs.(sum(mass_fractions(burner);dims=1) .- 1)) < 1e-10
+    @test minimum(mass_fractions(burner)) > -1e-12
+end
