@@ -49,8 +49,7 @@ function _gas_units(root, local_units=Dict{Any,Any}())
         throw(ArgumentError("unsupported rate units: length=$length quantity=$quantity time=$time"))
     ae = lowercase(replace(String(get(u,"activation-energy","J/kmol"))," "=>""))
     aef = get(Dict("j/kmol"=>1.0,"kj/kmol"=>1e3,"j/mol"=>1e3,"kj/mol"=>1e6,
-        "cal/mol"=>4184.0,"kcal/mol"=>4.184e6,"k"=>8.31446261815324,
-        "kelvin"=>8.31446261815324),ae,nothing)
+        "cal/mol"=>4184.0,"kcal/mol"=>4.184e6,"k"=>R,"kelvin"=>R),ae,nothing)
     aef === nothing && throw(ArgumentError("unsupported activation-energy unit $ae"))
     lf,qf,tf,aef
 end
@@ -65,13 +64,14 @@ function _gas_quantity(x, default_factor, what)
     factors=Dict("m"=>1.0,"cm"=>1e-2,"mm"=>1e-3,"km"=>1e3,
         "s"=>1.0,"ms"=>1e-3,"mol"=>1e-3,"kmol"=>1.0,
         "j/kmol"=>1.0,"kj/kmol"=>1e3,"j/mol"=>1e3,"kj/mol"=>1e6,
-        "cal/mol"=>4184.0,"kcal/mol"=>4.184e6,"pa"=>1.0,"kpa"=>1e3,"mpa"=>1e6,"bar"=>1e5,"atm"=>101325.0,"torr"=>101325.0/760)
+        "cal/mol"=>4184.0,"kcal/mol"=>4.184e6,"k"=>R,"kelvin"=>R,
+        "pa"=>1.0,"kpa"=>1e3,"mpa"=>1e6,"bar"=>1e5,"atm"=>101325.0,"torr"=>101325.0/760)
     # Ea is the only quantity-string used in supported Arrhenius entries here.
     haskey(factors,unit) && return value*factors[unit]
     throw(ArgumentError("unsupported $what unit $unit"))
 end
 
-function _gas_arrhenius(data, order, units; name="rate-constant")
+function _gas_arrhenius(data, order, units; name="rate-constant", negative_A=false, validate=true)
     data isa AbstractDict || throw(ArgumentError("$name must be a mapping"))
     Araw=get(data,"A",nothing); Araw === nothing && throw(ArgumentError("$name is missing A"))
     A=Araw isa AbstractString ? 0.0 : _gasfloat(Araw,"$name A")
@@ -112,6 +112,7 @@ function _gas_arrhenius(data, order, units; name="rate-constant")
         A *= _gas_pow(tf,-1.0)
         A *= _gas_pow(qf,1-order)
     end
+    _gas_validation(A >= 0 || negative_A, validate, "$name has negative A without negative-A: true")
     b=_gasfloat(get(data,"b",0.0),"$name b")
     # Cantera stores activation energy as Ea/R and reconstructs J/kmol in
     # input_data before the sidecar converts it back to cal/mol.
@@ -121,8 +122,9 @@ function _gas_arrhenius(data, order, units; name="rate-constant")
     (A,b,Ea)
 end
 
-function _gas_pressure(x, root)
-    default=lowercase(String(get(get(root,"units",Dict()),"pressure","Pa")))
+function _gas_pressure(x, root, local_units=Dict{Any,Any}())
+    units=merge(Dict{Any,Any}(),get(root,"units",Dict()),local_units)
+    default=lowercase(String(get(units,"pressure","Pa")))
     factors=Dict("pa"=>1.0,"kpa"=>1e3,"mpa"=>1e6,"bar"=>1e5,"atm"=>101325.0,"torr"=>101325.0/760)
     if x isa Real
         haskey(factors,default) || throw(ArgumentError("unsupported pressure unit $default"))
@@ -134,6 +136,21 @@ function _gas_pressure(x, root)
     unit=lowercase(strip(m.captures[2])); unit=isempty(unit) ? default : unit
     haskey(factors,unit) || throw(ArgumentError("unsupported pressure unit $unit"))
     parse(Float64,m.captures[1])*factors[unit]
+end
+
+@inline function _gas_validation(valid, enabled, message)
+    valid && return true
+    if enabled
+        throw(ArgumentError(message))
+    else
+        @warn message
+        return false
+    end
+end
+
+@inline function _gas_arrhenius_value(coefficients, T)
+    A,b,Ea=coefficients
+    A*exp(b*log(T)-Ea*(4184.0/R)/T)
 end
 
 function _gas_side(text, species_index, context)
@@ -209,7 +226,7 @@ function _gas_select_reactions(root, phase, mechanism, data_paths)
     selected
 end
 
-function _native_gas_arrays(root, phase, names; mechanism="", data_paths=String[])
+function _native_gas_arrays(root, phase, names; mechanism="", data_paths=String[], validate=true)
     ns=length(names); index=Dict(String(n)=>i for (i,n) in enumerate(names))
     reactions=_gas_select_reactions(root,phase,mechanism,data_paths); nr=length(reactions)
     react=zeros(ns,nr); prod=zeros(ns,nr); orders=zeros(ns,nr); reversible=falses(nr)
@@ -218,9 +235,12 @@ function _native_gas_arrays(root, phase, names; mechanism="", data_paths=String[
     pri=Int[]; pci=Int[]; pgo=[1]; pressures=Float64[]; pro=[1]; parr=NTuple{3,Float64}[]
     lmr_offsets=[1]; lmr_species=Int[]; lmr_eps=NTuple{3,Float64}[]
     for (j,r) in enumerate(reactions)
-        ctx="reaction $j"
+        ctx="reaction $j ($(get(r,"equation","?")))"
         lhs,rhs,rev,collider=_gas_reaction_equation(get(r,"equation",nothing),index,ctx)
         typ=String(get(r,"type","elementary")); units=_gas_units(root,get(r,"units",Dict{Any,Any}()))
+        supported_types=("elementary","three-body","falloff","chemically-activated",
+            "linear-Burke","pressure-dependent-Arrhenius","Blowers-Masel","Blowers-Masel-rate")
+        typ in supported_types || throw(ArgumentError("unsupported reaction rate type $typ in $ctx"))
         explicit=collider!==nothing
         typ=="chemically-activated" && throw(ArgumentError("chemically-activated rates are not supported in $ctx"))
         any(haskey(r,k) for k in ("SRI","Tsang","Chebyshev")) &&
@@ -233,7 +253,13 @@ function _native_gas_arrays(root, phase, names; mechanism="", data_paths=String[
         elseif !explicit && typ=="three-body" && isempty(shared)
             throw(ArgumentError("cannot identify explicit third body in $ctx"))
         end
-        thirdbody=typ=="three-body" || explicit || (!falloff && collider!==nothing)
+        plog_pseudo_collider=typ=="pressure-dependent-Arrhenius" && explicit && collider!==nothing && collider!="M"
+        invalid_plog_m = typ=="pressure-dependent-Arrhenius" && collider=="M"
+        _gas_validation(!invalid_plog_m, validate,
+            "pressure-dependent-Arrhenius reaction has a superfluous M collider in $ctx")
+        plog_pseudo_collider |= invalid_plog_m && !validate
+        thirdbody=typ=="three-body" || (explicit && !plog_pseudo_collider) ||
+            (!falloff && collider!==nothing && !plog_pseudo_collider)
         react[:,j]=lhs; prod[:,j]=rhs; reversible[j]=rev
         orders[:,j]=lhs
         raworders=get(r,"orders",Dict())
@@ -259,8 +285,13 @@ function _native_gas_arrays(root, phase, names; mechanism="", data_paths=String[
         end
         order=sum(orders[:,j])+(thirdbody && !falloff && typ!="linear-Burke" ? 1 : 0)
         if falloff
-            push!(fall,j); arr[j,:].=_gas_arrhenius(get(r,"high-P-rate-constant",nothing),order,units;name="high-P-rate-constant")
-            push!(low,_gas_arrhenius(get(r,"low-P-rate-constant",nothing),order+1,units;name="low-P-rate-constant"))
+            push!(fall,j)
+            negative_A=get(r,"negative-A",false)===true
+            arr[j,:].=_gas_arrhenius(get(r,"high-P-rate-constant",nothing),order,units;name="high-P-rate-constant in $ctx",negative_A,validate)
+            lowrate=_gas_arrhenius(get(r,"low-P-rate-constant",nothing),order+1,units;name="low-P-rate-constant in $ctx",negative_A,validate)
+            _gas_validation(arr[j,1]*lowrate[1]>=0, validate,
+                "falloff high/low pre-exponential factors must have the same sign in $ctx")
+            push!(low,lowrate)
             if haskey(r,"Troe")
                 t=r["Troe"]
                 t1=_gasfloat(t["T1"],"Troe T1"); t3=_gasfloat(t["T3"],"Troe T3")
@@ -294,16 +325,23 @@ function _native_gas_arrays(root, phase, names; mechanism="", data_paths=String[
             end
             grouped=Dict{Float64,Vector{NTuple{3,Float64}}}()
             for item in rates
-                p=_gas_pressure(item["P"],root)
+                p=_gas_pressure(item["P"],root,get(r,"units",Dict{Any,Any}()))
                 isfinite(p) && p>0 || throw(ArgumentError("$ctx PLOG pressure must be finite and positive"))
                 # Cantera groups PLOG rates by log(P), then exports exp(log(P)).
                 p=exp(log(p))
-                push!(get!(grouped,p,NTuple{3,Float64}[]),_gas_arrhenius(item,order,units))
+                push!(get!(grouped,p,NTuple{3,Float64}[]),
+                    _gas_arrhenius(item,order,units;name="PLOG rate in $ctx",negative_A=true,validate))
             end
             isempty(grouped) && throw(ArgumentError("$ctx PLOG has no rates"))
+            for (pressure,group) in grouped
+                bad_temperatures=filter(T->!(sum(_gas_arrhenius_value(rate,T) for rate in group)>0),
+                    (300.0,500.0,1000.0,2000.0,5000.0,10000.0))
+                isempty(bad_temperatures) || _gas_validation(false,validate,
+                    "PLOG rate sum must be positive at P=$pressure Pa and T=$(join(bad_temperatures, ", ")) K in $ctx")
+            end
             ps=sort!(collect(keys(grouped))); arr[j,:].=first(grouped[first(ps)])
             push!(pri,j)
-            if typ=="linear-Burke"
+            if typ=="linear-Burke" || plog_pseudo_collider
                 push!(pci,0)
             elseif collider!==nothing && collider!="M"
                 push!(pci,index[collider])
@@ -317,9 +355,9 @@ function _native_gas_arrays(root, phase, names; mechanism="", data_paths=String[
             end
             push!(pgo,length(pressures)+1)
             push!(lmr_offsets,length(lmr_species)+1)
-        elseif haskey(r,"rate-constant")
+        elseif haskey(r,"rate-constant") && typ in ("elementary","three-body","Blowers-Masel","Blowers-Masel-rate")
             rc=r["rate-constant"]
-            arr[j,:].=_gas_arrhenius(rc,order,units)
+            arr[j,:].=_gas_arrhenius(rc,order,units;name="rate-constant in $ctx",negative_A=get(r,"negative-A",false)===true,validate)
             if typ=="Blowers-Masel" || typ=="Blowers-Masel-rate"
                 push!(bmidx,j); bm=vcat(bm,reshape([arr[j,1],arr[j,2],_gas_quantity(get(rc,"Ea0",0.0),units[4],"$ctx Ea0"),_gas_quantity(get(rc,"w",0.0),units[4],"$ctx w")],1,4))
             end

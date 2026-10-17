@@ -59,6 +59,7 @@ end
             "phases"=>[Dict("name"=>"gas","thermo"=>"ideal-gas","elements"=>["H"],"species"=>["H2","H"],"reactions"=>"all")],
             "species"=>[species("H2",2),species("H",1)],
             "reactions"=>[rxn("H2 => H + H"),rxn2]))
+        @test_throws ArgumentError audit_mechanism(path;validate=true)
         report=audit_mechanism(path)
         under=filter(x->x.check==:plog_underflow_risk,report.issues)
         ranges=filter(x->x.check==:plog_valid_range,report.issues)

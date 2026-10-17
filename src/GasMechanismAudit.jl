@@ -4,6 +4,8 @@
 
 The report is a named tuple with `species`, `reactions`, `issues`, and `checks`.
 Collision-limit and transport-range findings are explicitly heuristic screens.
+Rate validation is disabled by default so the audit can report malformed rates;
+set `validate=true` to apply reader errors before collecting findings.
 """
 function _signed_log_sum(logabs, signs)
     isempty(logabs) && return (0, -Inf)
@@ -15,7 +17,7 @@ function _signed_log_sum(logabs, signs)
     (sign(scaled),m+Float64(log(abs(scaled))))
 end
 
-function audit_mechanism(path; phase=nothing, data_paths=String[])
+function audit_mechanism(path; phase=nothing, data_paths=String[], validate=false)
     root = YAML.load_file(path)
     phaseidx = phase === nothing ? 1 : findfirst(p -> get(p,"name","")==String(phase),root["phases"])
     phaseidx === nothing && throw(ArgumentError("phase $phase not found"))
@@ -24,7 +26,7 @@ function audit_mechanism(path; phase=nothing, data_paths=String[])
     names = String.(solroot["phases"][1]["species"])
     root = solroot
     # Resolve selectors and parser-level errors through the same input path as CreateSolution.
-    arrays = _native_gas_arrays(root,ph,names;mechanism=String(path),data_paths)
+    arrays = _native_gas_arrays(root,ph,names;mechanism=String(path),data_paths,validate)
     defs = Dict(String(s["name"])=>s for s in root["species"])
     used = Set{String}(); issues = NamedTuple[]
     nr = size(arrays["reactant_stoich_coeffs"],2)
@@ -110,7 +112,7 @@ function audit_mechanism(path; phase=nothing, data_paths=String[])
             for p in pressures
                 logs=Float64[]; signs=Int[]
                 for item in groups[p]
-                    A,b,Ea=_gas_arrhenius(item,Float64(sum(arrays["reactant_orders"][:,j])),units)
+                    A,b,Ea=_gas_arrhenius(item,Float64(sum(arrays["reactant_orders"][:,j])),units;negative_A=true,validate)
                     if A!=0
                         push!(logs,log(abs(A))+b*log(T)-Ea*4184.0/R/T)
                         push!(signs,signbit(A) ? -1 : 1)

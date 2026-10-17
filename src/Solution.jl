@@ -116,14 +116,15 @@ function _validate_kinetics_dimensions(npz, ns, nr)
 end
 
 """
-    CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reader=:native)
+    CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reader=:native, validate=true)
     
 Load the selected gas phase directly from YAML. Gas kinetics are parsed in Julia;
 an optional legacy NPZ sidecar may provide transport polynomial fits. Set
 `kinetics_reader=:sidecar` to compare against the legacy kinetics arrays. Imports
 are resolved relative to the mechanism first, then in `data_paths`.
 """
-function CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reader=:native)
+function CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reader=:native, validate=true)
+    validate isa Bool || throw(ArgumentError("validate must be a Bool"))
     yaml = YAML.load_file(mech)
     if phase !== nothing
         names = [get(p,"name","") for p in yaml["phases"]]
@@ -178,7 +179,7 @@ function CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reade
     # and currently supplies only transport fits, whose YAML polynomial fit path
     # is separate from gas kinetics.
     native_arrays = kinetics_reader === :native ?
-        _read_gas_kinetics(yaml, yaml["phases"][1], species_names; mechanism=String(mech), data_paths) : nothing
+        _read_gas_kinetics(yaml, yaml["phases"][1], species_names; mechanism=String(mech), data_paths, validate) : nothing
     npz = if kinetics_reader === :sidecar
         sidecar === nothing && throw(ArgumentError("kinetics_reader=:sidecar requires $sidecar_path"))
         sidecar
