@@ -4,6 +4,7 @@ using LinearAlgebra
 using SHA
 using Test
 
+include("plasma_module.jl")
 include("plasma_eedf_loader.jl")
 include("plasma_eedf_numerics.jl")
 include("plasma_native.jl")
