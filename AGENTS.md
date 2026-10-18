@@ -14,3 +14,9 @@ When a change adds, removes or alters such a rule:
 4. If removing the rule breaks a case, add a regression test that fails when the rule is removed.
 
 Pure refactors are a separate class: they must be bit-identical in states and solver counters, and they do not mix with policy changes in one commit.
+
+## Tolerances and solver defaults: Cantera first
+
+Before choosing or changing a tolerance or solver default (steady and transient rtol/atol, Jacobian reuse age, the time-step fallback schedule, Newton damping, refine criteria ratio/slope/curve/prune, iteration caps), find Cantera's equivalent and the reason for it (source comments, git history, issues and pull requests) and default to it. Cantera's defaults balance accuracy, efficiency and robustness.
+
+Deviate only with a measurement, and state in the PR which of accuracy, efficiency or robustness the deviation trades for which. Shortcuts such as solving perturbed cases on a fixed grid are such trades: justify them against Cantera's own criterion (for example, whether its refiner would add points), not only against a spot check.
