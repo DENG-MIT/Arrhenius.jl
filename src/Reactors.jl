@@ -168,7 +168,7 @@ function (rhs::ReactorRHS)(du, u, p, t)
     end
     wdot!(workspace.wdot, gas.reaction, temperature, workspace.C,
           workspace.entropy, workspace.h_mole, workspace.kinetics;
-          rate_multipliers=reactor.rate_multipliers)
+          rate_multipliers=reactor.rate_multipliers, pressure=pressure)
     cv_offset = reactor.constraint === :constant_volume ? one(temperature) : zero(temperature)
     capacity, energy_source = zero(temperature), zero(temperature)
     @inbounds for k in 1:ns

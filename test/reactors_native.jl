@@ -131,6 +131,27 @@ end
     @test received[]
 end
 
+@testset "10-atm PLOG reactor rates match Cantera" begin
+    gas = CreateSolution(joinpath(@__DIR__, "..", "mechanism", "stagni_2023.yaml"))
+    he = findfirst(==("HE"), gas.species_names)
+    @test !isnothing(he)
+    he = something(he)
+    reactor = IdealGasReactor(gas; temperature=2164.6519745633973,
+        pressure=10one_atm, mole_fractions=Dict("NH3" => 0.7, "H2" => 0.3,
+            "O2" => 0.675, "N2" => 0.675 * 3.76, "HNO" => 0.02,
+            "H" => 0.01, "NO" => 0.02))
+    rhs = reactor_rhs(reactor)
+    state = reactor_state(reactor)
+    value = similar(state)
+    references = ((0.0, 633.08832846796247), (1e-25, 633.08832846796247),
+                  (-1e-25, 633.08832846796247), (-1e-7, 633.08872287759277))
+    for (y_he, reference_rop) in references
+        state[he] = y_he
+        rhs(value, state, nothing, 0.0)
+        @test isapprox(rhs.workspace.kinetics.rates_of_progress[143], reference_rop; rtol=1e-10)
+    end
+end
+
 @testset "negative trial-state reactor Jacobian columns" begin
     gas = CreateSolution(joinpath(@__DIR__, "..", "mechanism", "h2o2.yaml"))
     mixture = Dict("H2" => 2.0, "O2" => 1.0, "AR" => 4.0)
