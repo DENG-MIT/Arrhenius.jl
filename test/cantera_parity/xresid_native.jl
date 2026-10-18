@@ -194,7 +194,7 @@ function row_eqtypes(f, spec)
         else
             types[1, j] = boundary || spec["kind"] == "fixed" ? code("T_bc") : code("energy")
             for k in 1:n
-                k == f.dependent_species && continue   # sum(Y)-1 everywhere (dep: 1-based)
+                boundary && k == f.dependent_species && continue
                 types[k+1, j] = j == 1 ? code("flux_bc") : j == N ? code("zero_grad") : code("species")
             end
             if spec["kind"] in ("burner", "fixed")

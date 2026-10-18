@@ -233,7 +233,8 @@ def ct_types(f, spec, R, can):
             if boundary and k == (excess_left if j == 0 else excess_right):
                 types[1 + k, j] = "closure_ct"
             else:
-                types[1 + k, j] = ("flux_bc" if boundary else "species")
+                types[1 + k, j] = ("flux_bc" if j == 0 else
+                                   "zero_grad" if j == N - 1 else "species")
         if cf:
             types[n + 1, j] = "zg_V" if boundary else "momentum"
             types[n + 2, j] = "lambda_left" if j == 0 else "lambda"

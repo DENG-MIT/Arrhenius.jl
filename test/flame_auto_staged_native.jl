@@ -36,7 +36,16 @@ using Arrhenius, LinearAlgebra, Test
     burner = BurnerFlame(gas; mdot=0.06, T=300.0, P=one_atm, X,
         discretization=:finite_difference)
     @test Arrhenius._fresh_analytic_guess!(burner, copy(burner.grid)) === burner
-    @test burner.state[end, :] == fill(burner.mass_flux, length(burner.grid))
+    burner_velocity = velocity(burner)
+    inlet_velocity = burner.mass_flux / Arrhenius._flame_density(burner,
+        burner.inlet_temperature, burner.inlet_Y).density
+    equilibrium_velocity = burner.mass_flux / Arrhenius._flame_density(burner, eq.T, eq.Y).density
+    for j in eachindex(burner.grid)
+        fraction = clamp((burner.grid[j] - burner.grid[1]) /
+            (0.2 * (burner.grid[end] - burner.grid[1])), 0.0, 1.0)
+        @test burner_velocity[j] ≈ inlet_velocity + fraction *
+            (equilibrium_velocity - inlet_velocity) rtol=1e-10
+    end
     @test isapprox(burner.state[1, end] * 1000, eq.T; atol=1e-8)
 
     # H2/air at 300 K, 1 atm: thermal diffusion (Soret) shifts the flame speed

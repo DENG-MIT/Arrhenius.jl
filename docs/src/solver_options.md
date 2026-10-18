@@ -38,7 +38,8 @@ The resolved Newton preset for every listed kind is:
 | Flame kind | Jacobian mode | Staged ladder selected | Existing `auto` default | Solve path |
 | --- | --- | --- | --- | --- |
 | `FreeFlame` | `:auto` | Yes | `false` | Premixed staged ladder (uniform 12/24/48-point starts, locked-temperature retry, refinement; free-flame domain expansion when needed) |
-| `BurnerFlame` | `:auto` | Yes | `false` | Premixed staged ladder without domain expansion |
+| `BurnerFlame` (energy-on) | `:auto` | Yes | `false` | Premixed staged ladder without domain expansion |
+| `BurnerFlame` (fixed-T profile) | `:auto` | No | `false` | Cantera `auto=False` refinement loop with compatible Newton/Jacobian settings |
 | `CounterflowDiffusionFlame` | `:auto` | No | `true` | Existing counterflow recovery sequence |
 | `CounterflowPremixedFlame`, `CounterflowTwinPremixedFlame`, `ImpingingJet` | `:auto` | No | `true` | Existing premixed-counterflow recovery sequence |
 

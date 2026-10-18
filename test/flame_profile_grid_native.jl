@@ -8,8 +8,14 @@ function profile_grid_test_flame(gas;grid=[0.,.2,.6,.8,1.],discretization=:conse
     state[1,:].=.3
     state[2:n+1,:].=Y
     state[end,:].=.04
-    return BurnerFlame(gas,copy(grid),one_atm,300.,Y,state,2,300.,argmax(Y),false,.04,
-        Float64[],Float64[],Float64[],:full_knots,:mixture_averaged,false,nothing,:mole,discretization,nothing)
+    f=BurnerFlame(gas;X="H2:1.1,O2:1,AR:5",grid=copy(grid),mdot=.04,
+        P=one_atm,discretization)
+    f.inlet_Y=copy(Y)
+    f.state=state
+    f.anchor=2
+    f.fixed_temperature=300.
+    f.dependent_species=argmax(Y)
+    return f
 end
 
 function profile_grid_test_snapshot(f)
