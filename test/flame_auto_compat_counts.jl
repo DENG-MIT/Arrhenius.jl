@@ -16,10 +16,15 @@ function make_flame(spec, spec_path)
         discretization=:finite_difference)
     if spec["kind"] == "free"
         return FreeFlame(gas; common...)
-    elseif spec["kind"] == "burner"
-        return BurnerFlame(gas; mdot=spec["mdot"], common...)
+    elseif spec["kind"] in ("burner", "fixed")
+        flame = BurnerFlame(gas; mdot=spec["mdot"], common...)
+        if spec["kind"] == "fixed"
+            set_temperature_profile!(flame, Float64.(spec["profile_z"]),
+                Float64.(spec["profile_T"]); relative=false)
+        end
+        return flame
     end
-    error("only free and burner specs are supported: $(spec["kind"])")
+    error("only free, burner, and fixed specs are supported: $(spec["kind"])")
 end
 
 dry_run = any(arg -> strip(arg) == "--dry-run", ARGS)
@@ -27,7 +32,12 @@ spec_paths = filter(arg -> strip(arg) != "--dry-run", ARGS)
 isempty(spec_paths) && error("provide one or more flame spec paths")
 for path in spec_paths
     spec = YAML.load_file(path)
-    for compatible in (dry_run ? (true,) : (false, true))
+    modes = if spec["kind"] == "fixed"
+        (false,) # Cantera-compatible auto staging rejects prescribed-temperature burners.
+    else
+        dry_run ? (true,) : (false, true)
+    end
+    for compatible in modes
         flame = make_flame(spec, path)
         stats = solver_stats(flame)
         solve!(flame; ratio=spec["ratio"], slope=spec["slope"],
@@ -51,7 +61,7 @@ for path in spec_paths
             "stagni_2023__free__phi1.2_h20.3_p1__mixture-averaged" => (9, 283),
             "alzueta_2023__free__phi1.2_h20.3_p1__mixture-averaged" => (9, 305)),
             spec["id"], nothing)
-        if compatible && expected_ladder !== nothing
+        if compatible && !dry_run && expected_ladder !== nothing
             expected_regrids, expected_points = expected_ladder
             @assert stats.regrids == expected_regrids
             @assert length(flame.grid) == expected_points

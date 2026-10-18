@@ -364,7 +364,7 @@ end
 
 """Accumulate the derivative of Cantera's active mass-action product branch."""
 function _mass_action_product_gradient!(gradient, C, species, orders, stoich,
-        column, entries, scale)
+        column, entries, scale; cantera_compatible=false)
     standard = _mass_action_standard(orders, stoich, species, column, entries)
     nterms = 0
     if standard
@@ -373,14 +373,13 @@ function _mass_action_product_gradient!(gradient, C, species, orders, stoich,
         end
     end
     standard &= 1 <= nterms <= 3
-    if standard
+    if standard && !cantera_compatible
         negative_factors = 0
         @inbounds for j in entries
-            c = C[species[j]]
-            negative_factors += Int(c < 0) * Int(stoich[species[j], column])
+            negative_factors += Int(C[species[j]] < 0) * Int(stoich[species[j], column])
         end
         negative_factors >= 2 && return gradient
-    else
+    elseif !standard
         @inbounds for j in entries
             orders[j] == 0 && continue
             C[species[j]] > 0 || return gradient
@@ -391,6 +390,19 @@ function _mass_action_product_gradient!(gradient, C, species, orders, stoich,
         k = species[j]
         order = standard ? Int(stoich[k, column]) : orders[j]
         order == 0 && continue
+        if standard && cantera_compatible
+            # Cantera's C1/C2/C3 derivative requires every remaining reactant
+            # factor to be positive, including repeated occurrences of k.
+            active=true
+            for other in entries
+                count = Int(stoich[species[other], column]) - Int(other == j)
+                if count > 0 && C[species[other]] <= 0
+                    active=false
+                    break
+                end
+            end
+            active || continue
+        end
         derivative = zero(scale)
         if standard
             # Repeat the species factor `order` times, omitting each occurrence

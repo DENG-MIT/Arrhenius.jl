@@ -96,7 +96,7 @@ function _flame_falloff_derivative(reaction,j,i,T,collider,high;low=nothing,log_
     return _flame_partial(value)
 end
 
-function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache)
+function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache;cantera_compatible=false)
     plog=reaction.plog
     issorted(plog.reaction_indices) || return false
     logT=log(T);plog_cursor=1
@@ -112,11 +112,11 @@ function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache)
     @inbounds for i in 1:reaction.n_reactions
         _mass_action_product_gradient!(d.rate_gradient,C,rowvals(reaction.reactant_orders),
             nonzeros(reaction.reactant_orders),reaction.reactant_stoich_coeffs,i,
-            nzrange(reaction.reactant_orders,i),kf[i])
+            nzrange(reaction.reactant_orders,i),kf[i];cantera_compatible)
         if reaction.is_reversible[i]
             _mass_action_product_gradient!(d.rate_gradient,C,rowvals(reaction.product_stoich_coeffs),
                 nonzeros(reaction.product_stoich_coeffs),reaction.product_stoich_coeffs,i,
-                nzrange(reaction.product_stoich_coeffs,i),-kr[i])
+                nzrange(reaction.product_stoich_coeffs,i),-kr[i];cantera_compatible)
         end
         pf=_mass_action_product(C,rowvals(reaction.reactant_orders),nonzeros(reaction.reactant_orders),
             reaction.reactant_stoich_coeffs,i,nzrange(reaction.reactant_orders,i))
@@ -190,7 +190,7 @@ Local chemistry block at one node: `G[k,1]` is d(source_k)/d(T/1000) and
 `G[k,l+1]` is d(source_k)/dY_l, for the molar source evaluated from the clipped
 state `y` with mole fractions `X` and molar enthalpies `h`.
 """
-function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache)
+function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache;cantera_compatible=false)
     n=gas.n_species;MW=gas.MW;Td=_flame_dual(T,1000.0);inverseMW=0.0
     @inbounds for k in 1:n
         inverseMW+=y[k]/MW[k]
@@ -204,7 +204,8 @@ function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache)
     end
     wdot!(d.dual_source,gas.reaction,Td,d.dual_C,d.dual_s,d.dual_h,d.dual_kinetics;
         pressure=P)
-    _flame_concentration_jacobian!(d,gas.reaction,T,P,d.concentration,h,d.entropy,cache) || return false
+    _flame_concentration_jacobian!(d,gas.reaction,T,P,d.concentration,h,d.entropy,cache;
+        cantera_compatible) || return false
     mul!(d.source_direction,d.concentration_jacobian,X)
     @inbounds for k in 1:n
         G[k,1]=_flame_partial(d.dual_source[k])
@@ -236,7 +237,8 @@ function _flame_auto_species_jacobian!(band,f,u,w,r;previous=nothing,dt=Inf)
     for j in 2:N-1
         invmw=sum(@view(u[2:n+1,j])./MW)
         _flame_source_jacobian!(G,d,f.gas,f.pressure,1000u[1,j],
-            @view(u[2:n+1,j]),@view(w.X[:,j]),@view(w.h[:,j]),w.rate_caches[j]) || return false
+            @view(u[2:n+1,j]),@view(w.X[:,j]),@view(w.h[:,j]),w.rate_caches[j];
+            cantera_compatible=(f.discretization==:finite_difference)) || return false
         fill!(fluxleft,0); fill!(fluxright,0)
         for face in (j-1,j)
             dz=f.grid[face+1]-f.grid[face]

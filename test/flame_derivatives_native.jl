@@ -1,4 +1,4 @@
-using Arrhenius, ForwardDiff, LinearAlgebra, Test
+using Arrhenius, ForwardDiff, LinearAlgebra, SparseArrays, Test
 
 function flame_test_dual_fields(value,::Type{D}) where D
     names=propertynames(value)
@@ -22,6 +22,32 @@ function flame_test_automatic_jacobian(f,w;previous=nothing,dt=Inf)
         state=reshape(inputs,shape)
         vec(flame_residual!(similar(state),f,state,storage;
             previous,dt,update_transport=false))
+    end
+end
+
+@testset "Cantera-compatible integer mass-action derivative at signed traces" begin
+    two_body=sparse([1,2],[1,1],[1.,1.],2,1)
+    function gradient_for(a,b)
+        c=[a,b]; g=zeros(2)
+        Arrhenius._mass_action_product_gradient!(g,c,rowvals(two_body),nonzeros(two_body),
+            two_body,1,nzrange(two_body,1),3.;cantera_compatible=true)
+        return g
+    end
+    for a in (0.,1e-25,-1e-25,-1e-7)
+        got=gradient_for(a,.2)
+        @test got[1] ≈ 0.6 rtol=1e-14 atol=0.
+        @test got[2] ≈ (a>0 ? 3a : 0.) rtol=1e-14 atol=1e-300
+    end
+    got=gradient_for(.2,-1e-7)
+    @test got[1] ≈ 0. atol=0.
+    @test got[2] ≈ 0.6 rtol=1e-14 atol=0.
+
+    repeated=sparse([1],[1],[2.],1,1)
+    for a in (0.,1e-25,-1e-25,-1e-7)
+        g=zeros(1)
+        Arrhenius._mass_action_product_gradient!(g,[a],rowvals(repeated),nonzeros(repeated),
+            repeated,1,nzrange(repeated,1),3.;cantera_compatible=true)
+        @test g[1] ≈ (a>0 ? 6a : 0.) rtol=1e-14 atol=1e-300
     end
 end
 
@@ -339,6 +365,16 @@ end
     boundary_jac=Arrhenius._flame_jacobian(f,f.state,w,r;analytic=true)
     @test Arrhenius._flame_cantera_species_perturbation(f.state,2,1) ==
         1e-5*abs(f.state[2,1])+1e-10
+    @test Arrhenius._flame_cantera_temperature_perturbation(f.state,1,1) ≈
+        (1e-5*abs(1000f.state[1,1])+1e-10)/1000 rtol=1e-7
+    step=zeros(size(f.state)); node=3
+    step[1,node]=1e-6; step[end,node]=0.02
+    step[2,node]=1e-8
+    scale=1e-4
+    exact_velocity_delta=(Arrhenius._flame_step_velocity(f,f.state,scale.*step,node)-
+        Arrhenius._flame_state_velocity(f,f.state,node))/scale
+    @test Arrhenius._flame_linearized_step_velocity(f,f.state,step,node) ≈
+        exact_velocity_delta rtol=1e-7
     B=n+2; halfband=2B-1; h_index=findfirst(==("H"),gas.species_names)
     left_row=B; left_col=B+h_index+1
     right_row=(N-1)*B+B; right_col=(N-2)*B+h_index+1

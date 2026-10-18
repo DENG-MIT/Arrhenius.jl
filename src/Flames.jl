@@ -842,6 +842,12 @@ _flame_perturbation(f,u,k,j)=1e-7*max(abs(u[k,j]),k==1 ? .1 : 1e-5)
     h=1e-5*abs(x)+1e-10
     return x<0 ? -h : h
 end
+@inline function _flame_cantera_temperature_perturbation(u,k,j)
+    x=u[k,j]
+    temperature=1000x
+    h=1e-5*abs(temperature)+1e-10
+    return (temperature+h)/1000-x
+end
 # Fraction of the forward derivative that a positive finite-difference step of
 # `_flame_perturbation` samples on a clipped face-midpoint species value: one
 # at nonnegative values, the chord fraction within one step below zero.
@@ -911,8 +917,17 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
                 f.flux_gradient_basis == :mole &&
                 2 <= k <= B-1 && (j == 1 || j == N ||
                     f isa BurnerFlame && (j == 2 || j == N-1))
-            steps[j] = cantera_fd ? _flame_cantera_species_perturbation(u,k,j) : _flame_perturbation(f,u,k,j)
+            cantera_temperature_fd = analytic && !update_transport && f isa FreeFlame &&
+                f.discretization == :finite_difference &&
+                f.transport_model == :mixture_averaged && !f.soret_enabled &&
+                f.flux_gradient_basis == :mole && k == 1
+            steps[j] = cantera_fd ? _flame_cantera_species_perturbation(u,k,j) :
+                cantera_temperature_fd ? _flame_cantera_temperature_perturbation(u,k,j) :
+                _flame_perturbation(f,u,k,j)
             perturbed[k,j] = u[k,j]+steps[j]
+            if cantera_temperature_fd
+                perturbed[B,j] = u[B,j]*u[1,j]/perturbed[1,j]
+            end
             perturbed_any=true
             if local_property_updates && f isa Union{FreeFlame,BurnerFlame} &&
                     (update_transport || k != B) && perturbed[k,j] != u[k,j]
@@ -952,6 +967,10 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
                 row = (jj-1)*B+kk
                 band[kl+ku+1+row-column,column] = (rp[kk,jj]-r[kk,jj])/steps[j]
             end
+            k == 1 && analytic && !update_transport && f isa FreeFlame &&
+                f.discretization == :finite_difference &&
+                f.transport_model == :mixture_averaged && !f.soret_enabled &&
+                f.flux_gradient_basis == :mole && (perturbed[B,j] = u[B,j])
             perturbed[k,j] = u[k,j]
         end
         copyto!(w.X,w.base_X)
@@ -959,6 +978,19 @@ function _flame_jacobian(f,u,w,r; previous=nothing,dt=Inf,previous_enthalpy=noth
         copyto!(w.cp,w.base_cp)
         copyto!(w.h,w.base_h)
         copyto!(w.source,w.base_source)
+    end
+    if analytic && !update_transport && f isa FreeFlame &&
+            f.discretization == :finite_difference &&
+            f.transport_model == :mixture_averaged && !f.soret_enabled &&
+            f.flux_gradient_basis == :mole
+        for j in 1:N
+            tcol=(j-1)*B+1; mcol=(j-1)*B+B
+            slope=-u[B,j]/u[1,j]
+            for row in max(1,tcol-2B+1):min(B*N,tcol+2B-1)
+                tidx=kl+ku+1+row-tcol; midx=kl+ku+1+row-mcol
+                band[tidx,tcol] -= slope*band[midx,mcol]
+            end
+        end
     end
     if analytic && !update_transport && f isa Union{FreeFlame,BurnerFlame}
         _flame_auto_species_jacobian!(band,f,u,w,r;previous,dt) || begin
@@ -1136,13 +1168,31 @@ function _flame_policy_correction_norm(step,weights,f,options,state=f.state)
             total+=(step[k,j]/weights[k])^2
         end
         for j in axes(step,2)
-            u0=_flame_state_velocity(f,state,j)
-            u1=_flame_step_velocity(f,state,step,j)
-            total+=((u1-u0)/weights[end])^2
+            du = if f isa FreeFlame && options.cantera_compatible
+                _flame_linearized_step_velocity(f,state,step,j)
+            else
+                _flame_step_velocity(f,state,step,j)-_flame_state_velocity(f,state,j)
+            end
+            total+=(du/weights[end])^2
         end
         return sqrt(total/denominator)
     end
     return _flame_correction_norm(step,weights,denominator)
+end
+
+@inline function _flame_linearized_step_velocity(f,state,step,j)
+    n=f.gas.n_species
+    T=1000state[1,j]
+    inverse_mw=0.0
+    delta_inverse_mw=0.0
+    @inbounds for k in 1:n
+        inverse_mw+=state[k+1,j]/f.gas.MW[k]
+        delta_inverse_mw+=step[k+1,j]/f.gas.MW[k]
+    end
+    rho=_flame_density(f,T,@view(state[2:n+1,j])).density
+    velocity=state[end,j]/rho
+    delta_temperature=1000step[1,j]
+    return step[end,j]/rho+velocity*(delta_temperature/T+delta_inverse_mw/inverse_mw)
 end
 
 function _flame_solve_correction!(correction,band,pivots,residual,bandwidth)
@@ -1727,10 +1777,12 @@ end
 # the mean gradient; solve! doubles the domain and restarts the staged ladder.
 struct FlameDomainTooNarrow <: Exception end
 
-# FreeFlame's staged initial guess uses the Cantera 30%-50% temperature and
-# composition ramp while retaining the inlet mass flux from the preceding
-# stage. The compatibility option applies Cantera's fixed-temperature snap or
-# Tmid insertion rule on the target grid.
+# FreeFlame's staged initial guess follows Cantera's 30%-50% temperature and
+# composition ramp. With compatibility enabled, its linearly profiled velocity
+# is mapped to the density-weighted mass-flux state, including after Tmid
+# insertion; compatibility disabled retains constant inlet mass flux. The
+# compatibility option also applies Cantera's fixed-temperature snap or Tmid
+# insertion rule on the target grid.
 function _fresh_analytic_guess!(f::FreeFlame, z = f.grid; cantera_compatible=true)
     x = f.inlet_Y ./ f.gas.MW
     x ./= sum(x)
@@ -1738,12 +1790,22 @@ function _fresh_analytic_guess!(f::FreeFlame, z = f.grid; cantera_compatible=tru
     T0, y = f.inlet_temperature, f.inlet_Y
     L = z[end] - z[1]
     mdot = f.state[end, 1]
+    rho_in = f.pressure / (R * T0 * sum(y ./ f.gas.MW))
+    rho_eq = f.pressure / (R * eq.T * sum(eq.Y ./ f.gas.MW))
+    u0, u1 = mdot / rho_in, mdot / rho_eq
     state = Matrix{Float64}(undef, size(f.state, 1), length(z))
     for j in eachindex(z)
         fraction = clamp(((z[j] - z[1]) / L - .3) / .2, 0, 1)
         state[1, j] = (T0 + fraction * (eq.T - T0)) / 1000
         state[2:size(state, 1) - 1, j] .= y .+ fraction .* (eq.Y .- y)
-        state[end, j] = mdot
+        if cantera_compatible
+            velocity = u0 + fraction * (u1 - u0)
+            mean_molecular_weight = 1 / sum(@view(state[2:size(state, 1)-1, j]) ./ f.gas.MW)
+            rho = f.pressure * mean_molecular_weight / (R * (1000 * state[1, j]))
+            state[end, j] = rho * velocity
+        else
+            state[end, j] = mdot
+        end
     end
     grid = collect(Float64, z)
     target = (0.75 * T0 + 0.25 * eq.T) / 1000
@@ -1771,10 +1833,25 @@ function _fresh_analytic_guess!(f::FreeFlame, z = f.grid; cantera_compatible=tru
                 else
                     fraction = (target - state[1, i]) / (state[1, i + 1] - state[1, i])
                     zfixed = grid[i] + fraction * (grid[i + 1] - grid[i])
+                    if cantera_compatible
+                        rho_left = f.pressure / (R * (1000 * state[1, i]) *
+                            sum(@view(state[2:size(state, 1)-1, i]) ./ f.gas.MW))
+                        rho_right = f.pressure / (R * (1000 * state[1, i + 1]) *
+                            sum(@view(state[2:size(state, 1)-1, i + 1]) ./ f.gas.MW))
+                        velocity_fixed = (1 - fraction) * state[end, i] / rho_left +
+                            fraction * state[end, i + 1] / rho_right
+                    end
                     grid = vcat(grid[1:i], zfixed, grid[i + 1:end])
                     state = hcat(state[:, 1:i],
                         (1 - fraction) .* state[:, i] .+ fraction .* state[:, i + 1],
                         state[:, i + 1:end])
+                    if cantera_compatible
+                        mean_molecular_weight = 1 /
+                            sum(@view(state[2:size(state, 1)-1, i + 1]) ./ f.gas.MW)
+                        rho_fixed = f.pressure * mean_molecular_weight /
+                            (R * (1000 * state[1, i + 1]))
+                        state[end, i + 1] = rho_fixed * velocity_fixed
+                    end
                     anchor, fixed_temperature = i + 1, 1000 * target
                 end
             end

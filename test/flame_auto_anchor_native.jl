@@ -11,7 +11,32 @@ using Arrhenius, Test
 
     f.state[end, :] .= 0.42
     Arrhenius._fresh_analytic_guess!(f, grid; cantera_compatible=true)
-    @test all(isapprox.(f.state[end, :], 0.42; rtol=4eps()))  # 1-ulp platform (FMA) differences
+    rho_in = f.pressure / (Arrhenius.R * f.inlet_temperature * sum(f.inlet_Y ./ f.gas.MW))
+    rho_eq = f.pressure / (Arrhenius.R * eq.T * sum(eq.Y ./ f.gas.MW))
+    u0, u1 = 0.42 / rho_in, 0.42 / rho_eq
+    input_velocity = similar(grid)
+    for j in eachindex(grid)
+        fraction = clamp(((grid[j] - grid[1]) / (grid[end] - grid[1]) - 0.3) / 0.2, 0, 1)
+        input_velocity[j] = u0 + fraction * (u1 - u0)
+    end
+    expected_mdot = similar(f.grid)
+    for j in eachindex(f.grid)
+        input_index = findfirst(==(f.grid[j]), grid)
+        velocity = if input_index !== nothing
+            input_velocity[input_index]
+        else
+            i = searchsortedlast(grid, f.grid[j])
+            fraction = (f.grid[j] - grid[i]) / (grid[i + 1] - grid[i])
+            (1 - fraction) * input_velocity[i] + fraction * input_velocity[i + 1]
+        end
+        Tj = 1000 * f.state[1, j]
+        Yj = @view f.state[2:end-1, j]
+        rhoj = f.pressure / (Arrhenius.R * Tj * sum(Yj ./ f.gas.MW))
+        expected_mdot[j] = rhoj * velocity
+    end
+    @test f.state[end, :] ≈ expected_mdot rtol=4eps()
+    @test f.state[end, 1] ≈ 0.42 rtol=4eps()
+    @test maximum(abs.(diff(f.state[end, :]))) > 0
     @test length(f.grid) == length(grid) + 1
     @test isapprox(f.grid[f.anchor], 0.01125; atol=1e-14)
     @test isapprox(f.fixed_temperature, 0.75 * 300.0 + 0.25 * eq.T; atol=1e-10)
@@ -20,6 +45,7 @@ using Arrhenius, Test
     Arrhenius._fresh_analytic_guess!(f, grid; cantera_compatible=false)
     @test f.grid == grid
     @test length(f.state[1, :]) == length(grid)
+    @test all(isapprox.(f.state[end, :], 0.42; rtol=4eps()))
     @test f.fixed_temperature == 1000 * f.state[1, f.anchor]
 
     temperature_lock = copy(f.state[1, :]) .+ 0.01

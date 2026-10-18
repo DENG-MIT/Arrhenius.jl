@@ -18,13 +18,25 @@ using Arrhenius, LinearAlgebra, Test
     Arrhenius._fresh_analytic_guess!(flame, copy(grid0))
     @test length(flame.grid) == length(grid0) + 1
     @test flame.grid ≈ vcat(grid0[1:3], 0.0105, grid0[4:end]) atol=1e-14
-    @test flame.state[:, [1, 2, 3, 5, 6, 7, 8, 9]] ≈ state0 rtol=0 atol=1e-12
+    original_nodes = [1, 2, 3, 5, 6, 7, 8, 9]
+    @test flame.state[1:end-1, original_nodes] ≈ state0[1:end-1, :] rtol=0 atol=1e-12
+    eq = equilibrate(gas; T=300.0, P=one_atm, X, mode=:HP)
+    mdot = state0[end, 1]
+    rho_in = flame.pressure / (R * 300.0 * sum(flame.inlet_Y ./ gas.MW))
+    rho_eq = flame.pressure / (R * eq.T * sum(eq.Y ./ gas.MW))
+    u0, u1 = mdot / rho_in, mdot / rho_eq
+    for (old_j, new_j) in enumerate(original_nodes)
+        fraction = clamp(((grid0[old_j] - grid0[1]) / (grid0[end] - grid0[1]) - 0.3) / 0.2, 0, 1)
+        mean_molecular_weight = 1 / sum(@view(flame.state[2:end-1, new_j]) ./ gas.MW)
+        rho = flame.pressure * mean_molecular_weight / (R * (1000 * flame.state[1, new_j]))
+        expected_mdot = rho * (u0 + fraction * (u1 - u0))
+        @test isapprox(flame.state[end, new_j], expected_mdot; rtol=1e-12, atol=1e-12)
+    end
     @test flame.fixed_temperature == 1000 * flame.state[1, flame.anchor]
     @test !flame.converged
 
     # Cantera inserts the Tmid crossing on a coarse stage grid when
     # neither adjacent grid temperature falls within its 20% snap band.
-    eq = equilibrate(gas; T=300.0, P=one_atm, X, mode=:HP)
     uniform12 = 0.03 .* [0.0, 0.2, 0.3, 0.6, 0.8, 1.0]
     Arrhenius._fresh_analytic_guess!(flame, uniform12)
     @test length(flame.grid) == 7
