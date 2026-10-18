@@ -131,6 +131,29 @@ end
     @test received[]
 end
 
+@testset "signed trial concentrations for absent species" begin
+    gas = CreateSolution(joinpath(@__DIR__, "..", "mechanism", "stagni_2023.yaml"))
+    he = findfirst(==("HE"), gas.species_names)
+    @test !isnothing(he)
+    he = something(he)
+    reactor = IdealGasReactor(gas; temperature=2164.6519745633973,
+        pressure=one_atm, mole_fractions=Dict("NH3" => 0.7, "H2" => 0.3,
+            "O2" => 0.675, "N2" => 0.675 * 3.76))
+    rhs = reactor_rhs(reactor)
+    initial = reactor_state(reactor)
+    @test initial[he] == 0.0
+    for y_he in (0.0, 1e-25, -1e-25, -1e-7)
+        state = copy(initial)
+        state[he] = y_he
+        derivative = similar(state)
+        rhs(derivative, state, nothing, 0.0)
+        density = reactor_properties(reactor, state).density
+        expected = y_he * density / gas.MW[he]
+        @test isapprox(rhs.workspace.C[he], expected; rtol=1e-14, atol=0.0)
+        @test all(isfinite, derivative)
+    end
+end
+
 @testset "10-atm PLOG reactor rates match Cantera" begin
     gas = CreateSolution(joinpath(@__DIR__, "..", "mechanism", "stagni_2023.yaml"))
     he = findfirst(==("HE"), gas.species_names)
