@@ -221,3 +221,24 @@ end
         end
     end
 end
+
+@testset "PLOG kinetics wrappers honor explicit pressure" begin
+    gas = CreateSolution(joinpath(@__DIR__, "..", "mechanism", "stagni_2023.yaml"))
+    temperature, pressure = 2164.6519745633973, 10one_atm
+    X = mole_fractions(gas, Dict("NH3" => 0.7, "H2" => 0.3, "O2" => 0.675,
+        "N2" => 0.675 * 3.76, "HNO" => 0.02, "H" => 0.01, "NO" => 0.02))
+    rates = reaction_rate_constants(gas; T=temperature, P=pressure, X)
+    @test isapprox(rates.forward[143], 2400382.4821791155; rtol=1e-10)
+
+    C = pressure / (R * temperature) .* X
+    C .*= 0.5
+    he = something(findfirst(==("HE"), gas.species_names))
+    C[he] = -1e-7 * pressure / (R * temperature)
+    h_mole = cal_h_RT(gas, temperature, pressure, X) .* (R * temperature)
+    entropy = cal_s0_R(gas, temperature, pressure, X) .* R
+    explicit = wdot_func(gas.reaction, temperature, C, entropy, h_mole;
+        get_qdot=true, pressure)
+    inferred = wdot_func(gas.reaction, temperature, C, entropy, h_mole; get_qdot=true)
+    @test all(isfinite, explicit) && all(isfinite, inferred)
+    @test !isapprox(inferred[143], explicit[143]; rtol=1e-8)
+end

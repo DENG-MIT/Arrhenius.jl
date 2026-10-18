@@ -82,7 +82,7 @@ function (rhs::SurfaceFlowRHS)(f,u,p,z)
         cal_s0_R!(w.entropy,flow.gas,T,P,w.X)
         w.h_mole .*= R*T
         w.entropy .*= R
-        wdot!(w.wdot,flow.gas.reaction,T,w.C,w.entropy,w.h_mole,w.kinetics)
+        wdot!(w.wdot,flow.gas.reaction,T,w.C,w.entropy,w.h_mole,w.kinetics; pressure=P)
     else
         fill!(w.wdot,0.0)
     end
@@ -150,7 +150,7 @@ function _surface_cstr_polish(flow,Yin,volume,area,Y0,theta0;tolerance=1e-9,maxi
             cal_h_RT!(w.h_mole,gas,flow.temperature,flow.pressure,w.X)
             cal_s0_R!(w.entropy,gas,flow.temperature,flow.pressure,w.X)
             w.h_mole .*= R*flow.temperature; w.entropy .*= R
-            wdot!(w.wdot,gas.reaction,flow.temperature,w.C,w.entropy,w.h_mole,w.kinetics)
+            wdot!(w.wdot,gas.reaction,flow.temperature,w.C,w.entropy,w.h_mole,w.kinetics; pressure=flow.pressure)
         else
             fill!(w.wdot,0)
         end

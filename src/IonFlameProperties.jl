@@ -118,7 +118,7 @@ function _ion_flame_properties!(w::IonizedFlameWorkspace, f::IonizedFlame, u;
         cp .*= R
         w.entropy .*= R
         wdot!(@view(w.source[:, j]), gas.reaction, T, w.C, w.entropy, h, w.kinetics;
-            temperature_cache=w.rate_caches[j])
+            temperature_cache=w.rate_caches[j], pressure=f.pressure)
     end
 
     frozen = !f.field_enabled

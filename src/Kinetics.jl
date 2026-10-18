@@ -715,7 +715,7 @@ function reaction_rate_constants(gas::Solution;T,P=one_atm,X)
     h = cal_h_RT(gas,T,P,x).*(R*T)
     s = cal_s0_R(gas,T,P,x).*R
     workspace = KineticsWorkspace(gas.reaction,promote_type(typeof(T),eltype(c)))
-    return wdot!(similar(c),gas.reaction,T,c,s,h,workspace;get_rate_constants=true)
+    return wdot!(similar(c),gas.reaction,T,c,s,h,workspace;pressure=P,get_rate_constants=true)
 end
 export reaction_rate_constants
 
@@ -729,14 +729,17 @@ function wdot_func(
     get_qdot=false,
     rate_multipliers=nothing,
     log_rate_data=nothing,
+    pressure=nothing,
 )
     multiplier_type = isnothing(rate_multipliers) ? Float64 : eltype(rate_multipliers)
+    pressure_type = isnothing(pressure) ? Float64 : typeof(pressure)
     workspace_type = promote_type(
         typeof(T),
         eltype(C),
         eltype(S0),
         eltype(h_mole),
         multiplier_type,
+        pressure_type,
     )
     workspace = KineticsWorkspace(reaction, workspace_type)
     wdot = zeros(workspace_type, size(reaction.vk, 1))
@@ -751,6 +754,7 @@ function wdot_func(
         get_qdot=get_qdot,
         rate_multipliers=rate_multipliers,
         log_rate_data=log_rate_data,
+        pressure=pressure,
     )
 end
 export wdot_func
