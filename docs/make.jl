@@ -26,6 +26,7 @@ makedocs(
         "examples.md",
         "validation.md",
         "api.md",
+        "plasma.md",
     ],
 )
 
