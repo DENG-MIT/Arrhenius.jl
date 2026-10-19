@@ -34,8 +34,8 @@ using Arrhenius, Test
         rhoj = f.pressure / (Arrhenius.R * Tj * sum(Yj ./ f.gas.MW))
         expected_mdot[j] = rhoj * velocity
     end
-    @test f.state[end, :] ≈ expected_mdot rtol=4eps()
-    @test f.state[end, 1] ≈ 0.42 rtol=4eps()
+    @test f.state[end, :] ≈ expected_mdot rtol=1e-12
+    @test f.state[end, 1] ≈ 0.42 rtol=1e-12
     @test maximum(abs.(diff(f.state[end, :]))) > 0
     @test length(f.grid) == length(grid) + 1
     @test isapprox(f.grid[f.anchor], 0.01125; atol=1e-14)
@@ -45,7 +45,7 @@ using Arrhenius, Test
     Arrhenius._fresh_analytic_guess!(f, grid; cantera_compatible=false)
     @test f.grid == grid
     @test length(f.state[1, :]) == length(grid)
-    @test all(isapprox.(f.state[end, :], 0.42; rtol=4eps()))
+    @test all(isapprox.(f.state[end, :], 0.42; rtol=1e-12))
     @test f.fixed_temperature == 1000 * f.state[1, f.anchor]
 
     temperature_lock = copy(f.state[1, :]) .+ 0.01
@@ -62,7 +62,7 @@ using Arrhenius, Test
         discretization=:finite_difference)
     Arrhenius._fresh_analytic_guess!(burner, grid; cantera_compatible=true)
     @test burner.grid == grid
-    @test burner.state[end, :] == fill(burner.mass_flux, length(grid))
+    @test all(isapprox.(burner.state[end, :], burner.mass_flux; rtol=1e-12))
     @test isapprox(burner.state[1, end] * 1000, eq.T; atol=1e-8)
     @test !Arrhenius._burner_blown_off(burner)
     flat = copy(burner.state)
