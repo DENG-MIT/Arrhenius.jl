@@ -1,13 +1,20 @@
-@inline function _plog_group_rate(plog::PlogData, group, T, logT)
-    rate = zero(T)
-    activation_scale = oftype(T, 4184.0 / R) / T
-    @inbounds for row in plog.rate_offsets[group]:(plog.rate_offsets[group + 1] - 1)
-        A = plog.Arrhenius_coeffs[row, 1]
-        b = plog.Arrhenius_coeffs[row, 2]
-        Ea = plog.Arrhenius_coeffs[row, 3]
-        rate += A * exp(b * logT - Ea * activation_scale)
+@inline function _plog_group_lograte(plog::PlogData, group, T, logT)
+    first=plog.rate_offsets[group]
+    last=plog.rate_offsets[group+1]-1
+    scale=oftype(T,4184.0/R)/T
+    if first==last
+        A=plog.Arrhenius_coeffs[first,1]
+        return log(A)+plog.Arrhenius_coeffs[first,2]*logT-
+            plog.Arrhenius_coeffs[first,3]*scale
     end
-    return rate
+    rate=_positive_floor(T)
+    @inbounds for row in first:last
+        A=plog.Arrhenius_coeffs[row,1]
+        b=plog.Arrhenius_coeffs[row,2]
+        Ea=plog.Arrhenius_coeffs[row,3]
+        rate+=A*exp(b*logT-Ea*scale)
+    end
+    log(rate)
 end
 
 @inline function _plog_rate(plog::PlogData, plog_index, T, P, logT)
@@ -15,9 +22,9 @@ end
     last_group = plog.group_offsets[plog_index + 1] - 1
 
     if P <= plog.pressures[first_group]
-        return _plog_group_rate(plog, first_group, T, logT)
+        return exp(_plog_group_lograte(plog, first_group, T, logT))
     elseif P >= plog.pressures[last_group]
-        return _plog_group_rate(plog, last_group, T, logT)
+        return exp(_plog_group_lograte(plog, last_group, T, logT))
     end
 
     lower_group = first_group
@@ -25,18 +32,15 @@ end
         lower_group += 1
     end
     upper_group = lower_group + 1
-    lower_rate = _plog_group_rate(plog, lower_group, T, logT)
-    upper_rate = _plog_group_rate(plog, upper_group, T, logT)
+    lower_log_rate = _plog_group_lograte(plog, lower_group, T, logT)
+    upper_log_rate = _plog_group_lograte(plog, upper_group, T, logT)
     @inbounds fraction =
         log(P / plog.pressures[lower_group]) /
         log(plog.pressures[upper_group] / plog.pressures[lower_group])
-    # Cantera sums duplicate expressions at one pressure before taking the log.
-    tiny = _positive_floor(lower_rate)
-    return exp(log(lower_rate + tiny) +
-               fraction * (log(upper_rate + tiny) - log(lower_rate + tiny)))
+    return exp(lower_log_rate + fraction * (upper_log_rate - lower_log_rate))
 end
 
-@inline _positive_floor(value::T) where {T<:AbstractFloat} = nextfloat(zero(T))
+@inline _positive_floor(value::T) where {T<:AbstractFloat} = max(oftype(value, 1.0e-300), nextfloat(zero(T)))
 
 # Effective pressure P*eps_mix of a linear-Burke (LMR-R) reaction: listed
 # colliders weigh their mole fraction by eps_i(T); all other species by one.
@@ -65,13 +69,20 @@ end
     @inbounds while P > plog.pressures[lower_group + 1]
         lower_group += 1
     end
-    lower_rate = _plog_group_rate(plog, lower_group, T, logT)
-    upper_rate = _plog_group_rate(plog, lower_group + 1, T, logT)
-    tiny = _positive_floor(lower_rate)
-    return (log(upper_rate + tiny) - log(lower_rate + tiny)) /
+    lower_log_rate = _plog_group_lograte(plog, lower_group, T, logT)
+    upper_log_rate = _plog_group_lograte(plog, lower_group + 1, T, logT)
+    return (upper_log_rate - lower_log_rate) /
         log(plog.pressures[lower_group + 1] / plog.pressures[lower_group])
 end
 @inline _positive_floor(value) = oftype(value, 1.0e-300)
+
+@inline function _troe_fcent(A, T1, T2, T3, T)
+    fcent=(one(T)-A)*exp(-T/T3)+A*exp(-T/T1)
+    if T2 != 0
+        fcent += exp(-T2/T)
+    end
+    fcent
+end
 
 """Log-domain Arrhenius parameters for mixed-precision rate evaluation.
 
@@ -119,7 +130,7 @@ export LogRateData
     return oftype(outer, exp(log_a + b * logT - ea * activation_scale))
 end
 
-@inline function _plog_group_rate(
+@inline function _plog_group_lograte(
     rate_data::LogRateData,
     plog::PlogData,
     group,
@@ -127,9 +138,16 @@ end
     rate_logT,
     rate_activation_scale,
 )
-    rate = zero(outer_temperature)
-    @inbounds for row in plog.rate_offsets[group]:(plog.rate_offsets[group + 1] - 1)
-        rate += _mixed_elementary_rate(
+    first=plog.rate_offsets[group]
+    last=plog.rate_offsets[group+1]-1
+    if first==last
+        return rate_data.plog_log_a[first] +
+            rate_data.plog_b[first]*rate_logT -
+            rate_data.plog_ea[first]*rate_activation_scale
+    end
+    rate=_positive_floor(outer_temperature)
+    @inbounds for row in first:last
+        rate+=_mixed_elementary_rate(
             rate_data.plog_log_a[row],
             rate_data.plog_b[row],
             rate_data.plog_ea[row],
@@ -138,7 +156,7 @@ end
             outer_temperature,
         )
     end
-    return rate
+    log(rate)
 end
 
 @inline function _plog_rate(
@@ -153,53 +171,25 @@ end
     first_group = plog.group_offsets[plog_index]
     last_group = plog.group_offsets[plog_index + 1] - 1
     if P <= plog.pressures[first_group]
-        return _plog_group_rate(
-            rate_data,
-            plog,
-            first_group,
-            T,
-            rate_logT,
-            rate_activation_scale,
-        )
+return exp(_plog_group_lograte(
+            rate_data, plog, first_group, T, rate_logT, rate_activation_scale))
     elseif P >= plog.pressures[last_group]
-        return _plog_group_rate(
-            rate_data,
-            plog,
-            last_group,
-            T,
-            rate_logT,
-            rate_activation_scale,
-        )
+return exp(_plog_group_lograte(
+            rate_data, plog, last_group, T, rate_logT, rate_activation_scale))
     end
     lower_group = first_group
     @inbounds while P > plog.pressures[lower_group + 1]
         lower_group += 1
     end
     upper_group = lower_group + 1
-    lower_rate = _plog_group_rate(
-        rate_data,
-        plog,
-        lower_group,
-        T,
-        rate_logT,
-        rate_activation_scale,
-    )
-    upper_rate = _plog_group_rate(
-        rate_data,
-        plog,
-        upper_group,
-        T,
-        rate_logT,
-        rate_activation_scale,
-    )
+    lower_log_rate = _plog_group_lograte(
+        rate_data, plog, lower_group, T, rate_logT, rate_activation_scale)
+    upper_log_rate = _plog_group_lograte(
+        rate_data, plog, upper_group, T, rate_logT, rate_activation_scale)
     @inbounds fraction =
         log(P / plog.pressures[lower_group]) /
         log(plog.pressures[upper_group] / plog.pressures[lower_group])
-    tiny = _positive_floor(lower_rate)
-    return exp(
-        log(lower_rate + tiny) +
-        fraction * (log(upper_rate + tiny) - log(lower_rate + tiny)),
-    )
+    return exp(lower_log_rate + fraction * (upper_log_rate - lower_log_rate))
 end
 
 @inline function _plog_rate_with_collider(
@@ -296,22 +286,44 @@ function _mass_action!(workspace, reaction::Reaction, C)
     @inbounds for i in 1:reaction.n_reactions
         forward,reverse = workspace.kf[i],workspace.kr[i]
         forward *= _mass_action_product(C, ri, rv, reaction.reactant_stoich_coeffs, i,
-            nzrange(reactants, i))
+            nzrange(reactants, i), reaction.reactant_mass_action_terms[i])
         if reaction.is_reversible[i]
-            reverse *= _mass_action_product(C, pi, pv, products, i, nzrange(products, i))
+            reverse *= _mass_action_product(C, pi, pv, products, i, nzrange(products, i),
+                reaction.product_mass_action_terms[i])
         end
         workspace.kf[i],workspace.kr[i] = forward,reverse
         workspace.rates_of_progress[i] = forward-reverse
     end
 end
 
+@inline function _mass_action_product(C, species, orders, stoich, column, entries,
+        plan::NTuple{4,Int64})
+    i1,i2,i3,n = plan
+    n == 0 && return _mass_action_product(C, species, orders, stoich, column, entries)
+    @inbounds c1 = C[i1]
+    n == 1 && return c1
+    @inbounds c2 = C[i2]
+    if n == 2
+        return c1 < 0 && c2 < 0 ? zero(c1) : c1*c2
+    end
+    @inbounds c3 = C[i3]
+    negatives = Int(c1 < 0) + Int(c2 < 0) + Int(c3 < 0)
+    return negatives >= 2 ? zero(c1) : (c1*c2)*c3
+end
+
 """Cantera's optimized C1/C2/C3 and general stoichiometry concentration product."""
 @inline function _mass_action_product(C, species, orders, stoich, column, entries)
-    standard = _mass_action_standard(orders, stoich, species, column, entries)
     nterms = 0
+    standard = length(entries) <= 3
     if standard
         @inbounds for j in entries
-            nterms += Int(stoich[species[j], column])
+            coefficient = stoich[species[j], column]
+            if orders[j] == coefficient && coefficient >= 0 && isinteger(coefficient)
+                nterms += Int(coefficient)
+            else
+                standard = false
+                break
+            end
         end
     end
     standard &= 1 <= nterms <= 3
@@ -321,7 +333,7 @@ end
         negative_factors = 0
         @inbounds for j in entries
             c = C[species[j]]
-            for _ in 1:Int(stoich[species[j], column])
+            for _ in 1:Int(orders[j])
                 negative_factors += c < 0
                 multiplier *= c
             end
@@ -352,7 +364,7 @@ end
 
 """Accumulate the derivative of Cantera's active mass-action product branch."""
 function _mass_action_product_gradient!(gradient, C, species, orders, stoich,
-        column, entries, scale)
+        column, entries, scale; cantera_compatible=false)
     standard = _mass_action_standard(orders, stoich, species, column, entries)
     nterms = 0
     if standard
@@ -361,14 +373,13 @@ function _mass_action_product_gradient!(gradient, C, species, orders, stoich,
         end
     end
     standard &= 1 <= nterms <= 3
-    if standard
+    if standard && !cantera_compatible
         negative_factors = 0
         @inbounds for j in entries
-            c = C[species[j]]
-            negative_factors += Int(c < 0) * Int(stoich[species[j], column])
+            negative_factors += Int(C[species[j]] < 0) * Int(stoich[species[j], column])
         end
         negative_factors >= 2 && return gradient
-    else
+    elseif !standard
         @inbounds for j in entries
             orders[j] == 0 && continue
             C[species[j]] > 0 || return gradient
@@ -379,6 +390,19 @@ function _mass_action_product_gradient!(gradient, C, species, orders, stoich,
         k = species[j]
         order = standard ? Int(stoich[k, column]) : orders[j]
         order == 0 && continue
+        if standard && cantera_compatible
+            # Cantera's C1/C2/C3 derivative requires every remaining reactant
+            # factor to be positive, including repeated occurrences of k.
+            active=true
+            for other in entries
+                count = Int(stoich[species[other], column]) - Int(other == j)
+                if count > 0 && C[species[other]] <= 0
+                    active=false
+                    break
+                end
+            end
+            active || continue
+        end
         derivative = zero(scale)
         if standard
             # Repeat the species factor `order` times, omitting each occurrence
@@ -489,9 +513,8 @@ function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
         for k in eachindex(temperature_cache.log_fcent)
             # Cantera clamps F_cent at SmallNumber before taking its logarithm.
             temperature_cache.log_fcent[k] = log10(max(
-                (1-reaction.Troe_[k,1])*exp(-T/reaction.Troe_[k,4])+
-                reaction.Troe_[k,1]*exp(-T/reaction.Troe_[k,2])+
-                exp(-reaction.Troe_[k,3]/T),1e-300))
+                _troe_fcent(reaction.Troe_[k,1],reaction.Troe_[k,2],
+                    reaction.Troe_[k,3],reaction.Troe_[k,4],T),1e-300))
         end
     end
     end
@@ -588,11 +611,10 @@ function _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan=nothing;
             lF_cent = if cached
                 temperature_cache.log_fcent[k]
             else
-            @inbounds F_cent =
-                (one(T) - reaction.Troe_[k, 1]) * exp(-T / reaction.Troe_[k, 4]) +
-                reaction.Troe_[k, 1] * exp(-T / reaction.Troe_[k, 2]) +
-                exp(-reaction.Troe_[k, 3] / T)
-                log10(max(F_cent, oftype(F_cent, 1e-300)))
+            @inbounds F_cent = _troe_fcent(
+                reaction.Troe_[k,1],reaction.Troe_[k,2],
+                reaction.Troe_[k,3],reaction.Troe_[k,4],T)
+            log10(max(F_cent, oftype(F_cent, 1e-300)))
             end
             C_troe = -oftype(T, 0.4) - oftype(T, 0.67) * lF_cent
             N = oftype(T, 0.75) - oftype(T, 1.27) * lF_cent
@@ -705,7 +727,7 @@ function reaction_rate_constants(gas::Solution;T,P=one_atm,X)
     h = cal_h_RT(gas,T,P,x).*(R*T)
     s = cal_s0_R(gas,T,P,x).*R
     workspace = KineticsWorkspace(gas.reaction,promote_type(typeof(T),eltype(c)))
-    return wdot!(similar(c),gas.reaction,T,c,s,h,workspace;get_rate_constants=true)
+    return wdot!(similar(c),gas.reaction,T,c,s,h,workspace;pressure=P,get_rate_constants=true)
 end
 export reaction_rate_constants
 
@@ -719,14 +741,17 @@ function wdot_func(
     get_qdot=false,
     rate_multipliers=nothing,
     log_rate_data=nothing,
+    pressure=nothing,
 )
     multiplier_type = isnothing(rate_multipliers) ? Float64 : eltype(rate_multipliers)
+    pressure_type = isnothing(pressure) ? Float64 : typeof(pressure)
     workspace_type = promote_type(
         typeof(T),
         eltype(C),
         eltype(S0),
         eltype(h_mole),
         multiplier_type,
+        pressure_type,
     )
     workspace = KineticsWorkspace(reaction, workspace_type)
     wdot = zeros(workspace_type, size(reaction.vk, 1))
@@ -741,6 +766,7 @@ function wdot_func(
         get_qdot=get_qdot,
         rate_multipliers=rate_multipliers,
         log_rate_data=log_rate_data,
+        pressure=pressure,
     )
 end
 export wdot_func

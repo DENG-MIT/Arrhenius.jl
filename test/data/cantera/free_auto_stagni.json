@@ -1,0 +1,15 @@
+{
+ "id": "stagni_2023__free__phi1.2_h20.3_p1__mixture-averaged",
+ "mechanism": "mechanism/stagni_2023",
+ "kind": "free",
+ "phi": 1.2,
+ "h2": 0.3,
+ "P_atm": 1.0,
+ "T": 300.0,
+ "X": "NH3:0.7,H2:0.3,O2:0.5625,N2:2.115",
+ "width": 0.03,
+ "transport": "mixture-averaged",
+ "ratio": 3.0,
+ "slope": 0.03,
+ "curve": 0.06
+}

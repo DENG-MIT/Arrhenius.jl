@@ -13,3 +13,5 @@ To assess solution accuracy, a flame solution is compared with a separately conv
 Validation cases must represent burning flames when the question concerns a burning solution. Extinguished solutions are reported as extinguished and are not counted as successful burning cases.
 
 These methods describe the validation approach. They do not assert a particular accuracy level for every mechanism, flame family, or operating condition.
+
+The retained case-preparation and comparison drivers are indexed in the [validation entry points](https://github.com/DENG-MIT/Arrhenius.jl/tree/main/validation#validation-entry-points).

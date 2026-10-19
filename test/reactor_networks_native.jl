@@ -116,3 +116,30 @@ using Test
         temperature=300.0,mole_fractions=Dict("AR"=>1)))
     @test_throws ArgumentError network_problem(network,(1.0,0.0))
 end
+
+@testset "network PLOG rates use physical pressure at negative trial mass fraction" begin
+    gas = CreateSolution(joinpath(@__DIR__, "..", "mechanism", "stagni_2023.yaml"))
+    T, P = 2164.6519745633973, 10one_atm
+    initial = IdealGasReactor(gas; temperature=T, pressure=P,
+        mole_fractions=Dict("NH3" => 0.7, "H2" => 0.3, "O2" => 0.675,
+            "N2" => 0.675 * 3.76, "HNO" => 0.02, "H" => 0.01, "NO" => 0.02),
+        constraint=:constant_volume, energy=:isothermal)
+    vessel = WellStirredReactor(initial; volume=0.03)
+    network = ReactorNetwork((vessel=vessel,))
+    rhs = network_rhs(network)
+    state = network_state(network)
+    ns, offset = gas.n_species, network.offsets[1]
+    mass = sum(@view state[offset:offset+ns-1])
+    Y = copy(initial.mass_fractions)
+    he, n2 = findfirst(==("HE"), gas.species_names), findfirst(==("N2"), gas.species_names)
+    Y[he] = -1e-7
+    Y[n2] += 1e-7
+    state[offset:offset+ns-1] .= mass .* Y
+    inverse_mw = sum(Y ./ gas.MW)
+    volume = mass * R * T * inverse_mw / P
+    derivative = similar(state)
+    rhs(derivative, state, nothing, 0.0; volumes=[volume])
+    @test isapprox(rhs.state_vector[1].pressure, P; rtol=1e-14)
+    @test isapprox(rhs.workspaces[1].kinetics.rates_of_progress[143],
+        633.08866652485551; rtol=1e-10)
+end

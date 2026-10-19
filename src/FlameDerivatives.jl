@@ -96,7 +96,7 @@ function _flame_falloff_derivative(reaction,j,i,T,collider,high;low=nothing,log_
     return _flame_partial(value)
 end
 
-function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache)
+function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache;cantera_compatible=false)
     plog=reaction.plog
     issorted(plog.reaction_indices) || return false
     logT=log(T);plog_cursor=1
@@ -112,11 +112,11 @@ function _flame_concentration_jacobian!(d,reaction,T,P,C,h,s,cache)
     @inbounds for i in 1:reaction.n_reactions
         _mass_action_product_gradient!(d.rate_gradient,C,rowvals(reaction.reactant_orders),
             nonzeros(reaction.reactant_orders),reaction.reactant_stoich_coeffs,i,
-            nzrange(reaction.reactant_orders,i),kf[i])
+            nzrange(reaction.reactant_orders,i),kf[i];cantera_compatible)
         if reaction.is_reversible[i]
             _mass_action_product_gradient!(d.rate_gradient,C,rowvals(reaction.product_stoich_coeffs),
                 nonzeros(reaction.product_stoich_coeffs),reaction.product_stoich_coeffs,i,
-                nzrange(reaction.product_stoich_coeffs,i),-kr[i])
+                nzrange(reaction.product_stoich_coeffs,i),-kr[i];cantera_compatible)
         end
         pf=_mass_action_product(C,rowvals(reaction.reactant_orders),nonzeros(reaction.reactant_orders),
             reaction.reactant_stoich_coeffs,i,nzrange(reaction.reactant_orders,i))
@@ -190,7 +190,7 @@ Local chemistry block at one node: `G[k,1]` is d(source_k)/d(T/1000) and
 `G[k,l+1]` is d(source_k)/dY_l, for the molar source evaluated from the clipped
 state `y` with mole fractions `X` and molar enthalpies `h`.
 """
-function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache)
+function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache;cantera_compatible=false)
     n=gas.n_species;MW=gas.MW;Td=_flame_dual(T,1000.0);inverseMW=0.0
     @inbounds for k in 1:n
         inverseMW+=y[k]/MW[k]
@@ -204,7 +204,8 @@ function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache)
     end
     wdot!(d.dual_source,gas.reaction,Td,d.dual_C,d.dual_s,d.dual_h,d.dual_kinetics;
         pressure=P)
-    _flame_concentration_jacobian!(d,gas.reaction,T,P,d.concentration,h,d.entropy,cache) || return false
+    _flame_concentration_jacobian!(d,gas.reaction,T,P,d.concentration,h,d.entropy,cache;
+        cantera_compatible) || return false
     mul!(d.source_direction,d.concentration_jacobian,X)
     @inbounds for k in 1:n
         G[k,1]=_flame_partial(d.dual_source[k])
@@ -216,6 +217,125 @@ function _flame_source_jacobian!(G,d,gas,P,T,y,X,h,cache)
         end
     end
     return all(isfinite,G)
+end
+
+
+"""Fill Cantera-auto interior species columns for the native finite-difference residual.
+
+The mixture-averaged transport coefficients are frozen. This helper fills only
+interior residual rows; the caller applies kind-specific endpoint handling. Unsupported
+transport configurations return false for full finite differences.
+"""
+function _flame_auto_species_jacobian!(band,f,u,w,r;previous=nothing,dt=Inf)
+    f isa Union{FreeFlame,BurnerFlame} || return false
+    (f.transport_model == :mixture_averaged && !f.soret_enabled &&
+        f.flux_gradient_basis == :mole) || return false
+    n,N=f.gas.n_species,length(f.grid);B=n+2;MW=f.gas.MW
+    d=_ConservativeFlameDerivatives(f.gas,N)
+    G=zeros(n,n+1)
+    fluxleft=zeros(n,n);fluxright=zeros(n,n);rawderivs=zeros(n)
+    for j in 2:N-1
+        invmw=sum(@view(u[2:n+1,j])./MW)
+        _flame_source_jacobian!(G,d,f.gas,f.pressure,1000u[1,j],
+            @view(u[2:n+1,j]),@view(w.X[:,j]),@view(w.h[:,j]),w.rate_caches[j];
+            cantera_compatible=(f.discretization==:finite_difference)) || return false
+        fill!(fluxleft,0); fill!(fluxright,0)
+        for face in (j-1,j)
+            dz=f.grid[face+1]-f.grid[face]
+            raw_sum=0.0
+            for k in 1:n
+                raw_sum-=w.diffusion_prefactor[k,face]*(w.X[k,face+1]-w.X[k,face])/dz
+            end
+            is_left=face==j
+            for m in 1:n
+                dxscale=(1/invmw)/MW[m]; dsum=0.0
+                for k in 1:n
+                    dx=dxscale*((k==m ? 1.0 : 0.0)-w.X[k,j])
+                    rawderivs[k]=w.diffusion_prefactor[k,face]*dx/dz*(is_left ? 1.0 : -1.0)
+                    dsum+=rawderivs[k]
+                end
+                for k in 1:n
+                    value=rawderivs[k]-u[k+1,face]*dsum
+                    is_left && k==m && (value-=raw_sum)
+                    if is_left
+                        fluxright[k,m]=value
+                    else
+                        fluxleft[k,m]=value
+                    end
+                end
+            end
+        end
+        drho_ratio=-1.0./(MW.*invmw)
+        for m in 1:n, jj in max(2,j-1):min(N-1,j+1)
+            left=f.grid[jj]-f.grid[jj-1]
+            cell=.5*(f.grid[min(jj+1,N)]-f.grid[jj-1])
+            row_is_node=jj==j
+            cp=sum(u[k+1,jj]*w.cp[k,jj]/MW[k] for k in 1:n)
+            factor=_flame_timescale/w.rho[jj]
+            transient_energy=previous===nothing ? 0.0 :
+                _flame_timescale/dt*(u[1,jj]-previous[1,jj])
+            energy_steady=row_is_node ? r[1,jj]+transient_energy : r[1,jj]
+            dcp=row_is_node ? w.cp[m,j]/MW[m] : 0.0
+            dchem=0.0; dhflux=0.0
+            for k in 1:n
+                row_is_node && (dchem+=w.h[k,j]*G[k,m+1])
+                dFleft=jj==j+1 ? fluxright[k,m] : jj==j ? fluxleft[k,m] : 0.0
+                dFright=jj==j ? fluxright[k,m] : jj==j-1 ? fluxleft[k,m] : 0.0
+                dhflux+=.5*(dFleft+dFright)*(w.h[k,jj]-w.h[k,jj-1])/(left*MW[k])
+            end
+            dAenergy=-dchem-dhflux
+            if row_is_node
+                dTdz=1000*(u[1,j]-u[1,j-1])/left
+                dAenergy-=u[end,j]*dcp*dTdz
+            end
+            value=row_is_node ? factor/(1000cp)*dAenergy-
+                energy_steady*(drho_ratio[m]+dcp/cp) : factor/(1000cp)*dAenergy
+            if f isa BurnerFlame && !isempty(f.imposed_temperature)
+                value=0.0
+            end
+            _flame_band_add!(band,B,jj,1,j,m+1,value)
+            for k in 1:n
+                ddiv=0.0
+                jj==j && (ddiv+=(fluxright[k,m]-fluxleft[k,m])/cell)
+                jj==j-1 && (ddiv+=fluxleft[k,m]/cell)
+                jj==j+1 && (ddiv-=fluxright[k,m]/cell)
+                conv=k==m ? (jj==j ? -u[end,jj]/left :
+                    jj==j+1 ? u[end,jj]/left : 0.0) : 0.0
+                dA=-ddiv+conv
+                row_is_node && (dA+=MW[k]*G[k,m+1])
+                if row_is_node
+                    asteady=MW[k]*w.source[k,jj]-
+                        (w.flux[k,jj]-w.flux[k,jj-1])/cell-
+                        u[end,jj]*(u[k+1,jj]-u[k+1,jj-1])/left
+                    value=factor*dA-factor*asteady*drho_ratio[m]-
+                        (k==m && previous!==nothing ? _flame_timescale/dt : 0.0)
+                else
+                    value=factor*dA
+                end
+                _flame_band_add!(band,B,jj,k+1,j,m+1,value)
+            end
+        end
+    end
+    if f isa FreeFlame
+        # Cantera's analytic species columns omit boundary residual rows in
+        # (Y,u) coordinates. In native (Y,m) coordinates those rows retain
+        # the velocity-column chain-rule term du/dY at fixed mass flux.
+        for (j,boundary) in ((2,1),(N-1,N))
+            invmw=sum(@view(u[2:n+1,j])./MW)
+            scale_base=u[end,j]/invmw
+            for m in 1:n
+                col_y=(j-1)*B+(m+1)
+                col_m=(j-1)*B+B
+                scale=scale_base/MW[m]
+                for k in 1:B
+                    row=(boundary-1)*B+k
+                    dRdm=band[4B-1+row-col_m,col_m]
+                    band[4B-1+row-col_y,col_y]+=dRdm*scale
+                end
+            end
+        end
+    end
+    return true
 end
 
 @inline function _flame_band_add!(band,B,j,k,jj,kk,value)

@@ -8,7 +8,14 @@ using Plots
 using DelimitedFiles
 using Profile
 
-cd("./example/ignition")
+cd(@__DIR__)
+
+if !isfile("ignition.dat")
+    withenv("MPLBACKEND" => "Agg", "ARRHENIUS_GENERATE_ONLY" => "1") do
+        python = get(ENV, "PY", "python3")
+        run(`$python ignition.py`)
+    end
+end
 
 cantera_data = readdlm("ignition.dat")
 ct_ts = cantera_data[:, 1]

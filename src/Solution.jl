@@ -1,27 +1,3 @@
-function read_species_basics(yaml)
-    n_species = length(yaml["phases"][1]["species"])
-    n_reactions = length(get(yaml,"reactions",Any[]))
-    species_names = yaml["phases"][1]["species"]
-    elements = yaml["phases"][1]["elements"]
-    n_elements = length(elements)
-
-    ele_matrix = zeros(n_elements, n_species)
-
-    _species_names =
-        [yaml["species"][i]["name"] for i = 1:length(yaml["species"])]
-
-    for (i, species) in enumerate(species_names)
-        spec = yaml["species"][findfirst(x -> x == species, _species_names)]
-        for j = 1:n_elements
-            if haskey(spec["composition"], elements[j])
-                ele_matrix[j, i] = spec["composition"][elements[j]]
-            end
-        end
-    end
-
-    return n_species, n_reactions, species_names, elements, n_elements, ele_matrix
-end
-
 function _sidecar_string(npz, key)
     return String(vec(UInt8.(npz[key])))
 end
@@ -140,15 +116,15 @@ function _validate_kinetics_dimensions(npz, ns, nr)
 end
 
 """
-    CreateSolution(mech; data_paths=String[], phase=nothing)
+    CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reader=:native, validate=true)
     
-Load the first gas phase, or the phase named `phase` with sidecar
-`<mech>.<phase>.npz`, from a YAML mechanism and its preprocessed NPZ sidecar.
-Imported species/reaction sections require a v4 sidecar. Imports are resolved
-relative to the mechanism first, then in `data_paths`. Thermochemistry and
-kinetics are evaluated in Julia after loading.
+Load the selected gas phase directly from YAML. Gas kinetics are parsed in Julia;
+an optional legacy NPZ sidecar may provide transport polynomial fits. Set
+`kinetics_reader=:sidecar` to compare against the legacy kinetics arrays. Imports
+are resolved relative to the mechanism first, then in `data_paths`.
 """
-function CreateSolution(mech; data_paths=String[], phase=nothing)
+function CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reader=:native, validate=true)
+    validate isa Bool || throw(ArgumentError("validate must be a Bool"))
     yaml = YAML.load_file(mech)
     if phase !== nothing
         names = [get(p,"name","") for p in yaml["phases"]]
@@ -156,35 +132,62 @@ function CreateSolution(mech; data_paths=String[], phase=nothing)
         selected === nothing && throw(ArgumentError("phase $(phase) not found in $(mech)"))
         yaml["phases"] = vcat([yaml["phases"][selected]], deleteat!(copy(yaml["phases"]), selected))
     end
-    npz = npzread(phase === nothing ? "$mech.npz" : "$mech.$phase.npz")
-    _validate_sidecar_metadata(npz, mech; data_paths)
-    selection = _sidecar_selection(npz)
+    kinetics_reader in (:native,:sidecar) || throw(ArgumentError("kinetics_reader must be :native or :sidecar"))
+    sidecar_path = phase === nothing ? "$mech.npz" : "$mech.$phase.npz"
+    sidecar = nothing
+    if isfile(sidecar_path)
+        if kinetics_reader === :sidecar
+            sidecar = npzread(sidecar_path)
+            _validate_sidecar_metadata(sidecar, mech; data_paths)
+        else
+            # The sidecar is optional for native gas chemistry. Ignore unreadable
+            # or stale files; only a validated sidecar may contribute transport fits.
+            candidate = try
+                npzread(sidecar_path)
+            catch
+                nothing
+            end
+            if candidate !== nothing
+                try
+                    _validate_sidecar_metadata(candidate, mech; data_paths)
+                    sidecar = candidate
+                catch
+                    sidecar = nothing
+                end
+            end
+        end
+    end
+    selection = sidecar === nothing ? nothing : _sidecar_selection(sidecar)
     phase = yaml["phases"][1]
-    if selection === nothing && (!(get(phase,"species",nothing) isa AbstractVector) ||
+    if sidecar !== nothing && selection === nothing && (!(get(phase,"species",nothing) isa AbstractVector) ||
             !all(x -> x isa AbstractString,phase["species"]) ||
             get(phase,"reactions","all") != "all")
         throw(ArgumentError("selected/imported sections require a v4 sidecar; regenerate $(mech).npz"))
     end
     yaml = _solution_species_yaml(yaml,mech,data_paths)
 
-    #### Basics
-    n_species, n_reactions, species_names,
-    elements, n_elements, ele_matrix = read_species_basics(yaml)
+    #### Thermo and species metadata
+    thermo, n_species, n_reactions, species_names, elements, n_elements, ele_matrix = _read_gas_thermo(yaml)
     if selection !== nothing
         species_names == selection["species_names"] || throw(ArgumentError("sidecar species order does not match the phase"))
         n_reactions = Int(selection["n_reactions"])
     end
 
-    #### Thermo
-    if yaml["phases"][1]["thermo"] == "ideal-gas" # switch to work with Cantera standard
-        thermo = IdealGasThermo(yaml)
-    else
-        constructorThermo = Symbol(yaml["phases"][1]["thermo"], :Thermo)
-        thermo = @eval($constructorThermo)(yaml)
-    end
-
-
     #### Kinetic data
+
+    # Kinetics arrays are parsed natively from YAML. A legacy sidecar is optional
+    # and currently supplies only transport fits, whose YAML polynomial fit path
+    # is separate from gas kinetics.
+    native_arrays = kinetics_reader === :native ?
+        _read_gas_kinetics(yaml, yaml["phases"][1], species_names; mechanism=String(mech), data_paths, validate) : nothing
+    npz = if kinetics_reader === :sidecar
+        sidecar === nothing && throw(ArgumentError("kinetics_reader=:sidecar requires $sidecar_path"))
+        sidecar
+    else
+        native_arrays
+    end
+    n_reactions = selection === nothing ? size(npz["Arrhenius_coeffs"],1) : Int(selection["n_reactions"])
+    npz = _read_gas_transport(npz, sidecar, kinetics_reader)
 
     # Inert phases have no reaction arrays. Empty NPZ entries are omitted by the
     # exporter for compatibility with NPZ.jl; restore their unambiguous shapes.

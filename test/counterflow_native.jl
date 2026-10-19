@@ -27,6 +27,7 @@ end
         # solver_stats: per-flame counters; the exported global mirrors the family.
         cstats=solver_stats(f)
         @test cstats isa CounterflowStats && solver_stats(f)===cstats
+        @test !hasproperty(cstats,:property_nodes)
         @test cstats.jacobians>0 && !isempty(cstats.grids)
         @test cstats.newton_iterations>=cstats.jacobians
         @test last(cstats.grids)==length(f.grid)
@@ -134,7 +135,7 @@ end
             for j in 1:N, k in 1:B
                 h=1e-7*max(abs(cf.state[k,j]),k==1 ? .1 : k<=n+1 ? 1e-5 : .01)
                 trial .= cf.state; trial[k,j]+=h
-                counterflow_residual!(rp,cf,trial,wp;update_transport=false)
+                counterflow_residual!(rp,cf,trial,wp;update_transport=false,update_excess=false)
                 ref[:,(j-1)*B+k].=vec((rp.-base)./h)
             end
             @test norm(J-ref,Inf)/max(1.,norm(ref,Inf))<1e-7
@@ -158,21 +159,25 @@ end
                 @test all(==(1.),scales)
 
                 guards=zeros(size(cf.state)); tol=1e-8
-                @test Arrhenius._counterflow_constraints_converged(cf,guards,tol)
+                excess_left=argmax(@view cf.state[2:n+1,1])
+                excess_right=argmax(@view cf.state[2:n+1,N])
+                @test Arrhenius._counterflow_constraints_converged(cf,guards,tol,w)
                 for (row,col) in ((1,1),(1,N),(B-1,3),(B,3),(n+2,3),
-                                  (cf.dependent_species+1,3))
+                                  (excess_left+1,1),(excess_right+1,N))
                     guards[row,col]=2tol
-                    @test !Arrhenius._counterflow_constraints_converged(cf,guards,tol)
+                    @test !Arrhenius._counterflow_constraints_converged(cf,guards,tol,w)
                     guards[row,col]=0.
                 end
-                guards[cf.dependent_species+1,3]=2e-9
-                @test !Arrhenius._counterflow_constraints_converged(cf,guards,tol)
+                guards[cf.dependent_species+1,3]=2tol
+                @test Arrhenius._counterflow_constraints_converged(cf,guards,tol,w)
+                guards .= 0.; guards[excess_left+1,1]=2e-9
+                @test !Arrhenius._counterflow_constraints_converged(cf,guards,tol,w)
                 guards .= 0.; guards[B-2,3]=1.
-                @test Arrhenius._counterflow_constraints_converged(cf,guards,tol)
+                @test Arrhenius._counterflow_constraints_converged(cf,guards,tol,w)
                 guards .= 0.
                 for value in (NaN,Inf)
                     guards[n+2,3]=value
-                    @test !Arrhenius._counterflow_constraints_converged(cf,guards,tol)
+                    @test !Arrhenius._counterflow_constraints_converged(cf,guards,tol,w)
                 end
             end
             cp=cf.control_points
@@ -220,30 +225,61 @@ end
     @test Arrhenius._counterflow_retry_steady(10)
 end
 
-@testset "diffusion solve skips transient shift on dependent row" begin
+@testset "counterflow species closure is boundary-only" begin
     gas=CreateSolution(joinpath(dirname(pathof(Arrhenius)),"..","mechanism","h2o2.yaml"))
     f=CounterflowDiffusionFlame(gas;fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",
         mdot_fuel=.24,mdot_oxidizer=.72,grid=collect(range(0.,.02;length=7)))
-    observed=Tuple{Float64,Float64,Bool,Float64}[]
-    recorder=(J,flow,old,new,skip)->begin
-        B=size(flow.state,1); dep=flow.dependent_species+1
-        before=J[4B-1,2B+dep]
-        result=Arrhenius._counterflow_transient_update!(J,flow,old,new,skip)
-        push!(observed,(old,new,skip,J[4B-1,2B+dep]-before))
-        result
+    n,N=gas.n_species,length(f.grid); dep=f.dependent_species
+    u=copy(f.state); other=dep==1 ? 2 : 1
+    u[2:n+1,1].=1e-30; u[dep+1,1]=.1; u[other+1,1]=.9
+    j=3; u[dep+1,j]+=1e-4
+    previous=copy(u); previous[dep+1,j]-=2e-5
+    w=CounterflowWorkspace(f); r=similar(u); dt=1e-5
+    counterflow_residual!(r,f,u,w;previous,dt)
+    p=w.properties; z=f.grid; im=n+4
+    jm,jp=u[im,j]>0 ? (j-1,j) : (j,j+1)
+    cell=.5*(z[j+1]-z[j-1]); dz=z[jp]-z[jm]
+    expected=Arrhenius._flame_timescale/p.rho[j]*(gas.MW[dep]*p.source[dep,j]-
+        (p.flux[dep,j]-p.flux[dep,j-1])/cell-u[im,j]*(u[dep+1,jp]-u[dep+1,jm])/dz)-
+        Arrhenius._flame_timescale/dt*(u[dep+1,j]-previous[dep+1,j])
+    @test r[dep+1,j] ≈ expected rtol=1e-13 atol=1e-13
+    @test !isapprox(r[dep+1,j],sum(@view(u[2:n+1,j]))-1;atol=1e-12)
+    excess=argmax(@view u[2:n+1,1])
+    @test excess!=dep
+    @test r[excess+1,1] ≈ sum(@view(u[2:n+1,1]))-1 atol=1e-14
+    # Near-equal majors can swap under an FD perturbation. Closure must stay
+    # on the index selected by the preceding full residual until it completes.
+    u[excess+1,1]=.500000000001; u[dep+1,1]=.499999999999
+    counterflow_residual!(r,f,u,w;previous,dt)
+    frozen=w.excess_left
+    u[dep+1,1]+=4e-12; u[excess+1,1]-=4e-12
+    @test argmax(@view u[2:n+1,1]) != frozen
+    counterflow_residual!(r,f,u,w;previous,dt,update_excess=false)
+    @test w.excess_left==frozen
+    @test r[frozen+1,1] ≈ sum(@view(u[2:n+1,1]))-1 atol=1e-14
+    counterflow_residual!(r,f,u,w;previous,dt)
+    @test w.excess_left==argmax(@view u[2:n+1,1])
+    # The actual colored FD Jacobian must preserve the selected closure row
+    # even though its perturbation is much larger than the near-tie gap.
+    u[excess+1,1]=.500000000001; u[dep+1,1]=.499999999999
+    counterflow_residual!(r,f,u,w;previous,dt)
+    frozen=w.excess_left; jac=Arrhenius._counterflow_jacobian!(f,u,w,r;
+        previous,dt,analytic=false)
+    B=size(u,1); stride=4B-2; trial=copy(u); perturbed=similar(u)
+    for k in 1:n
+        col=k+1; row=frozen+1
+        packed=stride+1+row-col
+        h=1e-7*max(abs(u[k+1,1]),1e-5)
+        trial .= u; trial[k+1,1]+=h
+        counterflow_residual!(perturbed,f,trial,w;previous,dt,update_excess=false)
+        expected_fd=(perturbed[row,1]-r[row,1])/h
+        @test jac[packed,col]≈expected_fd atol=2e-8
     end
-    solve!(f;refine_grid=false,auto=false,initial_time_step=1e-5,
-        time_step_growth_strategy=:fixed_growth,_transient_update! = recorder)
-    @test f.converged
-    @test !isempty(observed)
-    @test all(t -> t[1]!=t[2] && t[3] && t[4]==0.,observed)
-    old,new,_,_=first(observed)
-    @test abs(Arrhenius._flame_timescale*(1/old-1/new))>1e-14
-    J=zeros(4size(f.state,1)-1,length(f.state)); B=size(f.state,1); dep=f.dependent_species+1
-    recorder(J,f,old,new,false)
-    @test J[4B-1,2B+dep] != 0
+    J=zeros(4size(u,1)-1,length(u)); delta=Arrhenius._flame_timescale*(1/1e-5-1/2e-5)
+    Arrhenius._counterflow_transient_update!(J,f,1e-5,2e-5)
+    diag=4size(u,1)-1
+    @test all(J[diag,(j-1)*size(u,1)+k+1]==delta for k in 1:n)
 end
-
 @testset "solver_stats dispatch for every counterflow kind" begin
     # Constructing each public kind must yield its own stats object (Cantera
     # keeps solver_stats per instance); dispatch needs no solve.
@@ -256,6 +292,14 @@ end
     twin=CounterflowTwinPremixedFlame(gas;reactants=composition,mdot=.12,T=373.,P,width=.2)
     jet=ImpingingJet(gas;reactants=composition,mdot=.06,T_inlet=373.,T_surface=500.,P,width=.2)
     flames=(diffusion,premixed,twin,jet)
+    # The shared Cantera-coordinate bounds convert correctly for all four kinds.
+    for flame in flames
+        n=gas.n_species; j=2; state=flame.state
+        physical_u_scale=Arrhenius.R*(1000state[1,j])*sum(state[k+1,j]/gas.MW[k] for k in 1:n)/flame.pressure
+        @test collect(Arrhenius._cantera_counterflow_state_bounds(flame,state,j,n+4).*physical_u_scale) ≈ [-1e20,1e20] rtol=eps(Float64)
+        @test Arrhenius._counterflow_Vscale .* collect(Arrhenius._cantera_counterflow_state_bounds(flame,state,j,n+2)) == [-1e20,1e20]
+        @test Arrhenius._counterflow_Lscale .* collect(Arrhenius._cantera_counterflow_state_bounds(flame,state,j,n+3)) == [-1e20,1e20]
+    end
     @test all(f -> solver_stats(f) isa CounterflowStats, flames)
     stats=solver_stats.(flames)
     @test all(stats[i]!==stats[j] for i in 1:4 for j in i+1:4)

@@ -1,6 +1,6 @@
 # Arrhenius.jl
 
-Arrhenius.jl is a Julia package for reacting-flow and combustion calculations. It provides native chemistry, thermodynamics, transport, reactors, and one-dimensional flame solvers; Cantera YAML mechanisms are preprocessed into sidecar data files.
+Arrhenius.jl is a Julia package for reacting-flow and combustion calculations. It provides native chemistry, thermodynamics, transport, reactors, and one-dimensional flame solvers; Gas-phase Cantera YAML mechanisms are read directly in Julia; optional sidecars provide fitted transport data.
 
 ## Key capabilities
 
@@ -33,7 +33,7 @@ solution = solve_reactor(reactor, (0.0, 0.001); integrator=native_bdf,
 
 ## Quick start: freely propagating flame
 
-The repository includes the H₂/O₂ mechanism and its preprocessed sidecar. Run from the repository root with <code>julia --project=.</code>:
+The repository includes the H₂/O₂ mechanism. Gas chemistry is read directly from YAML; the optional sidecar supplies fitted transport data. Run from the repository root with <code>julia --project=.</code>:
 
 ~~~julia
 using Arrhenius
@@ -57,4 +57,20 @@ solve!(flame)
 
 ## Citation and license
 
-If you use Arrhenius.jl in published work, cite [“Arrhenius.jl: A Differentiable Combustion Simulation Package”](https://arxiv.org/abs/2107.06172). The package is released under the [MIT License](LICENSE).
+If you use Arrhenius.jl in published work, please cite:
+
+W. Ji, X. Su, B. Pang, S. J. Cassady, A. M. Ferris, Y. Li, Z. Ren, R. Hanson, S. Deng, “Arrhenius.jl: A Differentiable Combustion Simulation Package,” arXiv:2107.06172 [physics.chem-ph], 2021. https://arxiv.org/abs/2107.06172
+
+```bibtex
+@misc{ji2021arrhenius,
+  title         = {Arrhenius.jl: A Differentiable Combustion Simulation Package},
+  author        = {Ji, Weiqi and Su, Xingyu and Pang, Bin and Cassady, Sean Joseph and Ferris, Alison M. and Li, Yujuan and Ren, Zhuyin and Hanson, Ronald and Deng, Sili},
+  year          = {2021},
+  eprint        = {2107.06172},
+  archivePrefix = {arXiv},
+  primaryClass  = {physics.chem-ph},
+  url           = {https://arxiv.org/abs/2107.06172}
+}
+```
+
+Related publications are listed in the [documentation](https://deng-mit.github.io/Arrhenius.jl/dev/concepts/#Publications). The package is released under the [MIT License](LICENSE).

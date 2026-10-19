@@ -54,7 +54,52 @@ struct Reaction{T<:AbstractFloat}
     vk::SparseMatrixCSC{T,Int64}
     vk_sum::Array{T,1}
     plog::PlogData{T}
+    reactant_mass_action_terms::Vector{NTuple{4,Int64}}
+    product_mass_action_terms::Vector{NTuple{4,Int64}}
     blowers_masel::BlowersMaselData{T}
+end
+
+# Record the standard C1/C2/C3 classification once when the mechanism is
+# constructed. The net-production hot loop can then skip repeated sparse
+# stoichiometry lookups and directly multiply concentration factors in order.
+function _mass_action_term_plans(orders::SparseMatrixCSC, stoich::SparseMatrixCSC)
+    species, order_values = rowvals(orders), nonzeros(orders)
+    plans = fill((Int64(0),Int64(0),Int64(0),Int64(0)), size(orders, 2))
+    @inbounds for column in 1:size(orders, 2)
+        entries = nzrange(orders, column)
+        length(entries) <= 3 || continue
+        terms = 0
+        i1 = i2 = i3 = 0
+        cursor = 0
+        standard = true
+        for j in entries
+            coefficient = stoich[species[j], column]
+            if order_values[j] == coefficient && coefficient >= 0 && isinteger(coefficient)
+                order = Int(coefficient)
+                terms += order
+                for _ in 1:order
+                    cursor += 1
+                    cursor == 1 ? (i1 = species[j]) :
+                    cursor == 2 ? (i2 = species[j]) :
+                    cursor == 3 ? (i3 = species[j]) : nothing
+                end
+            else
+                standard = false
+                break
+            end
+        end
+        standard && 1 <= terms <= 3 && (plans[column] = (i1,i2,i3,Int64(terms)))
+    end
+    return plans
+end
+
+function Reaction(product,reactant,orders,reversible,arrhenius,low,troe,third,falloff,
+        falloff_troe,efficiencies,reactant_indices,product_indices,n,vk,vk_sum,
+        plog::PlogData{T}, blowers_masel::BlowersMaselData{T}) where T
+    return Reaction(product,reactant,orders,reversible,arrhenius,low,troe,third,falloff,
+        falloff_troe,efficiencies,reactant_indices,product_indices,n,vk,vk_sum,plog,
+        _mass_action_term_plans(orders, reactant),
+        _mass_action_term_plans(product, product), blowers_masel)
 end
 
 # Preserve the pre-Blowers–Masel constructor used by downstream mechanisms.

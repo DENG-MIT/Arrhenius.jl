@@ -157,7 +157,7 @@ function (rhs::ReactorRHS)(du, u, p, t)
     gas_constant = oftype(temperature, R)
     @inbounds for k in 1:ns
         workspace.X[k] = u[k] / (gas.MW[k] * inverse_mw)
-        workspace.C[k] = max(u[k], zero(u[k])) * density / gas.MW[k]
+        workspace.C[k] = u[k] * density / gas.MW[k]
     end
     cal_cp_R!(workspace.cp_R, gas, temperature, pressure, workspace.X)
     cal_h_RT!(workspace.h_mole, gas, temperature, pressure, workspace.X)
@@ -168,7 +168,7 @@ function (rhs::ReactorRHS)(du, u, p, t)
     end
     wdot!(workspace.wdot, gas.reaction, temperature, workspace.C,
           workspace.entropy, workspace.h_mole, workspace.kinetics;
-          rate_multipliers=reactor.rate_multipliers)
+          rate_multipliers=reactor.rate_multipliers, pressure=pressure)
     cv_offset = reactor.constraint === :constant_volume ? one(temperature) : zero(temperature)
     capacity, energy_source = zero(temperature), zero(temperature)
     @inbounds for k in 1:ns

@@ -4,6 +4,7 @@ using LinearAlgebra
 using SHA
 using Test
 
+include("plasma_module.jl")
 include("plasma_eedf_loader.jl")
 include("plasma_eedf_numerics.jl")
 include("plasma_native.jl")
@@ -33,15 +34,24 @@ include("real_gas_trial_native.jl")
 include("reverse_rate_refresh_native.jl")
 include("linear_burke.jl")
 include("flames_native.jl")
+include("newton_policy_options.jl")
+include("cantera_compatible_switch.jl")
+include("premixed_timestep_stats.jl")
+include("flame_allocations_native.jl")
 include("flame_factorization_cache.jl")
 include("flame_refine_cantera_native.jl")
 include("flame_refine_velocity_native.jl")
+include("flame_auto_anchor_native.jl")
+include("flame_auto_compat_burner_native.jl")
+include("flame_fixed_t_velocity_native.jl")
 include("flame_auto_staged_native.jl")
+include("flame_auto_failed_stage_native.jl")
 include("flame_initial_guess_native.jl")
 include("conservative_flames_native.jl")
 include("flame_derivatives_native.jl")
 include("flame_profile_grid_native.jl")
 include("counterflow_native.jl")
+include("counterflow_continuation_native.jl")
 include("counterflow_premixed.jl")
 include("counterflow_initial_guess_native.jl")
 include("counterflow_refine_native.jl")
@@ -51,6 +61,7 @@ include("timestep_controls_native.jl")
 include("catalytic_flames_native.jl")
 include("dusty_gas.jl")
 include("kinetics_cache.jl")
+include("mass_action_kernel_optimization.jl")
 include("negative_mass_action.jl")
 include("blowers_masel_native.jl")
 include("inert_phase.jl")
@@ -291,3 +302,7 @@ end
     @show grad[1:3]
 
 end
+include("native_gas_mechanism.jl")
+
+include("gas_mechanism_audit.jl")
+include("common_tmid_refit.jl")

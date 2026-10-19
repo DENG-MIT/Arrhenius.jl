@@ -321,7 +321,7 @@ function (rhs::NetworkRHS)(du, u, p, t; volumes=nothing)
         if node.chemistry
             wdot!(workspace.wdot, gas.reaction, state.temperature, workspace.C,
                 workspace.entropy, workspace.h_mole, workspace.kinetics;
-                rate_multipliers=node.initial.rate_multipliers)
+                rate_multipliers=node.initial.rate_multipliers, pressure=state.pressure)
             @inbounds for k in 1:gas.n_species
                 du[offset+k-1] = workspace.wdot[k] * gas.MW[k] * state.volume
             end

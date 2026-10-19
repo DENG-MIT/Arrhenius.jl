@@ -1,0 +1,16 @@
+{
+  "kind": "diffusion",
+  "mechanism": "mechanism/h2o2",
+  "T": 300.0,
+  "T_oxidizer": 500.0,
+  "P_atm": 1.0,
+  "width": 0.018,
+  "fuel": "H2:1",
+  "oxidizer": "O2:1",
+  "mdot_fuel": 282.6555329524808,
+  "mdot_oxidizer": 1354.5350332138883,
+  "transport": "mixture-averaged",
+  "ratio": 3.0,
+  "slope": 0.06,
+  "curve": 0.12
+}

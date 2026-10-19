@@ -160,7 +160,7 @@ using Arrhenius, LinearAlgebra, Test
     # holding transport fixed, as required by this modified Newton method.
     w = Arrhenius.FlameWorkspace(f)
     r = flame_residual!(similar(f.state),f,f.state,w)
-    band = copy(Arrhenius._flame_jacobian(f,f.state,w,r))
+    band = copy(Arrhenius._flame_jacobian(f,f.state,w,r;analytic=false))
     B,N = size(f.state)
     kl = 2B-1
     for (k,j) in ((1,f.anchor),(2,f.anchor+1),(B,1))

@@ -30,6 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 abstract type AbstractPremixedCounterflow end
 solver_stats(f::AbstractPremixedCounterflow)=solver_stats(f.flow)
+solver_options(f::AbstractPremixedCounterflow)=solver_stats(f).last_solve_options
 
 "Premixed reactants opposed by a prescribed product stream."
 struct CounterflowPremixedFlame{F,C} <: AbstractPremixedCounterflow
@@ -224,12 +225,13 @@ end
 function counterflow_residual!(residual,f::AbstractPremixedCounterflow,u=f.state,
         w=CounterflowWorkspace(f);kwargs...)
     counterflow_residual!(residual,f.flow,u,w;kwargs...)
-    if f isa CounterflowTwinPremixedFlame && !f.soret_enabled
+    if f isa CounterflowTwinPremixedFlame
         # The twin boundary is a symmetry plane. The independent zero-gradient
         # equations and normalization are equivalent to equal adjacent Y.
         # This form stays differentiable for negative Newton trial traces.
+        excess=w.excess_right
         for k in 1:f.gas.n_species
-            k==f.dependent_species && continue
+            k==excess && continue
             residual[k+1,end]=u[k+1,end]-u[k+1,end-1]
         end
     end
@@ -252,9 +254,13 @@ _counterflow_growth_residual!(r,f::ImpingingJet,x,w;previous=nothing,dt=Inf) =
     throw(ArgumentError("residual-ratio growth is not supported for ImpingingJet until its Surf1D wall residual is reconstructed"))
 
 function _counterflow_growth_residual!(r,f::CounterflowTwinPremixedFlame,x,w;previous=nothing,dt=Inf)
-    _counterflow_growth_residual!(r,f.flow,x,w;previous,dt)
-    # Symm1D::eval replaces the storage inlet's Dirichlet rows at the symmetry
-    # plane with zero-gradient rows (physical V and T differences).
+    _counterflow_growth_residual!(r,f.flow,x,w;previous,dt,update_excess=false)
+    # Symm1D::eval replaces the storage-inlet Dirichlet rows at the symmetry
+    # plane with zero-gradient rows, except the current excess-species closure.
+    n=f.gas.n_species; excess=w.excess_right
+    for k in 1:n
+        k==excess || (r[k+1,end]=x[k+1,end]-x[k+1,end-1])
+    end
     iv=size(x,1)-2
     r[iv,end]=_counterflow_Vscale*(x[iv,end]-x[iv,end-1])
     isempty(f.fixed_temperature) &&
@@ -394,23 +400,31 @@ function solve!(f::AbstractPremixedCounterflow;refine_grid=true,ratio=3.,slope=.
         initial_time_step=Arrhenius._COUNTERFLOW_FD_INITIAL_TIME_STEP,auto=true,
         time_step_growth_factor=1.5,time_step_growth_strategy=:fixed_growth,
         time_step_callback=nothing,time_step_regrid=0,jacobian_mode=:auto,
-        refinement_interpolation=:velocity)
+        refinement_interpolation=:velocity,newton_options=nothing,cantera_compatible::Bool=false)
     isfinite(ratio)&&ratio>1 && 0<slope<=1 && 0<curve<=1 || throw(ArgumentError("invalid refinement criteria"))
     isfinite(initial_time_step)&&initial_time_step>0 || throw(ArgumentError("positive initial time step required"))
     isfinite(prune)&&prune<=min(slope,curve) && isfinite(grid_min)&&grid_min>0 ||
         throw(ArgumentError("finite prune <= min(slope,curve) and positive grid_min required"))
+    cantera_compatible && (jacobian_mode = :auto)
     _check_timestep_controls(time_step_growth_factor,time_step_growth_strategy,time_step_regrid,jacobian_mode)
     refinement_interpolation in (:mass_flux,:velocity) ||
         throw(ArgumentError("refinement_interpolation must be :mass_flux or :velocity"))
     interpolate_velocity=refinement_interpolation===:velocity
     time_step_growth_strategy===:residual_ratio &&
         throw(ArgumentError("residual-ratio growth is unsupported for $(typeof(f)) until Cantera boundary-residual parity is validated"))
+    newton_options=Arrhenius._newton_policy(newton_options,cantera_compatible)
     reset!(_counterflow_stats(f))  # per-flame counters report this solve only
+    _counterflow_stats(f).last_solve_options=(;jacobian_mode,newton_options,
+        staged_ladder=false,auto,refine_grid,ratio,slope,curve,prune,grid_min,max_points,
+        max_time_steps,loglevel,initial_time_step,time_step_growth_factor,
+        time_step_growth_strategy,time_step_callback,time_step_regrid,refinement_interpolation)
     controls=(;growth_factor=time_step_growth_factor,growth_strategy=time_step_growth_strategy,
-        step_callback=time_step_callback,analytic=jacobian_mode===:auto)
+        step_callback=time_step_callback,analytic=jacobian_mode!==:finite_difference,newton_options)
     # The shared counterflow driver counts only successful time steps toward
     # Cantera's steady-retry cadence (SteadyStateSystem::timeStep).
-    steady!(flow)=_premixed_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...)
+    steady!(flow)=_premixed_counterflow_steady!(flow;max_time_steps,timestep,loglevel,controls...,
+        newton_maxiters=newton_options.premixed_counterflow_steady_maxiters,
+        transient_newton_maxiters=newton_options.counterflow_transient_maxiters)
     f.converged=false
     timestep=Ref(Float64(initial_time_step))
     initial_N=length(f.grid)

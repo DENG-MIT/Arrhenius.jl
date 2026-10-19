@@ -132,7 +132,34 @@ end
     @test grown>50 && gated>50 && flat>50
 end
 
-@testset "counterflow transient Jacobian algebraic mask" begin
+@testset "counterflow Cantera bound fraction and trace species" begin
+    # Mirror MultiNewton::boundStep: compute the largest admissible fraction,
+    # landing exactly on the bound. This makes a subsequent outward Newton
+    # direction a failed damped step eligible for Cantera's fresh-Jacobian retry.
+    bound=Arrhenius._counterflow_bound_fraction
+    lower,upper=-1e-7,1e5
+    for y in (0.0,1e-25,-1e-25,-1e-7)
+        alpha=bound(y,-1e-6,lower,upper)
+        reference_trial=y-alpha*1e-6
+        @test reference_trial>=lower-1e-30
+        @test reference_trial≈max(y-1e-6,lower) atol=1e-30
+    end
+    @test bound(0.0,-1e-6,lower,upper)≈0.1 rtol=1e-14
+    @test bound(1e-25,-1e-6,lower,upper)≈0.1 rtol=1e-14
+    @test bound(-1e-25,-1e-6,lower,upper)≈0.1 rtol=1e-14
+    @test bound(-1e-7,-1e-6,lower,upper)==0.0
+    # A first step may land on the lower bound exactly; the next outward
+    # Newton direction must return zero, matching Cantera's refresh trigger.
+    @test bound(0.0,-1e-6,lower,upper)==0.1
+    @test bound(lower,-1e-12,lower,upper)==0.0
+    # Cantera's lower branch intentionally has no zero clamp: if the current
+    # value is already below lower and the step moves farther down, the
+    # returned fraction is negative. The upper branch does clamp this case.
+    @test bound(lower-1e-7,-1e-6,lower,upper)≈-0.1 rtol=1e-14
+    @test bound(upper+1e-7,1e-6,lower,upper)==0.0
+end
+
+@testset "counterflow transient Jacobian differential mask" begin
     gas=CreateSolution(joinpath(@__DIR__,"..","mechanism","h2o2.yaml"))
     f=CounterflowDiffusionFlame(gas;fuel="H2:1,AR:1",oxidizer="O2:.2,AR:.8",
         mdot_fuel=.24,mdot_oxidizer=.72,grid=collect(range(0.,.02;length=7)))
@@ -141,11 +168,11 @@ end
     old=copy(Arrhenius._counterflow_jacobian!(f,f.state,w,r;previous,dt=1e-5,analytic=false))
     updated=copy(old)
     Arrhenius._counterflow_transient_update!(updated,f,1e-5,Inf)
-    B,N=size(f.state); diagonal=4B-1; dep=f.dependent_species+1
-    # Cantera shifts only differential rows. The eliminated species is an
-    # algebraic sum(Y)=1 constraint in native coordinates, including interiors.
+    B,N=size(f.state); diagonal=4B-1
+    # Every interior species equation is differential; closure rows exist only
+    # at boundaries and therefore receive no pseudo-time shift.
     for j in 1:N,k in 1:B
-        shift=1<j<N && k<=gas.n_species+2 && k!=dep ? 10. : 0.
+        shift=1<j<N && k<=gas.n_species+2 ? 10. : 0.
         @test updated[diagonal,(j-1)*B+k]-old[diagonal,(j-1)*B+k]≈shift atol=1e-10
     end
     counterflow_residual!(r,f,f.state,w)
@@ -180,6 +207,73 @@ function Arrhenius._counterflow_newton!(f::CounterflowBudgetFixture,w;previous=n
     f.state[1,1]+=1
     return true
 end
+mutable struct BoundRefreshWorkspace
+    band::Matrix{Float64}
+    jacobian::Matrix{Float64}
+    pivots::Vector{LinearAlgebra.BlasInt}
+    jac_age::Int
+    jac_dt::Float64
+    jac_valid::Bool
+    jac_evals::Int
+end
+mutable struct BoundRefreshNewtonFixture
+    state::Matrix{Float64}
+    gas::NamedTuple
+    control_points::Nothing
+    dependent_species::Int
+    residual_calls::Int
+end
+function Arrhenius.counterflow_residual!(r,f::BoundRefreshNewtonFixture,u,w;kwargs...)
+    f.residual_calls+=1
+    fill!(r,0); r[2,1]=1.0
+    return r
+end
+function Arrhenius._counterflow_jacobian!(f::BoundRefreshNewtonFixture,u,w,r;kwargs...)
+    fill!(w.band,0)
+    for k in 1:length(u)
+        w.band[15,k]=1
+    end
+    return w.band
+end
+@testset "counterflow stale Jacobian retries a negative bound failure" begin
+    # The identical production failure retries only when the cached Jacobian
+    # is stale (age > 1): the second attempt evaluates one fresh Jacobian,
+    # then the fresh-Jacobian failure ends the solve without another retry.
+    lower=-1e-7
+    state=ones(4,1); state[2]=lower-1e-7
+    f=BoundRefreshNewtonFixture(state,(n_species=1,),nothing,1,0)
+    band=zeros(22,4)
+    for k in 1:4
+        band[15,k]=1
+    end
+    _,pivots=LinearAlgebra.LAPACK.gbtrf!(7,7,4,band)
+    w=BoundRefreshWorkspace(copy(band),copy(band),pivots,2,Inf,true,0)
+    @test !Arrhenius._counterflow_newton!(f,w;maxiters=4)
+    @test w.jac_evals==1
+    @test w.jac_age==1 # retry ended on the fresh Jacobian
+    @test f.residual_calls==2 # initial residual on each damped attempt
+end
+
+@testset "counterflow negative bound fraction fails before trial evaluation" begin
+    # Exercise the production Newton path, not just boundStep: the native
+    # species value is already below its lower bound and Newton points farther
+    # out. Cantera's asymmetric boundStep returns a negative fraction, which
+    # dampStep rejects (<1e-10) before evaluating any trial residual.
+    lower=-1e-7
+    state=ones(4,1); state[2]=lower-1e-7
+    f=BoundRefreshNewtonFixture(state,(n_species=1,),nothing,1,0)
+    band=zeros(22,4)
+    for k in 1:4
+        band[15,k]=1
+    end
+    _,pivots=LinearAlgebra.LAPACK.gbtrf!(7,7,4,band)
+    w=BoundRefreshWorkspace(copy(band),copy(band),pivots,0,Inf,false,0)
+    @test Arrhenius._counterflow_bound_fraction(state[2,1],-1.0,lower,1.00001)<0
+    @test !Arrhenius._counterflow_newton!(f,w;maxiters=1)
+    @test f.residual_calls==1 # initial residual only; no damped trial was evaluated
+    @test w.jac_evals==1
+end
+
 @testset "counterflow time-step budget and steady cadence" begin
     # The transient budget caps successful steps (the first two attempts fail
     # in this oracle), and an accepted final step returns before another steady
