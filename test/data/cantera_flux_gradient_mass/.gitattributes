@@ -1,0 +1,3 @@
+# Keep the upstream YAML bytes, including whitespace in the description.
+h2o2.yaml text eol=lf whitespace=-blank-at-eol
+h2o2.yaml.npz -text
