@@ -50,10 +50,10 @@ function surface_flow_properties(flow::SurfaceFlowReactor,Y)
             mass_flux=flow.mass_flux,momentum_flux=flow.momentum_flux,molecular_weight=MW)
 end
 
-struct SurfaceFlowRHS{F}
+struct SurfaceFlowRHS{F,W}
     flow::F
     surface_workspace::SurfaceWorkspace
-    gas_workspace::ReactorWorkspace{Float64}
+    gas_workspace::W
     trial::Vector{Float64}
     plus::Vector{Float64}
     minus::Vector{Float64}

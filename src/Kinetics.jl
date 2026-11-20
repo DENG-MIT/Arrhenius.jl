@@ -694,8 +694,9 @@ function wdot!(
     pressure=nothing,
     activity_concentrations=nothing,
     get_rate_constants=false,
+    reverse_plan=nothing,
 )
-    _rate_factors!(reaction,T,C,S0,h_mole,workspace;
+    _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan;
         rate_multipliers,log_rate_data,temperature_cache,pressure)
     kf,kr=workspace.kf,workspace.kr
     get_rate_constants && return (;forward=kf,reverse=kr,equilibrium=workspace.equilibrium_constants)

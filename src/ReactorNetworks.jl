@@ -216,11 +216,11 @@ mutable struct NetworkNodeState
     internal_energy::Float64
 end
 
-struct NetworkRHS{N,S}
+struct NetworkRHS{N,S,W}
     network::N
     states::S
     state_vector::Vector{NetworkNodeState}
-    workspaces::Vector{ReactorWorkspace{Float64}}
+    workspaces::Vector{W}
     mass_flow_rates::Vector{Float64}
     wall_heat_rates::Vector{Float64}
     energy_flux::Vector{Float64}

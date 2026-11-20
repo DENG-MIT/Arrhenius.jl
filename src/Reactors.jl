@@ -87,7 +87,7 @@ end
 "Return an independent initial state vector `[mass_fractions; temperature]`."
 reactor_state(reactor::IdealGasReactor) = vcat(reactor.mass_fractions, reactor.temperature)
 
-struct ReactorWorkspace{T}
+struct ReactorWorkspace{T,P}
     X::Vector{T}
     C::Vector{T}
     cp_R::Vector{T}
@@ -95,11 +95,13 @@ struct ReactorWorkspace{T}
     entropy::Vector{T}
     wdot::Vector{T}
     kinetics::KineticsWorkspace{T}
+    reverse_plan::P
 end
 
 function ReactorWorkspace(gas::Solution, ::Type{T}) where {T}
     return ReactorWorkspace(ntuple(_ -> zeros(T, gas.n_species), 6)...,
-                            KineticsWorkspace(gas.reaction, T))
+                            KineticsWorkspace(gas.reaction, T),
+                            _ReversibleRatePlan(gas.reaction))
 end
 
 "A reusable in-place ODE function. Use a separate instance for each concurrent solve."
@@ -168,7 +170,8 @@ function (rhs::ReactorRHS)(du, u, p, t)
     end
     wdot!(workspace.wdot, gas.reaction, temperature, workspace.C,
           workspace.entropy, workspace.h_mole, workspace.kinetics;
-          rate_multipliers=reactor.rate_multipliers, pressure=pressure)
+          rate_multipliers=reactor.rate_multipliers, pressure=pressure,
+          reverse_plan=workspace.reverse_plan)
     cv_offset = reactor.constraint === :constant_volume ? one(temperature) : zero(temperature)
     capacity, energy_source = zero(temperature), zero(temperature)
     @inbounds for k in 1:ns
