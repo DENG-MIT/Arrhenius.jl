@@ -1,4 +1,4 @@
-# Native gas-phase YAML to the arrays consumed by `Reaction`.
+# Native gas-phase YAML to the arrays consumed by `Reactions`.
 # The representation deliberately mirrors the legacy sidecar schema so the
 # kinetics evaluator remains independent of the input format.
 

@@ -3,13 +3,13 @@ import ForwardDiff
 # Native gas thermochemistry composed with the fixed Boltzmann collision model.
 struct _PlasmaThermalData
     thermo::IdealGasThermo{Float64}
-    reaction::Reaction{Float64}
+    reaction::Reactions{Float64}
     chebyshev_indices::Vector{Int}
     chebyshev_coefficients::Vector{Matrix{Float64}}
     chebyshev_temperature_ranges::Vector{Tuple{Float64,Float64}}
     chebyshev_pressure_ranges::Vector{Tuple{Float64,Float64}}
     eedf_model::EEDFModel
-    reverse_plan::_ReversibleRatePlan{Reaction{Float64},Vector{Bool}}
+    reverse_plan::_ReversibleRatePlan{Reactions{Float64},Vector{Bool}}
 end
 function _PlasmaThermalData(thermo,reaction,indices,coefficients,tranges,pranges,model)
     _PlasmaThermalData(thermo,reaction,indices,coefficients,tranges,pranges,model,

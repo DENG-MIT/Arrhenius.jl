@@ -47,8 +47,8 @@ function _convert_precision(plog::PlogData, ::Type{T}) where {T<:AbstractFloat}
     )
 end
 
-function _convert_precision(reaction::Reaction, ::Type{T}) where {T<:AbstractFloat}
-    return Reaction(
+function _convert_precision(reaction::Reactions, ::Type{T}) where {T<:AbstractFloat}
+    return Reactions(
         _precision_sparse(reaction.product_stoich_coeffs, T, "product stoichiometry"),
         _precision_sparse(reaction.reactant_stoich_coeffs, T, "reactant stoichiometry"),
         _precision_sparse(reaction.reactant_orders, T, "reactant orders"),

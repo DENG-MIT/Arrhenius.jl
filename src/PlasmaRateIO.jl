@@ -302,7 +302,7 @@ function _plasma_boltzmann_mechanism(root, ph, path, data_paths, atomic_weights)
     order_sparse, vk = sparse(Float64.(orders)), sparse(stoichiometry)
     i_reactant = [Int64.(findall(!iszero, @view orders[:, j])) for j in 1:n_reactions]
     i_product = [Int64.(findall(>(0), @view products[:, j])) for j in 1:n_reactions]
-    reaction = Reaction(product_sparse, reactant_sparse, order_sparse, reversible,
+    reaction = Reactions(product_sparse, reactant_sparse, order_sparse, reversible,
         arrhenius, _plasma_matrix(low_rows), _plasma_matrix(troe_rows),
         index_three_body, index_falloff, index_falloff_troe, sparse(efficiencies),
         i_reactant, i_product, n_reactions, vk, vec(Float64.(sum(vk, dims=1))),

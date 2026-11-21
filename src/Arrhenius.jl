@@ -7,6 +7,9 @@ module Arrhenius
 
     include("Constants.jl")
     include("BlowersMasel.jl")
+    include("reactions/AbstractReactions.jl")
+    include("reactions/Reactions.jl")
+    include("reactions/ReorderedReactions.jl")
     include("DataStructure.jl")
     include("GasMechanismKineticsIO.jl")
     include("GasMechanismThermoIO.jl")
@@ -44,7 +47,7 @@ include("SignedEquilibrium.jl")
             solve_catalytic, catalytic_diagnostics
         import ..Arrhenius: reactor_state, reactor_rhs, reactor_jacobian!, reactor_problem,
             reactor_properties, solve_reactor, _ReversibleRatePlan, _nasa7_coefficients,
-            _extended_thermo, _reactor_composition, _rate_factors!, _mass_action!, Reaction
+            _extended_thermo, _reactor_composition, _rate_factors!, _mass_action!, Reactions
 
         include("PlasmaEEDFTypes.jl")
         include("PlasmaEEDFIO.jl")
