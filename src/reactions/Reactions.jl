@@ -38,9 +38,7 @@ end
 
 """Whole-mechanism reaction data in the mechanism file's own reaction order.
 
-See [`AbstractReactions`](@ref) for the type hierarchy this participates in,
-and [`ReorderedReactions`](@ref) for the bucketed-by-kind variant built from
-one of these for faster scalar evaluation at scale.
+See [`AbstractReactions`](@ref) for the type hierarchy this participates in.
 """
 struct Reactions{T<:AbstractFloat} <: AbstractReactions{T}
     product_stoich_coeffs::SparseMatrixCSC{T,Int64}
