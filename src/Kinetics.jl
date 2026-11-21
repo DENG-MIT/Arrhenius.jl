@@ -102,7 +102,7 @@ struct LogRateData{T<:AbstractFloat}
     plog_ea::Vector{T}
 end
 
-function LogRateData(reaction::Reactions, ::Type{T}=Float32) where {T<:AbstractFloat}
+function LogRateData(reaction::AbstractReactions, ::Type{T}=Float32) where {T<:AbstractFloat}
     arrays = (
         reaction.Arrhenius_coeffs,
         reaction.Arrhenius_0,
@@ -238,7 +238,7 @@ mutable struct KineticsWorkspace{T}
     rates_of_progress::Vector{T}
 end
 
-function KineticsWorkspace(reaction::Reactions, ::Type{T}=Float64) where {T}
+function KineticsWorkspace(reaction::AbstractReactions, ::Type{T}=Float64) where {T}
     n = reaction.n_reactions
     return KineticsWorkspace{T}(
         zeros(T, n),
@@ -264,7 +264,7 @@ mutable struct _KineticsTemperatureCache
     pressure::Float64
     plog::Vector{Float64}
 end
-_KineticsTemperatureCache(reaction::Reactions) = _KineticsTemperatureCache(NaN,
+_KineticsTemperatureCache(reaction::AbstractReactions) = _KineticsTemperatureCache(NaN,
     zeros(reaction.n_reactions),zeros(length(reaction.index_falloff)),
     zeros(size(reaction.Troe_,1)),zeros(reaction.n_reactions),
     NaN,zeros(length(reaction.plog.reaction_indices)))
@@ -278,7 +278,7 @@ _KineticsTemperatureCache(reaction::Reactions) = _KineticsTemperatureCache(NaN,
     return value > 0 ? value^order : zero(value)
 end
 
-function _mass_action!(workspace, reaction::Reactions, C)
+function _mass_action!(workspace, reaction::AbstractReactions, C)
     reactants = reaction.reactant_orders
     products = reaction.product_stoich_coeffs
     ri, rv = rowvals(reactants), nonzeros(reactants)
@@ -434,7 +434,7 @@ struct _ReversibleRatePlan{R,V}
     flags::V
     reversible::Vector{Int}
 end
-function _ReversibleRatePlan(reaction::Reactions)
+function _ReversibleRatePlan(reaction::AbstractReactions)
     flags=copy(reaction.is_reversible)
     length(flags)==reaction.n_reactions || throw(DimensionMismatch("reaction reversibility mask has the wrong length"))
     _ReversibleRatePlan(reaction,flags,findall(flags))
