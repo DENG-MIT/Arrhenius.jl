@@ -20,6 +20,7 @@ module Arrhenius
     include("Magic.jl")
     include("Thermo.jl")
     include("Kinetics.jl")
+    include("reactions/ReorderedReactionsKernels.jl")
     include("Transport.jl")
     include("IonTransport.jl")
     include("MulticomponentTransport.jl")

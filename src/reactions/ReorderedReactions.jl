@@ -2,17 +2,28 @@
     ReorderedReactions(reactions::Reactions)
 
 Build a [`ReorderedReactions`](@ref) from `reactions`, bucketing reactions
-into contiguous ranges by kind -- plain, then three-body, then falloff --
-instead of `Reactions`' original mechanism-file order. `_rate_factors!`,
-`_mass_action!` and `wdot!` are untyped/duck-typed over their `reaction`
-argument, so every existing evaluator keeps working unchanged against a
-`ReorderedReactions` value: it exposes the exact same field names as
-`Reactions`, just column/row-permuted so that `index_three_body` and
-`index_falloff` become plain contiguous ranges (`index_three_body_start:
-index_falloff_start-1` and `index_falloff_start:n_reactions`) rather than
-scattered index lists. That removes the gather/scatter indirection identified
-as the scaling bottleneck in `validation/kinetics_scalar_scaling.md`, while
-every value stays bit-identical to the unreordered evaluation.
+into contiguous ranges -- plain-irreversible, plain-reversible, three-body,
+then falloff -- instead of `Reactions`' original mechanism-file order.
+`_rate_factors!`, `_mass_action!` and `wdot!` are untyped/duck-typed over
+their `reaction` argument, so every existing evaluator keeps working
+unchanged against a `ReorderedReactions` value: it exposes the exact same
+field names as `Reactions`, just column/row-permuted so that
+`index_three_body`/`index_falloff` become plain contiguous ranges rather
+than scattered index lists, and `index_rev_start` marks where
+"reactions that might need reverse-rate work" begins. That removes the
+gather/scatter indirection identified in
+`validation/kinetics_scalar_scaling.md`, while every value stays
+bit-identical (to floating-point roundoff) to the unreordered evaluation.
+
+This also gives `_rate_factors!`/`wdot!` a specialized method
+([`ReorderedReactionsKernels.jl`](@ref)) that skips the expensive
+delta_s/delta_h/equilibrium-constant computation for the whole
+plain-irreversible prefix in one contiguous range check, instead of
+consulting an `is_reversible`/`_ReversibleRatePlan` index list per reaction
+-- mirroring the LLMImprovments fork's `ReorderedKinetics`/`wdot_func!`
+design, which benchmarks ~7-12% faster than the generic evaluator on
+h2o2/h2_li_2004/gri30/nc7_ver3.1_mech (see
+`validation/kinetics_scalar_scaling.md`).
 
 `wdot!`'s net production-rate output does not depend on reaction order (it
 sums each reaction's contribution independently), so calling it with a
@@ -46,6 +57,7 @@ struct ReorderedReactions{T<:AbstractFloat} <: AbstractReactions{T}
     reactant_mass_action_terms::Vector{NTuple{4,Int64}}
     product_mass_action_terms::Vector{NTuple{4,Int64}}
     blowers_masel::BlowersMaselData{T}
+    index_rev_start::Int64
     index_three_body_start::Int64
     index_falloff_start::Int64
     # original_index[new_i] = old_i (this reaction's position in `reactions`'
@@ -63,12 +75,26 @@ function ReorderedReactions(reactions::Reactions{T}) where {T}
     @inbounds for i in reactions.index_falloff
         is_plain[i] = false
     end
-    plain = findall(is_plain)
+
+    # Plain reactions split further into irreversible-first, reversible-second
+    # so the hot equilibrium-constant computation can skip the irreversible
+    # prefix with one range check instead of consulting is_reversible/a
+    # _ReversibleRatePlan index list per reaction (three-body/falloff stay
+    # one bucket each regardless of reversibility -- both are a small
+    # fraction of any real mechanism, so splitting them further isn't worth
+    # the bucket-order bug surface; see eab69a7's own BucketedEfficiencyCache
+    # note on a similarly tiny-fraction optimization).
+    plain_irreversible = Int64[]
+    plain_reversible = Int64[]
+    @inbounds for i in 1:n
+        is_plain[i] || continue
+        push!(reactions.is_reversible[i] ? plain_reversible : plain_irreversible, i)
+    end
 
     # A reaction's Cantera `type:` selects exactly one of plain/three-body/
     # falloff at parse time (GasMechanismKineticsIO.jl's type dispatch), so
     # these three groups are disjoint and together cover every reaction.
-    perm = vcat(plain, reactions.index_three_body, reactions.index_falloff)
+    perm = vcat(plain_irreversible, plain_reversible, reactions.index_three_body, reactions.index_falloff)
     length(perm) == n && allunique(perm) ||
         throw(ArgumentError("index_three_body/index_falloff overlap or are out of range; cannot reorder"))
 
@@ -78,7 +104,8 @@ function ReorderedReactions(reactions::Reactions{T}) where {T}
         reordered_index[old_i] = new_i
     end
 
-    index_three_body_start = length(plain) + 1
+    index_rev_start = length(plain_irreversible) + 1
+    index_three_body_start = index_rev_start + length(plain_reversible)
     index_falloff_start = index_three_body_start + length(reactions.index_three_body)
 
     remap(indices) = [reordered_index[i] for i in indices]
@@ -120,6 +147,7 @@ function ReorderedReactions(reactions::Reactions{T}) where {T}
         reactions.reactant_mass_action_terms[perm],
         reactions.product_mass_action_terms[perm],
         blowers_masel,
+        index_rev_start,
         index_three_body_start,
         index_falloff_start,
         original_index,
