@@ -87,7 +87,22 @@ end
 "Return an independent initial state vector `[mass_fractions; temperature]`."
 reactor_state(reactor::IdealGasReactor) = vcat(reactor.mass_fractions, reactor.temperature)
 
-struct ReactorWorkspace{T,P}
+"""
+    ReactorWorkspace(gas, ::Type{T}; use_reordered_kinetics=false, rate_multipliers=nothing)
+
+`reordered` is `nothing` by default (the hot path evaluates `gas.reaction` in
+its own mechanism-file order, exactly as before). Pass
+`use_reordered_kinetics=true` to instead build a one-time
+[`ReorderedReactions`](@ref) plan and evaluate kinetics against it --
+bucketed by reaction kind for faster scalar evaluation at scale (see
+`validation/kinetics_scalar_scaling.md`). This is purely an internal
+performance detail: `wdot!`'s species-indexed output does not depend on
+reaction order, so the reactor RHS is unaffected either way (to floating
+point roundoff). `reordered_rate_multipliers` is the one-time gather of a
+reactor's `rate_multipliers` (given in mechanism order) into the matching
+bucket order, computed once here rather than on every RHS evaluation.
+"""
+struct ReactorWorkspace{T,P,Q,M}
     X::Vector{T}
     C::Vector{T}
     cp_R::Vector{T}
@@ -96,12 +111,20 @@ struct ReactorWorkspace{T,P}
     wdot::Vector{T}
     kinetics::KineticsWorkspace{T}
     reverse_plan::P
+    reordered::Q
+    reordered_rate_multipliers::M
 end
 
-function ReactorWorkspace(gas::Solution, ::Type{T}) where {T}
+function ReactorWorkspace(gas::Solution, ::Type{T}; use_reordered_kinetics::Bool=false,
+                          rate_multipliers=nothing) where {T}
+    reordered = use_reordered_kinetics ? ReorderedReactions(gas.reaction) : nothing
+    reaction = isnothing(reordered) ? gas.reaction : reordered
+    reordered_rate_multipliers = isnothing(reordered) || isnothing(rate_multipliers) ? nothing :
+        [rate_multipliers[original_reaction_index(reordered, i)] for i in 1:gas.n_reactions]
     return ReactorWorkspace(ntuple(_ -> zeros(T, gas.n_species), 6)...,
-                            KineticsWorkspace(gas.reaction, T),
-                            _ReversibleRatePlan(gas.reaction))
+                            KineticsWorkspace(reaction, T),
+                            _ReversibleRatePlan(reaction),
+                            reordered, reordered_rate_multipliers)
 end
 
 "A reusable in-place ODE function. Use a separate instance for each concurrent solve."
@@ -123,11 +146,17 @@ initial state; use `reactor_jacobian!` with solvers requiring derivatives.
 
 Negative trial mass fractions are clipped only when evaluating reaction
 concentrations. The state and its mass/element balances are never projected.
+
+`use_reordered_kinetics=true` evaluates chemistry through a
+`ReorderedReactions` plan bucketed by reaction kind instead of the
+mechanism's own reaction order -- an opt-in internal performance detail
+with no effect on the RHS itself (see `ReactorWorkspace`).
 """
-function reactor_rhs(reactor::IdealGasReactor)
+function reactor_rhs(reactor::IdealGasReactor; use_reordered_kinetics::Bool=false)
     u0 = reactor_state(reactor)
-    return ReactorRHS(reactor, ReactorWorkspace(reactor.gas, eltype(u0)),
-                      copy(u0), zero(u0), zero(u0), zero(u0))
+    workspace = ReactorWorkspace(reactor.gas, eltype(u0); use_reordered_kinetics,
+                                  rate_multipliers=reactor.rate_multipliers)
+    return ReactorRHS(reactor, workspace, copy(u0), zero(u0), zero(u0), zero(u0))
 end
 
 function _reactor_tpρ(reactor, u)
@@ -168,9 +197,11 @@ function (rhs::ReactorRHS)(du, u, p, t)
         workspace.h_mole[k] *= gas_constant * temperature
         workspace.entropy[k] *= gas_constant
     end
-    wdot!(workspace.wdot, gas.reaction, temperature, workspace.C,
+    reaction = isnothing(workspace.reordered) ? gas.reaction : workspace.reordered
+    multipliers = isnothing(workspace.reordered) ? reactor.rate_multipliers : workspace.reordered_rate_multipliers
+    wdot!(workspace.wdot, reaction, temperature, workspace.C,
           workspace.entropy, workspace.h_mole, workspace.kinetics;
-          rate_multipliers=reactor.rate_multipliers, pressure=pressure,
+          rate_multipliers=multipliers, pressure=pressure,
           reverse_plan=workspace.reverse_plan)
     cv_offset = reactor.constraint === :constant_volume ? one(temperature) : zero(temperature)
     capacity, energy_source = zero(temperature), zero(temperature)
@@ -278,12 +309,14 @@ Prepare a solver-independent named tuple `(f, jac, tgrad, u0, tspan, p)`.
 The callbacks use the SciML in-place calling convention. `tgrad` is zero for
 this autonomous system. Construct a solver's ODE problem from these fields.
 Each call allocates independent workspaces for safe concurrent integrations.
+
+`use_reordered_kinetics=true` forwards to `reactor_rhs` (see there).
 """
-function reactor_problem(reactor::IdealGasReactor, tspan)
+function reactor_problem(reactor::IdealGasReactor, tspan; use_reordered_kinetics::Bool=false)
     length(tspan) == 2 || throw(ArgumentError("tspan must contain start and end times"))
     all(isfinite, tspan) && tspan[2] > tspan[1] ||
         throw(ArgumentError("tspan must be finite and strictly increasing"))
-    rhs = reactor_rhs(reactor)
+    rhs = reactor_rhs(reactor; use_reordered_kinetics)
     jac = (J, u, p, t) -> reactor_jacobian!(J, u, rhs, t)
     tgrad = (du, u, p, t) -> (fill!(du, zero(eltype(du))); nothing)
     return (f=rhs, jac=jac, tgrad=tgrad, u0=reactor_state(reactor),
@@ -308,8 +341,8 @@ solution = solve_reactor(reactor, (0.0, 0.001); integrator=bdf,
                          reltol=1e-8, abstol=1e-14, saveat=1e-5)
 ```
 """
-function solve_reactor(reactor::IdealGasReactor, tspan; integrator, kwargs...)
-    return integrator(reactor_problem(reactor, tspan); kwargs...)
+function solve_reactor(reactor::IdealGasReactor, tspan; integrator, use_reordered_kinetics::Bool=false, kwargs...)
+    return integrator(reactor_problem(reactor, tspan; use_reordered_kinetics); kwargs...)
 end
 
 export IdealGasReactor, ReactorRHS, reactor_state, reactor_rhs
