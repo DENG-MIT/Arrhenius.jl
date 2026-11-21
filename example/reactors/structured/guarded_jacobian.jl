@@ -15,8 +15,8 @@ mutable struct GuardedStructuredJacobian{A}
     last_used_fallback::Bool
     last_boundary_reaction::Int
 end
-function guarded_structured_jacobian(reactor)
-    jac = structured_trial_jacobian(reactor)
+function guarded_structured_jacobian(reactor; builder=structured_trial_jacobian)
+    jac = builder(reactor)
     GuardedStructuredJacobian(jac, zeros(reactor.gas.n_species+1), 0, 0, 0, 0, false, 0)
 end
 function first_anyn_boundary(forward, reverse, reversible, C)
