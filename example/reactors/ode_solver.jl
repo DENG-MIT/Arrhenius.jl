@@ -27,9 +27,8 @@ Other reactors use the dense Jacobian supplied by `reactor_problem`.
 Set `linear_solver=:dense` to use the guarded analytic Jacobian and signed RHS
 with QNDF's ordinary dense linear solver for supported reactors. The default
 `linear_solver=:auto` retains automatic structured selection. `linear_solver=
-:generated` is `:dense` with `structured_jacobian.jl`'s hand-written,
-runtime-looped Jacobian replaced by `generated_jacobian.jl`'s mechanism-
-specialized compiled one -- same scope, same values, measured ~1.2-1.4x
+:generated` is `:dense` with codegenerated  mechanism-
+specialized compiled jacobians -- same idea as analytical, measured ~1.2-1.4x
 faster per Jacobian evaluation.
 """
 function native_bdf(problem; linear_solver=:auto, kwargs...)
@@ -132,16 +131,7 @@ if !isdefined(@__MODULE__, :native_rosenbrock23) &&
 Integrate with `OrdinaryDiffEqRosenbrock.Rosenbrock23()` instead of
 `native_bdf`'s `QNDF`. Rosenbrock methods evaluate (a factorization of) the
 Jacobian on nearly every accepted step rather than reusing one across many
-steps via Newton-chord iteration the way BDF/QNDF does -- so unlike
-`native_bdf`, where the generated Jacobian's per-call speedup is diluted by
-infrequent Jacobian rebuilds, it shows up close to directly here. Measured on
-`gri30` (`validation/structured_jacobian_codegen.md`): `njacs` is ~58% of
-total steps for Rosenbrock23 here, versus <1% for `native_bdf`'s QNDF, and
-the generated Jacobian is ~1.1x faster end to end versus ~1.01x for
-`native_bdf`. Requires the optional structured-reactor environment (same gate
-as `native_bdf`'s `:dense`/`:generated` options); `linear_solver=:analytic`
-uses `structured_trial_jacobian`, `linear_solver=:generated` uses
-`generated_structured_jacobian`. Dense linear algebra throughout --
+steps via Newton-chord iteration the way BDF/QNDF does --  Dense linear algebra throughout --
 `Rosenbrock23` does not use the sparse KLU/bordered solve `native_bdf`'s
 `:auto` option does.
 """

@@ -27,11 +27,10 @@ include("qndf_structured_adapter.jl")
 """
 `builder` selects which `concentration_core`-filling implementation the
 guarded Jacobian uses: `structured_trial_jacobian` (default, hand-written
-runtime loop) or `generated_structured_jacobian` (`generated_jacobian.jl`,
-mechanism-specialized compiled kernel -- same scope, same guard, same
-values, measured ~1.2-1.4x faster). Everything downstream (the
-ambiguous-zero-crossing fallback here, and the KLU/QNDF wiring in
-`qndf_structured_adapter`) is unaffected by this choice.
+runtime loop) or `generated_structured_jacobian` (`generated_jacobian.jl`.
+ Everything downstream (the ambiguous-zero-crossing fallback here, 
+ and the KLU/QNDF wiring in `qndf_structured_adapter`) 
+ is unaffected by this choice.
 """
 function try_guarded_jacobian(problem; builder=structured_trial_jacobian)
     problem.f isa Arrhenius.ReactorRHS || return nothing

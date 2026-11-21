@@ -569,8 +569,7 @@ if @isdefined(native_rosenbrock23)
 @testset "native_rosenbrock23 selection and correctness" begin
     # Rosenbrock methods evaluate the Jacobian on nearly every accepted step
     # (no BDF-style Newton-chord reuse), so this is the configuration where the
-    # generated Jacobian's per-call speedup actually shows up end to end --
-    # see validation/structured_jacobian_codegen.md for the measured numbers.
+    # generated Jacobian's per-call speedup shows up
     gas = CreateSolution(H2O2)
     reactor = IdealGasReactor(gas; temperature=1200.0, pressure=one_atm,
         mole_fractions=Dict("H2"=>2.0,"O2"=>1.0,"AR"=>3.76))
