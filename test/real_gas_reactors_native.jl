@@ -81,7 +81,7 @@ end
         old = gas.reaction
         fields = ntuple(i -> getfield(old,i),fieldcount(typeof(old))-1)
         bm = Arrhenius.BlowersMaselData([1],reshape([1.,0.,1e7,1e9],1,4))
-        reaction = Arrhenius.Reaction(fields...,bm)
+        reaction = Arrhenius.Reactions(fields...,bm)
         badgas = Arrhenius.Solution(gas.n_species,gas.n_reactions,gas.MW,gas.species_names,
             gas.elements,gas.ele_matrix,gas.thermo,gas.trans,reaction)
         @test_throws ArgumentError RedlichKwongReactor(badgas,model;temperature=1400.,mole_fractions=X)

@@ -58,7 +58,7 @@ include(joinpath(@__DIR__,"..","example","reactors","real_gas_ad_jacobian.jl"))
     old=gas.reaction
     fields=ntuple(i -> getfield(old,i),fieldcount(typeof(old))-1)
     bm=Arrhenius.BlowersMaselData([1],reshape([1.,0.,1e7,1e9],1,4))
-    reaction=Arrhenius.Reaction(fields...,bm)
+    reaction=Arrhenius.Reactions(fields...,bm)
     badgas=Arrhenius.Solution(gas.n_species,gas.n_reactions,gas.MW,gas.species_names,
         gas.elements,gas.ele_matrix,gas.thermo,gas.trans,reaction)
     bm_reactor=IdealGasReactor(badgas;temperature=1200.,mole_fractions=Dict("H2"=>1.),constraint=:constant_volume)

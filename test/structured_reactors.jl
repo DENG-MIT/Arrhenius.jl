@@ -34,7 +34,7 @@ function one_reaction_gas(base, reactant, product; orders=copy(reactant),
         blowers_masel=Arrhenius.BlowersMaselData(Int64[], zeros(0,4)))
     ns = base.n_species
     vk = sparse(product - reactant)
-    reaction = Arrhenius.Reaction(sparse(product), sparse(reactant), sparse(orders),
+    reaction = Arrhenius.Reactions(sparse(product), sparse(reactant), sparse(orders),
         [reversible], Matrix{Float64}(arrhenius), zeros(0,3), zeros(0,4),
         Vector{Int64}(third), Vector{Int64}(falloff), Vector{Int64}(falloff_troe),
         sparse(efficiencies), [Vector{Int64}(findnz(reactant[:,1])[1])],
