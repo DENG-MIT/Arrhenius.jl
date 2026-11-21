@@ -231,3 +231,94 @@ function _rate_factors!(reaction::ReorderedReactions,T,C,S0,h_mole,workspace,rev
 
     return nothing
 end
+
+"""
+    wdot!(wdot, reaction::ReorderedReactions, T, C, S0, h_mole, workspace; kwargs...)
+
+Specialized, fused evaluator for [`ReorderedReactions`](@ref). The generic
+`wdot!` (`Kinetics.jl`) is three separate calls -- `_rate_factors!` (rate
+constants), `_mass_action!` (concentration products, writing a full-size
+`workspace.rates_of_progress`), then `wdot!`'s own scatter loop (reading
+`rates_of_progress` back out) -- each its own pass over `1:n_reactions`.
+This method keeps the rate-constant step identical (the specialized
+`_rate_factors!` above) but fuses the concentration-product and scatter
+steps into one pass, mirroring the LLMImprovments fork's single-function
+`wdot_func!` shape: this is purely a call-layering/loop-fusion change, not
+an algorithmic one -- `_mass_action_product` (Cantera-compatible
+negative-concentration handling, `Kinetics.jl`, covered by
+`test/negative_mass_action.jl`) is reused exactly as-is, not replaced by
+the fork's simpler (and, for repeated-species negative-concentration
+terms, incorrect per that test suite) `k_Pi_C_rectantOrder!`.
+
+**Proxy reuse, mirroring the fork's `kf .-= kr; vk_kf!(wdot,vk,kf)`:** once
+`kf[i]`/`kr[i]` hold the forward/reverse rate *constants* (filled by
+`_rate_factors!` above) and this loop multiplies in each side's
+concentration product, `kf[i]` is overwritten in place to hold the net
+*rate of progress* `kf[i]*Π_reactants - kr[i]*Π_products` for the rest of
+this function -- the same role `workspace.rates_of_progress[i]` plays in
+the generic path, just without a fourth array. `kr[i]` is left stale after
+this point (not read again); only `kf[i]` carries the rate of progress
+into the final scatter.
+"""
+function wdot!(
+    wdot,
+    reaction::ReorderedReactions,
+    T,
+    C,
+    S0,
+    h_mole,
+    workspace;
+    get_qdot=false,
+    rate_multipliers=nothing,
+    log_rate_data=nothing,
+    temperature_cache=nothing,
+    pressure=nothing,
+    activity_concentrations=nothing,
+    get_rate_constants=false,
+    reverse_plan=nothing,
+)
+    _rate_factors!(reaction,T,C,S0,h_mole,workspace,reverse_plan;
+        rate_multipliers,log_rate_data,temperature_cache,pressure)
+    kf,kr=workspace.kf,workspace.kr
+    get_rate_constants && return (;forward=kf,reverse=kr,equilibrium=workspace.equilibrium_constants)
+
+    activity = isnothing(activity_concentrations) ? C : activity_concentrations
+    reactants = reaction.reactant_orders
+    products = reaction.product_stoich_coeffs
+    ri, rv = rowvals(reactants), nonzeros(reactants)
+    pi_, pv = rowvals(products), nonzeros(products)
+
+    if get_qdot
+        # Same values as the fused loop below would produce in kf, but
+        # written into rates_of_progress instead since the proxy-reuse
+        # trick only applies to the kf-scatter path past this point.
+        rates = workspace.rates_of_progress
+        @inbounds for i in 1:reaction.n_reactions
+            forward = kf[i] * _mass_action_product(activity, ri, rv, reaction.reactant_stoich_coeffs, i,
+                nzrange(reactants, i), reaction.reactant_mass_action_terms[i])
+            reverse = reaction.is_reversible[i] ?
+                kr[i] * _mass_action_product(activity, pi_, pv, products, i, nzrange(products, i),
+                    reaction.product_mass_action_terms[i]) : zero(forward)
+            rates[i] = forward - reverse
+        end
+        return rates
+    end
+
+    fill!(wdot, zero(eltype(wdot)))
+    rows, coefficients = rowvals(reaction.vk), nonzeros(reaction.vk)
+    @inbounds for i in 1:reaction.n_reactions
+        forward = kf[i] * _mass_action_product(activity, ri, rv, reaction.reactant_stoich_coeffs, i,
+            nzrange(reactants, i), reaction.reactant_mass_action_terms[i])
+        reverse = reaction.is_reversible[i] ?
+            kr[i] * _mass_action_product(activity, pi_, pv, products, i, nzrange(products, i),
+                reaction.product_mass_action_terms[i]) : zero(forward)
+        # kf[i] now proxies the net rate of progress for this reaction (see
+        # docstring) -- scattered into wdot immediately, in the same pass,
+        # rather than written back to a fourth array and read again later.
+        q = forward - reverse
+        for slot in nzrange(reaction.vk, i)
+            wdot[rows[slot]] = muladd(coefficients[slot], q, wdot[rows[slot]])
+        end
+    end
+    return wdot
+end

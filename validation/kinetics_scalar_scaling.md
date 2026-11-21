@@ -162,3 +162,53 @@ ordinary multiple dispatch, with every other kinetics feature (PLOG, linear-Burk
 Blowers-Masel, `log_rate_data`, `temperature_cache`, `rate_multipliers`) unchanged. It is not a
 uniform ~10% win across all mechanisms, and does not fully explain the fork's own measured
 advantage on reversible-heavy mechanisms like `gri30`.
+
+## Follow-up: profiling the residual gap, and a fused kernel (2026-11-21, continued)
+
+Profiled both kernels directly (`Profile.jl`, 200,000 calls each, equal ~1.1M-sample budgets,
+`gri30`) to look for the cause of the still-open `gri30` gap. No single dominant cause: the
+generic path shows real `kwcall`/`NamedTuple` construction self-time from its keyword-argument
+interface (absent from the fork's all-positional `wdot_func!`), but it's small in absolute
+terms (~6,948 self samples / 200,000 calls, a few ns/call) — not enough alone to explain a
+~700ns/call gap. The rest is spread thin across many small implementation-style differences
+(`getindex`/`_setindex!`/`*`/`reinterpret` self-time differ in both directions; no standout
+line). Conclusion: no isolated fix would close the rest of the gap on its own.
+
+Re-reading the fork's `k_Pi_C_rectantOrder!` line-by-line against this repo's
+`_mass_action_product` surfaced something a pure performance read would have missed: they are
+not equivalent algorithms. For a repeated-species order-2 term with a negative concentration,
+Cantera's rule (and `_mass_action_product`'s, exercised by `test/negative_mass_action.jl`'s 61
+tests) gives `0.0`; the fork's `order==2 ? Ci*Ci : ...` gives `Ci^2` (positive) — the opposite
+of the tested, physically-motivated behavior for solver overshoot. **Decision (confirmed with
+the task owner): keep `_mass_action_product` unchanged, port the fork's structure (not its
+math) around it.**
+
+Added a second specialization, `wdot!(reaction::ReorderedReactions, ...)`
+(`ReorderedReactionsKernels.jl`), fusing the generic path's three separate full-mechanism
+passes (`_rate_factors!` → `_mass_action!` writing a full `rates_of_progress` array →
+`wdot!`'s own scatter reading it back) into one pass — mirroring the fork's single-function
+`wdot_func!` shape, with `_mass_action_product` reused exactly as-is. `kf[i]` is overwritten in
+place to hold the net rate of progress for the rest of the function, the same proxy-reuse
+trick the fork uses for `kf .-= kr; vk_kf!(wdot,vk,kf)` (documented in the method's docstring).
+
+Result (median of 200 samples, 30 for `nc7_ver3.1_mech`, full `IdealGasReactor` RHS, three
+repeated runs):
+
+| Mechanism | before fusion | after fusion |
+|---|---:|---:|
+| h2o2 | ~1.0x | ~1.05-1.06x |
+| gri30 | ~1.0x | **~1.02-1.03x** |
+| h2_li_2004 | ~1.08-1.09x | ~1.06x |
+| nc7_ver3.1_mech | ~1.04-1.10x | ~1.09-1.11x |
+
+Real and repeatable (all four mechanisms improved, consistently, across three separate runs —
+not noise), but `gri30` is still far from the fork's full 0.88x (would need ~1.14x to match).
+This is the expected cost of the correctness decision above: the remaining gap most plausibly
+lives in `_mass_action_product`'s extra negative-concentration branching relative to the fork's
+simpler (and, in that one case, wrong) algorithm, which this port deliberately did not adopt.
+
+**Updated net assessment**: the fused kernel is a modest, broad, genuinely explained
+improvement (not a partial fix limited to low-reversibility mechanisms, like the first
+specialization). It still does not close `gri30`'s full gap, and closing the rest would require
+either accepting the fork's less-robust mass-action algorithm (rejected) or a different,
+not-yet-identified safe optimization of `_mass_action_product` itself.
