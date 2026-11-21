@@ -95,3 +95,70 @@ and a 500+-species mechanism) as the PR's evidence, same as this report.
 - This has not been run on any mechanism between 325 and 4,846 reactions, so the exact shape
   of the scaling curve (linear-in-excess vs. some other growth) between `gri30` and
   `nc7_ver3.1_mech` is not characterized — only that it continues to grow.
+
+## Follow-up: isolating reordering from the equilibrium-skip fix (2026-11-21)
+
+`eab69a7` (wiring `_ReversibleRatePlan` into `wdot!` by default) landed after this report and,
+per its own commit message, already closed most of the fork-vs-upstream gap measured above with
+a 3-line, non-reordering change. This follow-up isolates what reordering itself still has left
+to contribute on top of that fix, on branch `reactions-reorder` (`upstream-port/kinetics-performance`
++ `ReorderedReactions`, a bucketed-by-kind reaction layout carrying an original-order permutation).
+
+**Reordering alone (bucketing `index_three_body`/`index_falloff` into contiguous ranges,
+generic evaluator unchanged): noise-level**, ±0-3% on `h2o2`, `gri30`, `stagni_2023`, and
+`nc7_ver3.1_mech` — consistent with `eab69a7`'s own dropped `BucketedEfficiencyCache` finding:
+these mechanisms' third-body/falloff fraction is too small for removing that gather/scatter to
+matter once the equilibrium work is already skipped for irreversible reactions. The
+`ReorderedKinetics`-vs-upstream delta measured above was overwhelmingly the equilibrium-skip
+effect, not reordering.
+
+**The fork's kernel (`wdot_func!`) is still consistently 7-12% faster than this repo's generic
+evaluator (`_rate_factors!`/`_mass_action!`/`wdot!`) at the raw kernel level**, flat across
+mechanism size (28 to 4,846 reactions) — not a locality/scaling effect, a roughly constant
+per-call difference:
+
+| Mechanism | reactions | fork `wdot_func!` (ns) | upstream kernel (ns) | fork/upstream |
+|---|---:|---:|---:|---:|
+| h2o2 | 28 | 541 | 584 | 0.93x |
+| h2_li_2004 | 21 | 458 | 500 | 0.92x |
+| gri30 | 325 | 5959 | 6750 | 0.88x |
+| nc7_ver3.1_mech | 4846 | 58771 | 63416 | 0.93x |
+
+Ruled out: generic-path overhead from supporting `log_rate_data`/`temperature_cache` when
+unused. `@code_typed` on `_rate_factors!` called the way this benchmark calls it (those
+keywords omitted) shows zero residual `isnothing`/`Union` branches — Julia already specializes
+them away at compile time, so there is no runtime-branch cost to eliminate there.
+
+One real, explained piece of the gap was identified and ported: the fork's `ReorderedKinetics`
+carries a separate `vk_rev` matrix sized to just the reversible reactions, letting
+`wdot_func!` skip the delta_s/delta_h/equilibrium-constant computation for irreversible
+reactions via plain contiguous-range access rather than an `is_reversible`/`_ReversibleRatePlan`
+lookup per reaction. Porting this (`ReorderedReactionsKernels.jl`: `ReorderedReactions` now
+sub-buckets its plain-reaction group by reversibility too, and dispatches a specialized
+`_rate_factors!` that walks `index_rev_start:n_reactions` directly) reproduces this specific
+piece of the gap, and *only* this piece:
+
+| Mechanism | reversible fraction | kernel speedup from the specialized path |
+|---|---:|---:|
+| h2o2 | 100% | ~1.0x (nothing to skip) |
+| gri30 | ~95% | ~1.0x (nothing to skip) |
+| h2_li_2004 | lower | ~1.08-1.09x |
+| nc7_ver3.1_mech | ~4.5% | ~1.04-1.10x (noisier at this mechanism's per-call cost) |
+
+This is structurally expected, not a bug: on a mechanism that's almost entirely reversible
+(`h2o2`, `gri30`), there is no irreversible prefix to skip, matching `eab69a7`'s own observation
+that its equilibrium-skip fix likewise made no difference on those two. It also means `gri30`'s
+share of the fork's measured 0.88x is **not** explained by the reversible-prefix-skip — some
+other, smaller difference (candidates: the fork's `k_Pi_C_rectantOrder!`-style concentration
+product vs. this repo's C1/C2/C3-classified `_mass_action_product`, or the single fused
+`wdot_func!` vs. the generic path's three-function split) accounts for the residual there, and
+was not further isolated.
+
+**Net assessment**: reordering by itself is not worth shipping for raw speed on top of
+`eab69a7`. The reversible-prefix-skip kernel is a real, explained, correctly-scoped ~4-10% win
+specifically on mechanisms with a meaningful irreversible fraction (detailed/large mechanisms
+are more likely to have one), shipped alongside — not in place of — the generic evaluator via
+ordinary multiple dispatch, with every other kinetics feature (PLOG, linear-Burke,
+Blowers-Masel, `log_rate_data`, `temperature_cache`, `rate_multipliers`) unchanged. It is not a
+uniform ~10% win across all mechanisms, and does not fully explain the fork's own measured
+advantage on reversible-heavy mechanisms like `gri30`.
