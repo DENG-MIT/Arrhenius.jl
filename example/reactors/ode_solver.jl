@@ -118,3 +118,51 @@ function native_bdf(problem; linear_solver=:auto, kwargs...)
     SciMLBase.successful_retcode(solution) || error("reactor integration failed: $(solution.retcode)")
     return solution
 end
+
+# Optional, soft-gated like StructuredReactorSolver itself above: only defined when
+# OrdinaryDiffEqRosenbrock happens to be installed, since it is not a hard
+# dependency of this environment.
+if !isdefined(@__MODULE__, :native_rosenbrock23) &&
+        Base.find_package("OrdinaryDiffEqRosenbrock") !== nothing
+    import OrdinaryDiffEqRosenbrock
+
+"""
+    native_rosenbrock23(problem; linear_solver=:analytic, kwargs...)
+
+Integrate with `OrdinaryDiffEqRosenbrock.Rosenbrock23()` instead of
+`native_bdf`'s `QNDF`. Rosenbrock methods evaluate (a factorization of) the
+Jacobian on nearly every accepted step rather than reusing one across many
+steps via Newton-chord iteration the way BDF/QNDF does -- so unlike
+`native_bdf`, where the generated Jacobian's per-call speedup is diluted by
+infrequent Jacobian rebuilds, it shows up close to directly here. Measured on
+`gri30` (`validation/structured_jacobian_codegen.md`): `njacs` is ~58% of
+total steps for Rosenbrock23 here, versus <1% for `native_bdf`'s QNDF, and
+the generated Jacobian is ~1.1x faster end to end versus ~1.01x for
+`native_bdf`. Requires the optional structured-reactor environment (same gate
+as `native_bdf`'s `:dense`/`:generated` options); `linear_solver=:analytic`
+uses `structured_trial_jacobian`, `linear_solver=:generated` uses
+`generated_structured_jacobian`. Dense linear algebra throughout --
+`Rosenbrock23` does not use the sparse KLU/bordered solve `native_bdf`'s
+`:auto` option does.
+"""
+function native_rosenbrock23(problem; linear_solver=:analytic, kwargs...)
+    linear_solver in (:analytic, :generated) ||
+        throw(ArgumentError("linear_solver must be :analytic or :generated"))
+    isdefined(@__MODULE__, :StructuredReactorSolver) ||
+        throw(ArgumentError("native_rosenbrock23 requires the optional structured-reactor environment"))
+    builder = linear_solver === :generated ?
+        StructuredReactorSolver.generated_structured_jacobian :
+        StructuredReactorSolver.structured_trial_jacobian
+    guard = StructuredReactorSolver.try_guarded_jacobian(problem; builder)
+    guard === nothing && throw(ArgumentError(
+        "native_rosenbrock23 requires a reactor in the structured Jacobian's supported scope"))
+    f = SciMLBase.ODEFunction(guard.analytic.float_rhs; jac=guard, tgrad=problem.tgrad)
+    ode = SciMLBase.ODEProblem(f, problem.u0, problem.tspan, problem.p)
+    outside_domain = (u, p, t) -> !all(isfinite, u) || u[end] <= 0
+    solution = SciMLBase.solve(ode, OrdinaryDiffEqRosenbrock.Rosenbrock23();
+        isoutofdomain=outside_domain, kwargs...)
+    SciMLBase.successful_retcode(solution) ||
+        error("reactor integration failed: $(solution.retcode)")
+    return solution
+end
+end

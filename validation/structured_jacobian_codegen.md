@@ -117,9 +117,46 @@ evaluation is not the dominant cost once a BDF-family solver is reusing factoriz
 steps -- unlike the fork's own report (`gri30 generated ≈107ms vs analytical ≈248ms` end to
 end), which compared *supplying an analytic Jacobian at all* against *no Jacobian* (forcing
 many more implicit finite-difference/dual evaluations), not two analytic-Jacobian
-implementations against each other as this comparison does. Where this would matter more
-directly: workloads that evaluate the Jacobian far more frequently relative to the RHS --
-Newton-per-iteration contexts (e.g. a steady flame solve) rather than a BDF time-stepper that
-reuses it, or direct repeated Jacobian queries (parameter studies, sensitivity/optimization
-loops) -- untested here, and a natural next place to look if the ~1.3x per-call number needs
-to show up end to end.
+implementations against each other as this comparison does.
+
+## Where it does show up end to end: Rosenbrock23
+
+The write-up above predicted this would matter more for solvers that evaluate the Jacobian far
+more frequently relative to the RHS, rather than reusing one across many steps the way
+BDF/QNDF does. Tested directly: `example/reactors/ode_solver.jl` gained
+`native_rosenbrock23(problem; linear_solver=:analytic|:generated, kwargs...)`, mirroring
+`native_bdf`'s `:dense`/`:generated` dense-Jacobian selection but driving
+`OrdinaryDiffEqRosenbrock.Rosenbrock23()` instead of `OrdinaryDiffEqBDF.QNDF()` (soft-gated on
+that package being installed, same convention as `StructuredReactorSolver` itself; added as a
+real dependency of `example/reactors/Project.toml`).
+
+Rosenbrock23 is a W-method: it needs a Jacobian factorization on very nearly every accepted
+step, not just when a Newton iteration stalls. Measured `njacs`/accepted-steps ratio, versus
+`native_bdf`'s QNDF from the table above:
+
+| Mechanism | `native_bdf` (QNDF) njacs/steps | `native_rosenbrock23` njacs/steps |
+|---|---:|---:|
+| h2o2 | 8/1647 (0.5%) | 10264/22637 (45%) |
+| gri30 | 8/1647 (0.5%) | 18682/32225 (58%) |
+| nc7_ver3.1_mech | 29/685 (4.2%) | 3870/4850 (80%) |
+
+With the Jacobian now a large, size-growing fraction of total solver work, the ~1.2-1.4x
+per-call speedup shows up end to end, closely tracking the per-call number rather than being
+diluted away by it:
+
+| Mechanism | analytic (s) | generated (s) | end-to-end speedup |
+|---|---:|---:|---:|
+| h2o2 | 0.179 | 0.159 | **1.12x** |
+| gri30 | 3.046 | 2.745 | **1.11x** |
+| nc7_ver3.1_mech | 21.42 | 16.92 | **1.27x** |
+
+Bit-identical final state and `njacs` between `:analytic` and `:generated` on every mechanism
+(same correctness bar as the rest of this document). The larger mechanism shows the *largest*
+end-to-end win, consistent with Jacobian cost growing as a bigger share of total work there.
+
+**Net assessment, updated**: the generator is directly reportable as an end-to-end win for
+Julia-native solvers that don't amortize the Jacobian across many steps -- Rosenbrock-family
+methods being the concrete, tested example here, with other direct-repeated-Jacobian-query
+workloads (parameter studies, sensitivity/optimization loops, or a Newton-per-iteration flame
+solve -- the latter not using this codepath at all, since `Flames.jl` has its own, separate
+Jacobian assembly, untouched by this work) the natural next places this would also apply.
