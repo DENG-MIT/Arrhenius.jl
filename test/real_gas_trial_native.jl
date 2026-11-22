@@ -1,13 +1,12 @@
 module RealGasTrialContracts
 
 using Arrhenius, ForwardDiff, LinearAlgebra, NPZ, SparseArrays, Test, YAML
-include(joinpath(@__DIR__,"..","example","reactors","real_gas_ad_jacobian.jl"))
 
 @testset "Signed mass-action column polynomials" begin
     # The columns represent 2x, 2x^2 and (2x)y. At negative trials, two
     # negative factors suppress the product; a single negative factor remains.
     A=sparse([1,1,1,2],[1,2,3,3],[1.,2.,1.,1.],2,3)
-    product=(i,c)->_integer_trial_product(2.,c,rowvals(A),nonzeros(A),nzrange(A,i))
+    product=(i,c)->Arrhenius._integer_trial_product(2.,c,rowvals(A),nonzeros(A),nzrange(A,i))
     for (c,values,gradients) in (
             ([2.,3.],[4.,8.,12.],([2.,0.],[8.,0.],[6.,4.])),
             ([0.,3.],[0.,0.,0.],([2.,0.],[0.,0.],[6.,0.])),
@@ -21,18 +20,18 @@ include(joinpath(@__DIR__,"..","example","reactors","real_gas_ad_jacobian.jl"))
         end
     end
     # Preserve the stored-order grouping; k*(x*y) rounds differently here.
-    @test _integer_trial_product(.1,[.2,.3],rowvals(A),nonzeros(A),nzrange(A,3))===.006000000000000001
+    @test Arrhenius._integer_trial_product(.1,[.2,.3],rowvals(A),nonzeros(A),nzrange(A,3))===.006000000000000001
     for T in (Float32,Float64)
         orders=T.(A)
         for (i,expected) in enumerate(T[4,8,12])
-            value=_integer_trial_product(2f0,Float32[2,3],rowvals(orders),nonzeros(orders),nzrange(orders,i))
+            value=Arrhenius._integer_trial_product(2f0,Float32[2,3],rowvals(orders),nonzeros(orders),nzrange(orders,i))
             @test value===expected
         end
     end
 
     # Mutations must select the live arity/order without prepared metadata.
     live=sparse([1],[1],[1.],2,1)
-    evaluate=c->_integer_trial_product(2.,c,rowvals(live),nonzeros(live),nzrange(live,1))
+    evaluate=c->Arrhenius._integer_trial_product(2.,c,rowvals(live),nonzeros(live),nzrange(live,1))
     @test evaluate([2.,3.])==4.
     live[2,1]=1. # (1) -> (1,1)
     @test evaluate([2.,3.])==12.
@@ -53,9 +52,9 @@ end
         mole_fractions=collect(1.:g.n_species),constraint=:constant_volume)
     reactor=make_reactor(gas)
     policy=SignedIntegerShockTubeTrials(gas,path)
-    @test _validate_trial_policy(policy,reactor)===nothing
-    @test _trial_data_equal(gas,policy.verified)
-    @test _check_integer_trial_reactions(gas.reaction)===nothing
+    @test Arrhenius._validate_trial_policy(policy,reactor)===nothing
+    @test Arrhenius._trial_data_equal(gas,policy.verified)
+    @test Arrhenius._check_integer_trial_reactions(gas.reaction)===nothing
     @test_throws ArgumentError shocktube_ad_jacobian(make_reactor(deepcopy(gas));trial_policy=policy)
 
     # Same species and reaction counts do not establish numerical equivalence.
@@ -70,7 +69,7 @@ end
     finally
         gas.thermo.nasa_high[1,1]=old
     end
-    @test _validate_trial_policy(policy,reactor)===nothing
+    @test Arrhenius._validate_trial_policy(policy,reactor)===nothing
 
     mktempdir() do tmp
         input=YAML.load_file(path)
@@ -102,11 +101,11 @@ end
     fractional=deepcopy(gas.reaction)
     fractional.reactant_orders[1,1]=0.5
     fractional.reactant_stoich_coeffs[1,1]=0.5
-    @test_throws ArgumentError _check_integer_trial_reactions(fractional)
+    @test_throws ArgumentError Arrhenius._check_integer_trial_reactions(fractional)
     high_order=deepcopy(gas.reaction)
     high_order.reactant_orders[1,1]=4.
     high_order.reactant_stoich_coeffs[1,1]=4.
-    @test_throws ArgumentError _check_integer_trial_reactions(high_order)
+    @test_throws ArgumentError Arrhenius._check_integer_trial_reactions(high_order)
 end
 
 @testset "Signed trial Jacobian and unchanged input states" begin
@@ -137,7 +136,7 @@ end
             original=copy(u)
             jac(J,u,nothing,0.)
             full=ForwardDiff.jacobian(u) do state
-                rhs=_signed_reactor_rhs(reactor,eltype(state))
+                rhs=Arrhenius._signed_reactor_rhs(reactor,eltype(state))
                 out=zero(state);rhs(out,state,nothing,0.);out
             end
             row_scale=maximum(abs.(full);dims=2).+1e-50
@@ -155,7 +154,7 @@ end
         u=reactor_state(oxidizer)
         shocktube_ad_jacobian(oxidizer;trial_policy=policy)(J,u,nothing,0.)
         full=ForwardDiff.jacobian(u) do state
-            rhs=_signed_reactor_rhs(oxidizer,eltype(state))
+            rhs=Arrhenius._signed_reactor_rhs(oxidizer,eltype(state))
             out=zero(state);rhs(out,state,nothing,0.);out
         end
         absent=findall(gas.ele_matrix[findfirst(==("H"),gas.elements),:].>0)

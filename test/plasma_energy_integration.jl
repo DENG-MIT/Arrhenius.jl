@@ -1,6 +1,7 @@
 using Arrhenius, Test, LinearAlgebra
 using Arrhenius: YAML
-include(joinpath(dirname(pathof(Arrhenius)), "..", "example", "reactors", "ode_solver.jl"))
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 
 @testset "Energy reactor QNDF and explicit cache restart" begin
     mktempdir() do dir

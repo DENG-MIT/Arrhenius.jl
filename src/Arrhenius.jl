@@ -6,7 +6,9 @@ module Arrhenius
     using SparseArrays
 
     include("Constants.jl")
-    include("BlowersMasel.jl")
+    include("reactions/BlowersMasel.jl")
+    include("reactions/AbstractReactions.jl")
+    include("reactions/Reactions.jl")
     include("DataStructure.jl")
     include("GasMechanismKineticsIO.jl")
     include("GasMechanismThermoIO.jl")
@@ -16,7 +18,7 @@ module Arrhenius
     include("Solution.jl")
     include("Magic.jl")
     include("Thermo.jl")
-    include("Kinetics.jl")
+    include("reactions/Kinetics.jl")
     include("Transport.jl")
     include("IonTransport.jl")
     include("MulticomponentTransport.jl")
@@ -25,10 +27,21 @@ module Arrhenius
 include("SignedEquilibrium.jl")
     include("IdealGasStates.jl")
     include("IdealGasMixing.jl")
-    include("Reactors.jl")
-    include("ReactorNetworks.jl")
-    include("MovingWallReactors.jl")
-    include("SurfaceKinetics.jl")
+    # Heavier, optional-dependency reactor solvers (the structured/code-generated
+    # Jacobian, KLU solve, and the lightweight BDF/SDIRK adapters) are Package
+    # Extensions instead, under ext/ArrheniusStructuredReactorExt/ and
+    # ext/ArrheniusOrdinaryDiffEqExt/ -- they can't be nested under src/reactors/.
+    include("reactors/Reactors.jl")
+    include("reactors/ReactorNetworks.jl")
+    include("reactors/ReactorNetworkCases.jl")
+    include("reactors/MixingSolver.jl")
+    include("reactors/MovingWallReactors.jl")
+    include("reactors/MovingWallCases.jl")
+    include("reactors/ICEngineCases.jl")
+    include("reactors/SurfaceKinetics.jl")
+    include("reactors/SurfaceFlowReactors.jl")
+    include("reactors/RealGasReactors.jl")
+    include("reactors/RealGasADJacobian.jl")
     include("CondensedEquilibrium.jl")
     include("CoverageDependentThermo.jl")
 
@@ -44,7 +57,7 @@ include("SignedEquilibrium.jl")
             solve_catalytic, catalytic_diagnostics
         import ..Arrhenius: reactor_state, reactor_rhs, reactor_jacobian!, reactor_problem,
             reactor_properties, solve_reactor, _ReversibleRatePlan, _nasa7_coefficients,
-            _extended_thermo, _reactor_composition, _rate_factors!, _mass_action!, Reaction
+            _extended_thermo, _reactor_composition, _rate_factors!, _mass_action!, Reactions
 
         include("PlasmaEEDFTypes.jl")
         include("PlasmaEEDFIO.jl")
@@ -85,11 +98,7 @@ include("SignedEquilibrium.jl")
         isdefined(@__MODULE__, name) && continue
         @eval const $(name) = Plasma.$(name)
     end
-    include("SurfaceFlowReactors.jl")
     include("PureWater.jl")
-    include("CriticalProperties.jl")
-    include("RealGasThermo.jl")
-    include("RealGasReactors.jl")
     include("Flames.jl")
     include("FlameSensitivity.jl")
     include("IonizedFlames.jl")

@@ -312,5 +312,44 @@ function solve_reactor(reactor::IdealGasReactor, tspan; integrator, kwargs...)
     return integrator(reactor_problem(reactor, tspan); kwargs...)
 end
 
+"""
+    native_bdf(problem; linear_solver=:auto, kwargs...)
+
+Integrate a reactor `problem` (from `reactor_problem`) with Julia's adaptive
+QNDF solver. Requires loading `KLU`, `LinearSolve`, `OrdinaryDiffEqBDF`,
+`OrdinaryDiffEqDifferentiation`, `OrdinaryDiffEqNonlinearSolve`,
+`OrdinaryDiffEqRosenbrock`, and `SciMLBase` to activate
+`ArrheniusStructuredReactorExt`, which provides the method body.
+
+For supported constant-pressure, adiabatic ideal-gas reactors, enables an
+analytic Jacobian and sparse bordered solve. Other reactors use the dense
+Jacobian supplied by `reactor_problem`.
+
+Set `linear_solver=:dense` to use the guarded analytic Jacobian and signed
+RHS with QNDF's ordinary dense linear solver for supported reactors. The
+default `linear_solver=:auto` retains automatic structured selection.
+`linear_solver=:generated` is `:dense` with codegenerated
+mechanism-specialized compiled jacobians -- same idea as analytic, measured
+~1.2-1.4x faster per Jacobian evaluation.
+"""
+function native_bdf end
+
+"""
+    native_rosenbrock23(problem; linear_solver=:analytic, kwargs...)
+
+Integrate with `OrdinaryDiffEqRosenbrock.Rosenbrock23()` instead of
+`native_bdf`'s `QNDF`. Requires the same extension dependencies as
+`native_bdf` to activate.
+
+Rosenbrock methods evaluate (a factorization of) the Jacobian on nearly
+every accepted step rather than reusing one across many steps via
+Newton-chord iteration the way BDF/QNDF does. Dense linear algebra
+throughout -- `Rosenbrock23` does not use the sparse KLU/bordered solve
+`native_bdf`'s `:auto` option does. Only reactors in the structured
+Jacobian's supported scope are accepted.
+"""
+function native_rosenbrock23 end
+
 export IdealGasReactor, ReactorRHS, reactor_state, reactor_rhs
 export reactor_jacobian!, reactor_properties, reactor_problem, solve_reactor
+export native_bdf, native_rosenbrock23

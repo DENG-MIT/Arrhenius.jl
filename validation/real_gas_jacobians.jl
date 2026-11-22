@@ -3,7 +3,6 @@
 # Both mechanisms include nonzero third-body/falloff rates; h2-plog also checks
 # derivatives of true EOS pressure in PLOG. These are numerical test states.
 using Arrhenius, ForwardDiff, LinearAlgebra, Test
-include(joinpath(@__DIR__,"..","example","reactors","real_gas_ad_jacobian.jl"))
 
 function uncached_reactor_derivative(reactor,u)
     T=eltype(u)

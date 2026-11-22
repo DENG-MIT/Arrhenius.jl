@@ -1,6 +1,8 @@
-# include all different thermo files here 
+# include all different thermo files here
 #TODO Automate it to include all jl files in the Thermo folder
 include("Thermo/IdealGasThermo.jl")
+include("Thermo/RealGasThermo.jl")
+include("Thermo/CriticalProperties.jl")
 
 # --- Allocation-free mixture means for IdealGasThermo ---
 # Which of the dimensionless cp_R, h_RT, s0_R each mixture property accumulates.

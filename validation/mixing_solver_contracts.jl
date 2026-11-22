@@ -1,5 +1,4 @@
 using Arrhenius, Test
-include(joinpath(@__DIR__,"..","example","reactors","mixing_solver.jl"))
 function mixer_contracts(input)
     gas=CreateSolution(joinpath(input,"gri30.yaml"))
     air=CreateSolution(joinpath(input,"air.yaml"))

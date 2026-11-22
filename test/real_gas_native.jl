@@ -1,5 +1,5 @@
 using Test, Arrhenius, YAML, LinearAlgebra, ForwardDiff
-isdefined(Arrhenius,:RedlichKwongThermo) || Base.include(Arrhenius,joinpath(@__DIR__,"..","src","RealGasThermo.jl"))
+isdefined(Arrhenius,:RedlichKwongThermo) || Base.include(Arrhenius,joinpath(@__DIR__,"..","src","Thermo","RealGasThermo.jl"))
 
 @testset "Native Redlich–Kwong thermodynamic identities" begin
     model = RedlichKwongThermo(joinpath(@__DIR__,"..","mechanism","nDodecane_Reitz.yaml"))

@@ -1,6 +1,6 @@
 # Prepare ptcombust.yaml / Pt_surf with mechanism/export_surface.py first.
 using Arrhenius
-include("surface_solver.jl")
+using SciMLBase, OrdinaryDiffEqBDF
 
 function catalytic_reactor(path;flow=false)
     surface = SurfaceMechanism(path)

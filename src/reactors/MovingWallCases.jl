@@ -84,3 +84,5 @@ function run_moving_wall_example(name, mechanism_directory, output; integrator,
     end
     return (; model=case.model,solution)
 end
+
+export moving_wall_example, run_moving_wall_example

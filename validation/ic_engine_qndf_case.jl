@@ -9,8 +9,7 @@ include(joinpath(@__DIR__,"numerical_threads.jl"))
 engine_case_hashfile(path) = bytes2hex(sha256(read(path)))
 function engine_case_inputs(mechanism)
     root = dirname(@__DIR__)
-    paths = [joinpath(root,"example","reactors","ic_engine_setup.jl"),
-             joinpath(root,"example","reactors","ic_engine_qndf_solver.jl")]
+    paths = [joinpath(root,"example","reactors","ic_engine_qndf_solver.jl")]
     append!(paths,readdir(joinpath(root,"example","reactors","engine_qndf");join=true))
     sources = Dict(replace(relpath(p,root),'\\'=>'/')=>engine_case_hashfile(p)
         for p in paths if endswith(p,".jl"))

@@ -1,12 +1,10 @@
 using Arrhenius, LinearAlgebra, SHA, TOML
 import Arrhenius.NPZ
-include(joinpath(@__DIR__,"..","example","reactors","mixing_solver.jl"))
 include(joinpath(@__DIR__,"numerical_threads.jl"))
 
 function main(input,output)
     mkpath(output)
     paths=[joinpath(input,name) for name in ("gri30.yaml","gri30.yaml.npz","air.yaml","air.yaml.npz")]
-    append!(paths,[joinpath(@__DIR__,"..","example","reactors",name) for name in ("mixing_solver.jl","network_cases.jl")])
     append!(paths,[@__FILE__,joinpath(@__DIR__,"numerical_threads.jl")])
     for (folder,_,files) in walkdir(joinpath(pkgdir(Arrhenius),"src")),name in files
         endswith(name,".jl") && push!(paths,joinpath(folder,name))
@@ -52,7 +50,7 @@ function main(input,output)
         "current_state_residual_per_s"=>max(maximum(abs,derivative[1:end-1])/state.mass,abs(derivative[end])/state.temperature),
         "minimum_Y"=>minimum(state.mass_fractions),"chemistry_enabled"=>network.nodes.mixer.chemistry,
         "species_counts"=>[gas.n_species,air.n_species],"blas_threads"=>BLAS.get_num_threads(),
-        "candidate_sha256"=>filehash(joinpath(@__DIR__,"..","example","reactors","mixing_solver.jl")))
+        "candidate_sha256"=>filehash(joinpath(pkgdir(Arrhenius),"src","reactors","MixingSolver.jl")))
     open(joinpath(output,"native.toml"),"w") do io
         TOML.print(io,report;sorted=true)
     end

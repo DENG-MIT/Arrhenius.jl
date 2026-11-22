@@ -17,11 +17,12 @@ In Julia's package manager, enter <code>] add https://github.com/DENG-MIT/Arrhen
 
 ## Quick start: constant-pressure ignition
 
-The optional reactor example environment provides SciML's QNDF integrator. From the repository root, run this with <code>julia --project=example/reactors</code>:
+Loading `KLU`, `LinearSolve`, `OrdinaryDiffEqBDF`, `OrdinaryDiffEqDifferentiation`, `OrdinaryDiffEqNonlinearSolve`, `OrdinaryDiffEqRosenbrock`, and `SciMLBase` alongside `Arrhenius` activates its `ArrheniusStructuredReactorExt` extension, providing `native_bdf` (SciML's QNDF integrator with an analytic Jacobian). The `example/reactors` environment already lists all of them; from the repository root, run this with <code>julia --project=example/reactors</code>:
 
 ~~~julia
 using Arrhenius
-include("example/reactors/ode_solver.jl")
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 
 gas = CreateSolution("mechanism/h2o2.yaml")
 reactor = IdealGasReactor(gas; temperature=1001.0, pressure=one_atm,

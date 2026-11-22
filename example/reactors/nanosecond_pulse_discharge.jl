@@ -1,8 +1,6 @@
 using Arrhenius
-
-if !isdefined(@__MODULE__, :native_bdf)
-    include(joinpath(dirname(dirname(pathof(Arrhenius))),"example","reactors","ode_solver.jl"))
-end
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 
 _pulse_field(t)=190e-21*exp(-0.5*((t-24e-9)/3e-9)^2)
 

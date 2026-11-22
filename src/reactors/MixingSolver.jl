@@ -1,7 +1,5 @@
 # Full reacting stationary mixer with damped Newton and pseudo-transient steps.
-using Arrhenius, LinearAlgebra
-
-include(joinpath(@__DIR__, "network_cases.jl"))
+# ReactorNetworkCases.jl (mixing_network) is included earlier in Arrhenius.jl.
 
 "One accepted Newton/pseudo-transient iterate (iteration 0 records the initial state)."
 struct MixingIteration
@@ -168,3 +166,5 @@ function solve_mixing_network(gas, air; residual_tolerance=1e-9, max_iterations=
     return _solve_mixing_stationary(network; residual_tolerance, max_iterations,
                                     max_backtracks, save_history)
 end
+
+export MixingIteration, solve_mixing_network

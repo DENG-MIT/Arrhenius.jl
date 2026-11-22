@@ -544,7 +544,17 @@ function solve_network_steady(network::ReactorNetwork; integrator, interval=1.0,
     error("network did not reach steady state by $max_time s; residual=$residual s^-1")
 end
 
+"""
+    native_network_bdf(problem; kwargs...)
+
+Integrate a reactor-network `problem` with `OrdinaryDiffEqBDF.QNDF()`.
+Requires loading `SciMLBase` and `OrdinaryDiffEqBDF` to activate
+`ArrheniusOrdinaryDiffEqExt`, which provides the method body.
+"""
+function native_network_bdf end
+
 export Reservoir, WellStirredReactor, ReactorNetwork
 export MassFlowController, Valve, PressureController, HeatTransferWall
 export network_state, network_rhs, network_jacobian!, network_problem, network_isoutofdomain
 export network_diagnostics, solve_network, solve_network_steady
+export native_network_bdf

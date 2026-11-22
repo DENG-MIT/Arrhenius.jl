@@ -340,7 +340,7 @@ function CreateSolution(mech; data_paths=String[], phase=nothing, kinetics_reade
     if selection === nothing && isempty(bm_indices) && any(get(r,"type","") == "Blowers-Masel" for r in get(yaml,"reactions",Any[]))
         throw(ArgumentError("regenerate the sidecar to include Blowers–Masel parameters"))
     end
-    reaction = Reaction(
+    reaction = Reactions(
         product_stoich_coeffs,
         reactant_stoich_coeffs,
         reactant_orders,

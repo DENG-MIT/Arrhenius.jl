@@ -37,6 +37,16 @@ mutable struct StructuredTrialJacobian{R,RF,RD,P,S}
     temperature_rhs::RD
     plans::P
     structure_snapshot::S
+    # Fills `concentration_core` for the current state -- `_fill_concentration_core!`
+    # (this file) by default, or a mechanism-specialized `@generated` replacement
+    # built by `generated_jacobian.jl`'s `generated_structured_jacobian`. Everything
+    # downstream of this step (mass_core scaling, q, rank_vector, the temperature
+    # column, the energy row, and the KLU/QNDF wiring in guarded_jacobian.jl and
+    # klu_structured_solver.jl/qndf_structured_adapter.jl) is unaffected by which
+    # one is in use. Declared as the abstract `Function` (not a type parameter) so
+    # it can be reassigned after construction to a different concrete callable type
+    # (`generated_structured_jacobian` swaps in a closure of its own distinct type).
+    fill_core!::Function
     concentration_core::SparseMatrixCSC{Float64,Int}
     mass_core::SparseMatrixCSC{Float64,Int}
     pattern_colptr::Vector{Int}
@@ -277,7 +287,7 @@ function structured_trial_jacobian(reactor)
     n = ns + 1
     dual_zero = StructuredJacobianDual(0.0, ForwardDiff.Partials((0.0,)))
     StructuredTrialJacobian(reactor, float_rhs, temperature_rhs, plans,
-        _mechanism_snapshot(reactor), concentration_core, mass_core,
+        _mechanism_snapshot(reactor), _fill_concentration_core!, concentration_core, mass_core,
         copy(concentration_core.colptr), copy(concentration_core.rowval),
         zeros(ns), zeros(ns), zeros(n), zeros(ns), zeros(ns),
         zeros(maximum_dependencies),
@@ -389,7 +399,7 @@ function (jac::StructuredTrialJacobian)(J, state, p, t)
     copyto!(jac.input_state, state)
     T, P, density, inverse_mw = Arrhenius._reactor_tpρ(jac.reactor, state)
     jac.float_rhs(jac.float_derivative, state, nothing, t)
-    _fill_concentration_core!(jac, T, P)
+    jac.fill_core!(jac, T, P)
     workspace, MW = jac.float_rhs.workspace, jac.reactor.gas.MW
     core, mass_core = jac.concentration_core, jac.mass_core
     @inbounds for column in 1:ns

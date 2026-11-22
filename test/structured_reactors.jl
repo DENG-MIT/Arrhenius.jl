@@ -1,13 +1,15 @@
 using Test
 using LinearAlgebra
+using Random
 using SparseArrays
 using ForwardDiff
 using Arrhenius
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 
-# Load through the public optional entry point, not a test-only module path.
-include(joinpath(@__DIR__, "..", "example", "reactors", "ode_solver.jl"))
-@assert @isdefined(StructuredReactorSolver)
-const SRS = StructuredReactorSolver
+# Loading all of the extension's weakdeps above activates it.
+const SRS = Base.get_extension(Arrhenius, :ArrheniusStructuredReactorExt)
+@assert SRS !== nothing
 const KS = SRS.KLUCoreStructuredSolver
 include(joinpath(@__DIR__, "..", "validation", "numerical_threads.jl"))
 const STRUCTURED_THREAD_SETTINGS = benchmark_julia_thread_settings()
@@ -34,7 +36,7 @@ function one_reaction_gas(base, reactant, product; orders=copy(reactant),
         blowers_masel=Arrhenius.BlowersMaselData(Int64[], zeros(0,4)))
     ns = base.n_species
     vk = sparse(product - reactant)
-    reaction = Arrhenius.Reaction(sparse(product), sparse(reactant), sparse(orders),
+    reaction = Arrhenius.Reactions(sparse(product), sparse(reactant), sparse(orders),
         [reversible], Matrix{Float64}(arrhenius), zeros(0,3), zeros(0,4),
         Vector{Int64}(third), Vector{Int64}(falloff), Vector{Int64}(falloff_troe),
         sparse(efficiencies), [Vector{Int64}(findnz(reactant[:,1])[1])],
@@ -298,6 +300,144 @@ end
     malformed_problem = reactor_problem(malformed_reactor,(0.0,1e-8))
     @test_throws DimensionMismatch SRS.try_guarded_jacobian(malformed_problem)
     @test_throws DimensionMismatch SRS.try_structured_adapter(malformed_problem)
+
+    # generated_structured_jacobian must reject exactly what structured_trial_jacobian
+    # rejects -- it calls that function first, before building/caching any generated
+    # kernel, so every scope/data error above should reject identically rather than
+    # silently generating code for an unsupported or malformed mechanism.
+    @test_throws SRS.UnsupportedStructuredReactor SRS.generated_structured_jacobian(
+        IdealGasReactor(custom_gas;temperature=1200.0,pressure=one_atm,mass_fractions=Y))
+    @test_throws SRS.UnsupportedStructuredReactor SRS.generated_structured_jacobian(
+        IdealGasReactor(fractional_gas;temperature=1200.0,pressure=one_atm,mass_fractions=Y))
+    @test_throws SRS.UnsupportedStructuredReactor SRS.generated_structured_jacobian(
+        IdealGasReactor(bm_gas;temperature=1200.0,pressure=one_atm,mass_fractions=Y))
+    @test_throws SRS.UnsupportedStructuredReactor SRS.generated_structured_jacobian(
+        IdealGasReactor(plog_gas;temperature=1200.0,pressure=one_atm,mass_fractions=Y))
+    @test_throws SRS.UnsupportedStructuredReactor SRS.generated_structured_jacobian(
+        IdealGasReactor(overlap_gas;temperature=1200.0,pressure=one_atm,mass_fractions=Y))
+    @test_throws ArgumentError SRS.generated_structured_jacobian(
+        IdealGasReactor(invalid_gas;temperature=1200.0,pressure=one_atm,mass_fractions=Y))
+    @test_throws DomainError SRS.generated_structured_jacobian(
+        IdealGasReactor(nonfinite_gas;temperature=1200.0,pressure=one_atm,mass_fractions=Y))
+    @test_throws BoundsError SRS.generated_structured_jacobian(
+        IdealGasReactor(out_of_bounds;temperature=1200.0,pressure=one_atm,mass_fractions=Y))
+    @test_throws DimensionMismatch SRS.generated_structured_jacobian(malformed_reactor)
+    @test_throws DimensionMismatch SRS.try_guarded_jacobian(
+        malformed_problem; builder=SRS.generated_structured_jacobian)
+end
+
+@testset "generated structured Jacobian matches the analytic one" begin
+    # Per-kind correctness, one reaction at a time: kind 1 (single order-1 factor),
+    # kind 2 (two distinct order-1 factors, and the same species squared), kind 3
+    # (three distinct factors), each reversible and irreversible; three-body;
+    # falloff with and without Troe; PLOG without a concentration collider; and
+    # kind 4 (the general/fractional path's unrolled fallback) via the existing
+    # 4-species AnyN fixture. Every case is checked against structured_trial_jacobian
+    # at a non-trivial (non-uniform, partly negative-trial) state, not just at the
+    # reactor's own initial condition.
+    base = CreateSolution(H2O2)
+    Y = collect(range(1.0, 2.0; length=base.n_species)); Y ./= sum(Y)
+
+    function compare_generated!(gas; perturb=nothing)
+        reactor = IdealGasReactor(gas; temperature=1000.0, pressure=one_atm,
+            mass_fractions=Y, constraint=:constant_pressure, energy=:adiabatic)
+        analytic = SRS.structured_trial_jacobian(reactor)
+        generated = SRS.generated_structured_jacobian(reactor)
+        state = reactor_state(reactor)
+        isnothing(perturb) || perturb(state)
+        n = length(state)
+        J1, J2 = zeros(n, n), zeros(n, n)
+        analytic(J1, state, nothing, 0.0)
+        generated(J2, state, nothing, 0.0)
+        @test bitwise_equal(J1, J2)
+        return J1
+    end
+
+    sp(indices, values) = begin
+        v = spzeros(Float64, base.n_species, 1)
+        for (i, x) in zip(indices, values); v[i, 1] = x; end
+        v
+    end
+    h2, o2, h2o, oh, h = (findfirst(==(name), base.species_names) for name in
+        ("H2", "O2", "H2O", "OH", "H"))
+
+    # kind 1: A -> B
+    compare_generated!(one_reaction_gas(base, sp([h2], [1.0]), sp([h2o], [1.0])))
+    compare_generated!(one_reaction_gas(base, sp([h2], [1.0]), sp([h2o], [1.0]); reversible=true))
+    # kind 2, two distinct species: A + B -> C
+    compare_generated!(one_reaction_gas(base, sp([h2, o2], [1.0, 1.0]), sp([h2o], [1.0])))
+    compare_generated!(one_reaction_gas(base, sp([h2, o2], [1.0, 1.0]), sp([h2o], [1.0]); reversible=true))
+    # kind 2, repeated species: 2A -> B (exercises the Cantera "single negative factor
+    # squared still zeroes" rule, not just the "two distinct negative factors" one)
+    compare_generated!(one_reaction_gas(base, sp([h2], [2.0]), sp([h2o], [1.0])))
+    compare_generated!(one_reaction_gas(base, sp([h2], [2.0]), sp([h2o], [1.0]));
+        perturb=state -> (state[h2] = -1e-9))
+    # kind 3: A + B + C -> D
+    compare_generated!(one_reaction_gas(base, sp([h2, o2, h], [1.0, 1.0, 1.0]), sp([h2o], [1.0])))
+    compare_generated!(one_reaction_gas(base, sp([h2, o2, h], [1.0, 1.0, 1.0]), sp([h2o], [1.0]); reversible=true))
+    # three-body: A + M -> B (M generic, all-species efficiency 1). one_reaction_gas
+    # hardcodes an empty Arrhenius_0/Troe_, so it cannot build a valid falloff
+    # reaction (unlike three-body, falloff's rate evaluation reads Arrhenius_0) --
+    # falloff/Troe coverage comes from the real mechanisms below instead, which
+    # already contain them.
+    efficiencies = sparse(fill(1.0, base.n_species, 1))
+    compare_generated!(one_reaction_gas(base, sp([h2], [1.0]), sp([h2o], [1.0]);
+        third=[1], efficiencies, reversible=true))
+    # PLOG without a concentration collider
+    plog = Arrhenius.PlogData(Int64[1], Int64[1, 3], Float64[0.1one_atm, 10one_atm],
+        Int64[1, 2, 3], [1.0e6 0.0 0.0; 1.0e7 0.0 0.0])
+    compare_generated!(one_reaction_gas(base, sp([h2], [1.0]), sp([h2o], [1.0]); plog))
+    # kind 4: the general/fractional AnyN fixture.
+    anyn, anyn_species = anyn_gas(base, :forward)
+    J = compare_generated!(anyn)
+    @test any(!iszero, J)
+    # Forcing a zero at one of the four dependencies makes this specific kind-4
+    # derivative ambiguous (see _ambiguous_anyn_zero) -- calling either *raw*
+    # (unguarded) Jacobian callable directly on that state must throw, not return
+    # a wrong answer. (GuardedStructuredJacobian's own fallback-to-finite-difference
+    # behavior for exactly this state is already covered by "AnyN zero guard and
+    # mutation propagation" above; this just confirms the generated path's copy of
+    # the same check/throw matches the analytic path's, rather than silently
+    # differing.)
+    reverse_anyn, reverse_species = anyn_gas(base, :reversible_reverse)
+    let reactor = IdealGasReactor(reverse_anyn; temperature=1000.0, pressure=one_atm,
+            mass_fractions=Y, constraint=:constant_pressure, energy=:adiabatic)
+        analytic = SRS.structured_trial_jacobian(reactor)
+        generated = SRS.generated_structured_jacobian(reactor)
+        state = reactor_state(reactor)
+        state[first(reverse_species)] = 0.0
+        n = length(state)
+        @test_throws DomainError analytic(zeros(n, n), state, nothing, 0.0)
+        @test_throws DomainError generated(zeros(n, n), state, nothing, 0.0)
+    end
+
+    # Whole real mechanisms, at several randomized (and one forced-negative-trial)
+    # states each: h2o2 (falloff + Troe), gri30 (three-body + falloff + Troe at
+    # scale), and the PLOG-bearing (collider-free) stagni_2023.
+    rng = MersenneTwister(13)
+    for (path, T0, P0, X0) in (
+        (H2O2, 1200.0, one_atm, Dict("H2"=>2.0,"O2"=>1.0,"AR"=>3.76)),
+        (joinpath(@__DIR__,"..","mechanism","gri30.yaml"), 1500.0, 10one_atm,
+            Dict("CH4"=>1.0,"O2"=>2.0,"N2"=>7.52)),
+        (joinpath(@__DIR__,"..","mechanism","stagni_2023.yaml"), 1600.0, 5one_atm,
+            Dict("NH3"=>1.0,"O2"=>0.75,"N2"=>2.82)),
+    )
+        gas = CreateSolution(path)
+        reactor = IdealGasReactor(gas; temperature=T0, pressure=P0, mole_fractions=X0)
+        analytic = SRS.structured_trial_jacobian(reactor)
+        generated = SRS.generated_structured_jacobian(reactor)
+        u0 = reactor_state(reactor); n = length(u0)
+        for trial in 1:3
+            state = copy(u0)
+            state[1:end-1] .+= 0.05 .* randn(rng, gas.n_species) .* u0[1:end-1]
+            state[rand(rng, 1:gas.n_species)] = -1e-9
+            state[end] += 50randn(rng)
+            J1, J2 = zeros(n, n), zeros(n, n)
+            analytic(J1, state, nothing, 0.0)
+            generated(J2, state, nothing, 0.0)
+            @test bitwise_equal(J1, J2)
+        end
+    end
 end
 
 @testset "KLU fixed-pattern and singular-core recovery" begin
@@ -424,4 +564,34 @@ end
         @test !(dense_fallback.prob.f.jac isa SRS.GuardedStructuredJacobian)
     end
     @test benchmark_julia_thread_settings(enforce=false) == STRUCTURED_THREAD_SETTINGS
+end
+
+@testset "native_rosenbrock23 selection and correctness" begin
+    # Rosenbrock methods evaluate the Jacobian on nearly every accepted step
+    # (no BDF-style Newton-chord reuse), so this is the configuration where the
+    # generated Jacobian's per-call speedup shows up
+    gas = CreateSolution(H2O2)
+    reactor = IdealGasReactor(gas; temperature=1200.0, pressure=one_atm,
+        mole_fractions=Dict("H2"=>2.0,"O2"=>1.0,"AR"=>3.76))
+    problem = reactor_problem(reactor, (0.0, 1e-4))
+    @test_throws ArgumentError native_rosenbrock23(problem; linear_solver=:invalid)
+
+    analytic = native_rosenbrock23(problem; linear_solver=:analytic,
+        reltol=1e-10, abstol=1e-14)
+    generated = native_rosenbrock23(problem; linear_solver=:generated,
+        reltol=1e-10, abstol=1e-14)
+    @test SciMLBase.successful_retcode(analytic)
+    @test SciMLBase.successful_retcode(generated)
+    @test analytic.u == generated.u
+    @test analytic.destats.njacs == generated.destats.njacs > 0
+    @test all(isfinite, reduce(vcat, generated.u))
+
+    # Outside the structured Jacobian's scope (:constant_volume here): neither
+    # mode can build a guard, so both must fail the same documented way rather
+    # than silently falling back to something unverified.
+    cv = IdealGasReactor(gas; temperature=1200.0, pressure=one_atm,
+        mole_fractions=Dict("H2"=>2.0,"O2"=>1.0,"AR"=>3.76), constraint=:constant_volume)
+    out_of_scope = reactor_problem(cv, (0.0, 1e-4))
+    @test_throws ArgumentError native_rosenbrock23(out_of_scope; linear_solver=:analytic)
+    @test_throws ArgumentError native_rosenbrock23(out_of_scope; linear_solver=:generated)
 end

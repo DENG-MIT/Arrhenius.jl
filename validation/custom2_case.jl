@@ -1,7 +1,6 @@
 using Arrhenius, LinearAlgebra, SHA, TOML, Libdl
+using SciMLBase, OrdinaryDiffEqBDF
 import Arrhenius.NPZ
-include(joinpath(@__DIR__,"..","example","reactors","network_solver.jl"))
-include(joinpath(@__DIR__,"..","example","reactors","moving_wall_setup.jl"))
 include(joinpath(@__DIR__,"numerical_threads.jl"))
 
 const CUSTOM2_SCALARS=("time","temperature","pressure","volume","mass","density","velocity",
@@ -57,8 +56,8 @@ end
 function custom2_inputs(input)
     paths=[joinpath(input,name) for name in ("h2o2.yaml","h2o2.yaml.npz")]
     append!(paths,[@__FILE__,joinpath(@__DIR__,"numerical_threads.jl")])
-    append!(paths,[joinpath(@__DIR__,"..","example","reactors",name) for name in ("custom2.jl","network_solver.jl","moving_wall_setup.jl")])
-    for (folder,_,files) in walkdir(joinpath(pkgdir(Arrhenius),"src")),name in files
+    append!(paths,[joinpath(@__DIR__,"..","example","reactors","custom2.jl")])
+    for subdirectory in ("src","ext"), (folder,_,files) in walkdir(joinpath(pkgdir(Arrhenius),subdirectory)), name in files
         endswith(name,".jl") && push!(paths,joinpath(folder,name))
     end
     project=Base.active_project()

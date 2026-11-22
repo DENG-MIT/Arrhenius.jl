@@ -354,6 +354,16 @@ function surface_flow_diagnostics(flow::SurfaceFlowReactor,u)
         coverage_rate=copy(w.coverage_rates))
 end
 
+"""
+    native_surface_flow_bdf(problem; kwargs...)
+
+Integrate a surface-flow `problem` with `OrdinaryDiffEqBDF.QNDF()`.
+Requires loading `SciMLBase` and `OrdinaryDiffEqBDF` to activate
+`ArrheniusOrdinaryDiffEqExt`, which provides the method body.
+"""
+function native_surface_flow_bdf end
+
 export SurfaceFlowReactor, SurfaceFlowRHS, surface_flow_properties, surface_flow_rhs
 export surface_flow_jacobian!, surface_flow_problem, solve_surface_flow, surface_reactor_chain
 export surface_flow_diagnostics
+export native_surface_flow_bdf

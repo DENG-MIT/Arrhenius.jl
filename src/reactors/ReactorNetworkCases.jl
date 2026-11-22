@@ -45,3 +45,5 @@ function closed_pair_network(gas)
     wall = HeatTransferWall(:hot,:cold;area=0.1,U=10.0,heat_flux=t -> 20sin(t))
     return ReactorNetwork((hot=hot,cold=cold);flows=(mfc,valve),walls=(wall,))
 end
+
+export mixing_network, combustor_network, closed_pair_network

@@ -1,6 +1,6 @@
 # Prepare methane_pox_on_pt.yaml / Pt_surf with mechanism/export_surface.py first.
 using Arrhenius
-include("surface_solver.jl")
+using SciMLBase, OrdinaryDiffEqBDF
 include("surface_pfr_setup.jl")
 
 function surf_pfr_chain(path;output="surf_pfr_chain.csv",reactors=201)

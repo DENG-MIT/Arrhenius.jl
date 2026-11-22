@@ -1,7 +1,6 @@
 module NativeEngineExampleTests
 using Arrhenius
 using Test
-include(joinpath(@__DIR__,"..","example","reactors","ic_engine_setup.jl"))
 
 @testset "engine geometry and valve/injection schedule" begin
     @test engine_volume(0.0) ≈ ENGINE_CLEARANCE

@@ -1,6 +1,6 @@
 using Arrhenius, NPZ, Test, LinearAlgebra
 BLAS.set_num_threads(1)
-isdefined(Arrhenius,:RedlichKwongThermo) || Base.include(Arrhenius,joinpath(@__DIR__,"..","src","RealGasThermo.jl"))
+isdefined(Arrhenius,:RedlichKwongThermo) || Base.include(Arrhenius,joinpath(@__DIR__,"..","src","Thermo","RealGasThermo.jl"))
 references = ARGS[1]
 @testset "Cantera 4 Redlich–Kwong properties" begin
     for name in ("dodecane","binary-temperature","critical-parameters","ideal-limit","co2-roots")

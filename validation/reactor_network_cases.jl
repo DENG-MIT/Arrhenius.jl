@@ -1,12 +1,11 @@
 # Usage: julia --project=SOLVER_ENV validation/reactor_network_cases.jl REFERENCE_DIRECTORY
 using Arrhenius
+using SciMLBase, OrdinaryDiffEqBDF
 using LinearAlgebra
 using NPZ
 using Printf
 using Test
 using TOML
-include(joinpath(@__DIR__,"..","example","reactors","network_solver.jl"))
-include(joinpath(@__DIR__,"..","example","reactors","network_cases.jl"))
 
 function validate_network_cases(directory)
     gas = CreateSolution(joinpath(directory,"mechanisms","gri30.yaml"))

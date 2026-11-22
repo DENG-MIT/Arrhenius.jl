@@ -1,7 +1,6 @@
 # Prepare: python mechanism/export_surface.py methane_pox_on_pt.yaml Pt_surf --output pox.surface.npz
 using Arrhenius
-include("surface_solver.jl")
-include("surface_flow_solver.jl")
+using SciMLBase, OrdinaryDiffEqBDF
 include("surface_pfr_setup.jl")
 
 function surf_pfr(path;output="surf_pfr.csv")

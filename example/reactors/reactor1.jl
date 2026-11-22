@@ -2,10 +2,13 @@
 # Usage: julia --project=SOLVER_ENV reactor1.jl PATH_TO_PREPARED_CANTERA_H2O2_YAML
 # The mechanism and its .npz sidecar must include H2, O2, and N2. The repository's
 # older nine-species h2o2.yaml instead contains Ar; see constant_pressure_ignition.jl.
-# Dependencies: Arrhenius, SciMLBase, OrdinaryDiffEqBDF.
+# Dependencies: Arrhenius, KLU, LinearSolve, OrdinaryDiffEqBDF,
+# OrdinaryDiffEqDifferentiation, OrdinaryDiffEqNonlinearSolve,
+# OrdinaryDiffEqRosenbrock, SciMLBase.
 using Arrhenius
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 using Printf
-include("ode_solver.jl")
 
 length(ARGS) == 1 || error("usage: reactor1.jl PATH_TO_PREPARED_CANTERA_H2O2_YAML")
 gas = CreateSolution(ARGS[1])

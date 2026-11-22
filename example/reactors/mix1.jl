@@ -1,9 +1,8 @@
-# Stationary mix1 calculation via the native Newton helper in mixing_solver.jl.
+# Stationary mix1 calculation via the native Newton helper solve_mixing_network.
 # Usage: julia mix1.jl path/to/gri30.yaml path/to/air.yaml
 # Both yaml files must be prepared (parsed .npz sidecars present). A separate
 # air mechanism is required; the gas model is never substituted for air.
 using Arrhenius
-include(joinpath(@__DIR__, "mixing_solver.jl"))
 
 length(ARGS) == 2 ||
     error("usage: julia mix1.jl <gri30.yaml> <air.yaml> (prepared yaml paths with .npz sidecars)")
