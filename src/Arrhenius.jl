@@ -6,7 +6,7 @@ module Arrhenius
     using SparseArrays
 
     include("Constants.jl")
-    include("BlowersMasel.jl")
+    include("reactions/BlowersMasel.jl")
     include("reactions/AbstractReactions.jl")
     include("reactions/Reactions.jl")
     include("DataStructure.jl")
@@ -27,14 +27,21 @@ module Arrhenius
 include("SignedEquilibrium.jl")
     include("IdealGasStates.jl")
     include("IdealGasMixing.jl")
-    include("Reactors.jl")
-    include("ReactorNetworks.jl")
-    include("ReactorNetworkCases.jl")
-    include("MixingSolver.jl")
-    include("MovingWallReactors.jl")
-    include("MovingWallCases.jl")
-    include("ICEngineCases.jl")
-    include("SurfaceKinetics.jl")
+    # Heavier, optional-dependency reactor solvers (the structured/code-generated
+    # Jacobian, KLU solve, and the lightweight BDF/SDIRK adapters) are Package
+    # Extensions instead, under ext/ArrheniusStructuredReactorExt/ and
+    # ext/ArrheniusOrdinaryDiffEqExt/ -- they can't be nested under src/reactors/.
+    include("reactors/Reactors.jl")
+    include("reactors/ReactorNetworks.jl")
+    include("reactors/ReactorNetworkCases.jl")
+    include("reactors/MixingSolver.jl")
+    include("reactors/MovingWallReactors.jl")
+    include("reactors/MovingWallCases.jl")
+    include("reactors/ICEngineCases.jl")
+    include("reactors/SurfaceKinetics.jl")
+    include("reactors/SurfaceFlowReactors.jl")
+    include("reactors/RealGasReactors.jl")
+    include("reactors/RealGasADJacobian.jl")
     include("CondensedEquilibrium.jl")
     include("CoverageDependentThermo.jl")
 
@@ -91,12 +98,7 @@ include("SignedEquilibrium.jl")
         isdefined(@__MODULE__, name) && continue
         @eval const $(name) = Plasma.$(name)
     end
-    include("SurfaceFlowReactors.jl")
     include("PureWater.jl")
-    include("CriticalProperties.jl")
-    include("RealGasThermo.jl")
-    include("RealGasReactors.jl")
-    include("RealGasADJacobian.jl")
     include("Flames.jl")
     include("FlameSensitivity.jl")
     include("IonizedFlames.jl")

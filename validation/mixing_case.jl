@@ -50,7 +50,7 @@ function main(input,output)
         "current_state_residual_per_s"=>max(maximum(abs,derivative[1:end-1])/state.mass,abs(derivative[end])/state.temperature),
         "minimum_Y"=>minimum(state.mass_fractions),"chemistry_enabled"=>network.nodes.mixer.chemistry,
         "species_counts"=>[gas.n_species,air.n_species],"blas_threads"=>BLAS.get_num_threads(),
-        "candidate_sha256"=>filehash(joinpath(pkgdir(Arrhenius),"src","MixingSolver.jl")))
+        "candidate_sha256"=>filehash(joinpath(pkgdir(Arrhenius),"src","reactors","MixingSolver.jl")))
     open(joinpath(output,"native.toml"),"w") do io
         TOML.print(io,report;sorted=true)
     end

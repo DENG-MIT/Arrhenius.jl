@@ -8,7 +8,7 @@ for name in ("OPENBLAS_NUM_THREADS","OMP_NUM_THREADS","MKL_NUM_THREADS","VECLIB_
     ENV[name] = "1"
 end
 const SHOCKTUBE_EXAMPLE_PATH = joinpath(@__DIR__,"..","example","reactors","non_ideal_shock_tube.jl")
-const SHOCKTUBE_AD_PATH = joinpath(@__DIR__,"..","src","RealGasADJacobian.jl")
+const SHOCKTUBE_AD_PATH = joinpath(@__DIR__,"..","src","reactors","RealGasADJacobian.jl")
 import_seconds = @elapsed begin
     @eval using Arrhenius, NPZ, SHA, Dates, TOML, LinearAlgebra, Libdl
     include(SHOCKTUBE_EXAMPLE_PATH)
