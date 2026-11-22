@@ -1,7 +1,8 @@
 # Compare native structured and dense reactor integrations.
 # Usage: julia --project=example/reactors preconditioned_integration.jl PREPARED_N_HEPTANE_YAML
 using Arrhenius
-include("ode_solver.jl")
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 
 """
     preconditioned_integration(gas; linear_solver=:auto, t_end=0.1, saveat=nothing)

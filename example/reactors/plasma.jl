@@ -1,7 +1,8 @@
 # Isothermal oxygen glow discharge with an isotropic electron distribution.
 # Usage: julia --project=example/reactors example/reactors/plasma.jl OXYGEN_YAML [SPECIES_DATA_DIR]
 using Arrhenius
-include("ode_solver.jl")
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 
 function _plasma_source_times(t_end, output_step)
     times = [0.0]

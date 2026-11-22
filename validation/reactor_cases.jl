@@ -1,12 +1,15 @@
 # Usage: julia --project=SOLVER_ENV validation/reactor_cases.jl REFERENCE_DIR [MECHANISM_DIR]
-# Requires Arrhenius, NPZ, SciMLBase, and OrdinaryDiffEqBDF.
+# Requires Arrhenius, NPZ, KLU, LinearSolve, OrdinaryDiffEqBDF,
+# OrdinaryDiffEqDifferentiation, OrdinaryDiffEqNonlinearSolve,
+# OrdinaryDiffEqRosenbrock, and SciMLBase.
 using Arrhenius
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 using LinearAlgebra
 using NPZ
 using Printf
 using Test
 using TOML
-include(joinpath(@__DIR__, "..", "example", "reactors", "ode_solver.jl"))
 
 function validate_reactor_cases(reference_directory, mechanism_directory)
     reports = Dict{String,Any}[]

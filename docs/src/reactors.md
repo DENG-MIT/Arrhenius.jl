@@ -4,11 +4,12 @@ IdealGasReactor defines a homogeneous closed reactor at constant pressure or vol
 
 ## Constant-pressure ignition
 
-From the repository root, activate example/reactors and run this example. The optional environment includes SciMLBase and OrdinaryDiffEqBDF; the helper selects QNDF and connects the Arrhenius Jacobian to the integrator.
+From the repository root, activate example/reactors and run this example. The environment includes `KLU`, `LinearSolve`, `OrdinaryDiffEqBDF`, `OrdinaryDiffEqDifferentiation`, `OrdinaryDiffEqNonlinearSolve`, `OrdinaryDiffEqRosenbrock`, and `SciMLBase`; loading all of them alongside `Arrhenius` activates its `ArrheniusStructuredReactorExt` extension, which provides `native_bdf` (selects QNDF and connects the Arrhenius Jacobian to the integrator).
 
 ~~~julia
 using Arrhenius
-include("example/reactors/ode_solver.jl")
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 
 gas = CreateSolution("mechanism/h2o2.yaml")
 reactor = IdealGasReactor(gas; temperature=1001.0, pressure=one_atm,

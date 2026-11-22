@@ -1,6 +1,9 @@
-# Requires Arrhenius, SciMLBase, and OrdinaryDiffEqBDF in the active environment.
+# Requires Arrhenius, KLU, LinearSolve, OrdinaryDiffEqBDF,
+# OrdinaryDiffEqDifferentiation, OrdinaryDiffEqNonlinearSolve,
+# OrdinaryDiffEqRosenbrock, and SciMLBase in the active environment.
 using Arrhenius
-include("ode_solver.jl")
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 
 gas = CreateSolution(joinpath(@__DIR__, "..", "..", "mechanism", "h2o2.yaml"))
 for constraint in (:constant_pressure, :constant_volume)

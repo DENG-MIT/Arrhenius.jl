@@ -4,11 +4,12 @@ using Random
 using SparseArrays
 using ForwardDiff
 using Arrhenius
+using KLU, LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase
 
-# Load through the public optional entry point, not a test-only module path.
-include(joinpath(@__DIR__, "..", "example", "reactors", "ode_solver.jl"))
-@assert @isdefined(StructuredReactorSolver)
-const SRS = StructuredReactorSolver
+# Loading all of the extension's weakdeps above activates it.
+const SRS = Base.get_extension(Arrhenius, :ArrheniusStructuredReactorExt)
+@assert SRS !== nothing
 const KS = SRS.KLUCoreStructuredSolver
 include(joinpath(@__DIR__, "..", "validation", "numerical_threads.jl"))
 const STRUCTURED_THREAD_SETTINGS = benchmark_julia_thread_settings()
@@ -565,7 +566,6 @@ end
     @test benchmark_julia_thread_settings(enforce=false) == STRUCTURED_THREAD_SETTINGS
 end
 
-if @isdefined(native_rosenbrock23)
 @testset "native_rosenbrock23 selection and correctness" begin
     # Rosenbrock methods evaluate the Jacobian on nearly every accepted step
     # (no BDF-style Newton-chord reuse), so this is the configuration where the
@@ -594,5 +594,4 @@ if @isdefined(native_rosenbrock23)
     out_of_scope = reactor_problem(cv, (0.0, 1e-4))
     @test_throws ArgumentError native_rosenbrock23(out_of_scope; linear_solver=:analytic)
     @test_throws ArgumentError native_rosenbrock23(out_of_scope; linear_solver=:generated)
-end
 end

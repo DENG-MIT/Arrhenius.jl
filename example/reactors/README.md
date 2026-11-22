@@ -10,13 +10,21 @@ julia --project=example/reactors example/reactors/constant_pressure_ignition.jl
 This environment uses the local Arrhenius checkout. Ideal-gas mechanisms require a YAML
 file and its prepared `.npz` sidecar, as described in the main README.
 
-`ode_solver.jl` supplies the `native_bdf` integrator for `solve_reactor`.
-For supported constant-pressure, adiabatic ideal-gas reactors, it uses a native
-analytic Jacobian and a sparse bordered linear solve with KLU. Supported
-mechanisms use Float64 NASA7 data, integer stoichiometry and ordinary reaction
-orders; Arrhenius, three-body, falloff/Troe and fixed-pressure PLOG rates are
-supported. Other mechanisms and constant-volume or isothermal reactors use
-the dense Jacobian supplied by `reactor_problem`.
+`Arrhenius.native_bdf` (and `Arrhenius.native_rosenbrock23`) are the package's
+own `solve_reactor` integrators, provided by the `ArrheniusStructuredReactorExt`
+package extension. Loading `KLU`, `LinearSolve`, `OrdinaryDiffEqBDF`,
+`OrdinaryDiffEqDifferentiation`, `OrdinaryDiffEqNonlinearSolve`,
+`OrdinaryDiffEqRosenbrock`, and `SciMLBase` alongside `Arrhenius` activates it
+(this environment lists all of them, so plain `using Arrhenius, KLU,
+LinearSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation,
+OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock, SciMLBase` is enough).
+For supported constant-pressure, adiabatic ideal-gas reactors, `native_bdf`
+uses a native analytic Jacobian and a sparse bordered linear solve with KLU.
+Supported mechanisms use Float64 NASA7 data, integer stoichiometry and
+ordinary reaction orders; Arrhenius, three-body, falloff/Troe and
+fixed-pressure PLOG rates are supported. Other mechanisms and
+constant-volume or isothermal reactors use the dense Jacobian supplied by
+`reactor_problem`.
 
 Pass `linear_solver=:dense` to `native_bdf` to select the guarded analytic
 Jacobian and signed reactor RHS with QNDF's ordinary dense linear solver for a
@@ -29,9 +37,11 @@ can be reused for subsequent reactor calculations. Use separate workspaces for
 concurrent integrations, and do not mutate a mechanism during a solve.
 
 The structured solver uses the dependency versions in this environment.
-Other environments retain dense QNDF integration. The core Arrhenius package
-continues to accept caller-supplied integrators without requiring these solver
-dependencies.
+Environments that do not load all of the extension's dependencies get no
+`native_bdf`/`native_rosenbrock23` methods at all (a clear `MethodError`
+rather than a silent dense fallback) but can still supply their own
+integrator to `solve_reactor`; the core Arrhenius package does not require
+these solver dependencies.
 
 Run the optional solver regressions with:
 
