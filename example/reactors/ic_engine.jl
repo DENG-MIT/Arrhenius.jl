@@ -4,9 +4,9 @@
 # Solver dependencies: SciMLBase, OrdinaryDiffEqBDF and ForwardDiff.
 # CSV profiles use the temperature/crank-angle limits. The companion TOML
 # reports integrals from all accepted states and the pressure-work ledger.
+using Arrhenius
 include("ic_engine_qndf_solver.jl")
 using .NativeEngineQNDF
-include("ic_engine_setup.jl")
 using TOML
 if abspath(PROGRAM_FILE) == @__FILE__
     isempty(ARGS) && error("provide the prepared dodecane_IG.yaml mechanism")

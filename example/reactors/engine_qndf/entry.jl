@@ -4,7 +4,6 @@ using Arrhenius, SciMLBase, OrdinaryDiffEqBDF, ForwardDiff, LinearAlgebra, Spars
 import Arrhenius.NPZ
 import TOML
 
-include(joinpath(@__DIR__,"..","ic_engine_setup.jl"))
 for helper in ("derivatives.jl","signed_reactor.jl",
         "unseeded_derivatives.jl","scaling.jl",
         "mass_weights.jl","element_budget.jl",

@@ -3,7 +3,6 @@ using NPZ
 using Test
 using TOML
 include(joinpath(@__DIR__,"..","example","reactors","network_solver.jl"))
-include(joinpath(@__DIR__,"..","example","reactors","moving_wall_setup.jl"))
 
 function validate_moving_wall_cases(directory;run=true)
     metrics = Dict{String,Any}()

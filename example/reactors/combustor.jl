@@ -1,6 +1,5 @@
 # Native steady burning states at decreasing residence times, using GRI-Mech 3.0.
 using Arrhenius
-include("network_cases.jl")
 include("network_solver.jl")
 
 function main()

@@ -3,7 +3,6 @@ using NPZ
 using Test
 using TOML
 include(joinpath(@__DIR__,"..","example","reactors","ic_engine_solver.jl"))
-include(joinpath(@__DIR__,"..","example","reactors","ic_engine_setup.jl"))
 
 struct EngineOutputControlProbe{M}
     model::M

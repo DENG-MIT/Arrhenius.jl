@@ -8,7 +8,7 @@ for name in ("OPENBLAS_NUM_THREADS","OMP_NUM_THREADS","MKL_NUM_THREADS","VECLIB_
     ENV[name] = "1"
 end
 const SHOCKTUBE_EXAMPLE_PATH = joinpath(@__DIR__,"..","example","reactors","non_ideal_shock_tube.jl")
-const SHOCKTUBE_AD_PATH = joinpath(@__DIR__,"..","example","reactors","real_gas_ad_jacobian.jl")
+const SHOCKTUBE_AD_PATH = joinpath(@__DIR__,"..","src","RealGasADJacobian.jl")
 import_seconds = @elapsed begin
     @eval using Arrhenius, NPZ, SHA, Dates, TOML, LinearAlgebra, Libdl
     include(SHOCKTUBE_EXAMPLE_PATH)
@@ -55,8 +55,7 @@ end
 function shocktube_source_hashes(root)
     paths=[joinpath(folder,file) for (folder,_,files) in walkdir(joinpath(root,"src")) for file in files]
     append!(paths,[joinpath(root,"example","reactors",file) for file in
-        ("non_ideal_shock_tube.jl","real_gas_ode_solver.jl","real_gas_ad_jacobian.jl",
-         "real_gas_trial_states.jl","real_gas_qndf_solver.jl")])
+        ("non_ideal_shock_tube.jl","real_gas_ode_solver.jl","real_gas_qndf_solver.jl")])
     push!(paths,joinpath(root,"validation","real_gas_timing.jl"))
     Dict(replace(relpath(path,root),'\\'=>'/')=>bytes2hex(sha256(read(path))) for path in paths)
 end

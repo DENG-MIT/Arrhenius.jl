@@ -87,8 +87,9 @@ end
     @test isdefined(EnginePublicCLI,:solve_ic_engine_qndf)
     @test isdefined(EnginePublicCLI,:write_ic_engine_csv)
     @test E.NPZ===E.Arrhenius.NPZ
-    @test realpath(String(first(methods(E.engine_network)).file))==realpath(joinpath(reactors,"ic_engine_setup.jl"))
-    @test realpath(String(first(methods(EnginePublicCLI.engine_network)).file))==realpath(joinpath(reactors,"ic_engine_setup.jl"))
+    engine_network_source=realpath(joinpath(pkgdir(E.Arrhenius),"src","ICEngineCases.jl"))
+    @test realpath(String(first(methods(E.engine_network)).file))==engine_network_source
+    @test realpath(String(first(methods(EnginePublicCLI.engine_network)).file))==engine_network_source
     @test !isdefined(E,:engine_timing_main)
     @test !isdefined(E,:run_full_private_engine)
     @test !isdefined(E,:engine_remaining_probe)

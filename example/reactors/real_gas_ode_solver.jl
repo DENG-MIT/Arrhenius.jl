@@ -1,5 +1,5 @@
+using Arrhenius
 using SciMLBase, OrdinaryDiffEqSDIRK
-include(joinpath(@__DIR__,"real_gas_ad_jacobian.jl"))
 
 _shocktube_outside_domain(u,p,t) = !all(isfinite,u) || u[end] <= 0 ||
     minimum(view(u,1:length(u)-1)) < -1e-13

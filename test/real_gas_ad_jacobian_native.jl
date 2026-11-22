@@ -1,5 +1,4 @@
 using Arrhenius, LinearAlgebra, YAML, Test
-include(joinpath(@__DIR__,"..","example","reactors","real_gas_ad_jacobian.jl"))
 
 @testset "Optional shock-tube automatic Jacobian" begin
     path=joinpath(@__DIR__,"..","mechanism","h2o2.yaml")

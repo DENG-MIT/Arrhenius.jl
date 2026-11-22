@@ -251,3 +251,10 @@ function write_ic_engine_csv(path,output,gas)
     end
     return path
 end
+
+export ENGINE_FREQUENCY, ENGINE_DISPLACEMENT, ENGINE_CLEARANCE, ENGINE_PISTON_AREA,
+    ENGINE_INJECTION_RATE, engine_crank_angle, engine_piston_speed, engine_volume,
+    engine_gate, engine_switching_times, engine_network, solve_ic_engine,
+    engine_output_indices, ic_engine_observables, engine_trapezoid, engine_quadratic_integral,
+    engine_quadrature_terms, engine_integral_values, ic_engine_integrals, ic_engine_summary,
+    write_ic_engine_csv

@@ -1,7 +1,6 @@
 # Two fixed-volume vessels with a time-varying mass-flow controller, valve,
 # and a conducting wall with prescribed heat flux. All transfer is internal.
 using Arrhenius
-include("network_cases.jl")
 include("network_solver.jl")
 
 gas = CreateSolution(isempty(ARGS) ? joinpath(@__DIR__,"..","..","mechanism","gri30.yaml") : ARGS[1])

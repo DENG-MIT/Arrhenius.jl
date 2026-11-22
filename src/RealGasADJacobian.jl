@@ -1,5 +1,5 @@
 using Arrhenius, ForwardDiff, LinearAlgebra
-include(joinpath(@__DIR__,"real_gas_trial_states.jl"))
+include(joinpath(@__DIR__,"RealGasTrialStates.jl"))
 
 """
     shocktube_ad_jacobian(reactor; chunk=8, trial_policy=ClippedShockTubeTrials())
@@ -126,3 +126,5 @@ function _shocktube_ad_jacobian(reactor,::Val{N},trial_policy::P) where {N,P<:Sh
       end
     end
 end
+
+export shocktube_ad_jacobian, ShockTubeTrialPolicy, ClippedShockTubeTrials, SignedIntegerShockTubeTrials
