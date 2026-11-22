@@ -610,5 +610,15 @@ function catalytic_diagnostics(rhs::CatalyticRHS,u,t=0.0)
 end
 catalytic_diagnostics(n::CatalyticNetwork,u,t=0.0) = catalytic_diagnostics(catalytic_rhs(n),u,t)
 
+"""
+    native_surface_bdf(problem; kwargs...)
+
+Integrate a surface-coverage `problem` with `OrdinaryDiffEqBDF.QNDF()`.
+Requires loading `SciMLBase` and `OrdinaryDiffEqBDF` to activate
+`ArrheniusOrdinaryDiffEqExt`, which provides the method body.
+"""
+function native_surface_bdf end
+
 export ReactorSurface, CatalyticNetwork, CatalyticRHS, catalytic_state, catalytic_rhs
 export catalytic_jacobian!, catalytic_problem, solve_catalytic, catalytic_diagnostics
+export native_surface_bdf

@@ -4,7 +4,8 @@
 # real_gas_reactor_cases.py. This validation performs no Cantera calls.
 using Arrhenius, LinearAlgebra, Test
 include(joinpath(@__DIR__,"..","example","reactors","non_ideal_shock_tube.jl"))
-include(joinpath(@__DIR__,"..","example","reactors","real_gas_qndf_solver.jl"))
+using OrdinaryDiffEqBDF
+const _ODE_EXT = Base.get_extension(Arrhenius, :ArrheniusOrdinaryDiffEqExt)
 
 function adapter_contracts(directory)
     path=joinpath(directory,"dodecane_IG.yaml")
@@ -34,10 +35,10 @@ function adapter_contracts(directory)
             @test all(==(1e-19),integrator.opts.abstol[1:end-1])
             @test integrator.opts.abstol[end]==1e-6/1000.
             @test integrator.alg.nlsolve.κ==1//100
-            @test _shocktube_physical_state(integrator.u,scale)≈u rtol=2e-16
-            @test _shocktube_physical_state(u,nothing)==u
-            @test _shocktube_physical_state(u,nothing)!==u
-            domain=_ScaledShockTubeDomain(scale)
+            @test _ODE_EXT._shocktube_physical_state(integrator.u,scale)≈u rtol=2e-16
+            @test _ODE_EXT._shocktube_physical_state(u,nothing)==u
+            @test _ODE_EXT._shocktube_physical_state(u,nothing)!==u
+            domain=_ODE_EXT._ScaledShockTubeDomain(scale)
             z=copy(integrator.u)
             @test !domain(z,nothing,0.)
             z[1]=-2e-13/scale[1]
@@ -59,7 +60,7 @@ function adapter_contracts(directory)
             J=zeros(length(state),length(state))
             shocktube_ad_jacobian(air;trial_policy=policy)(J,state,nothing,0.)
             full=ForwardDiff.jacobian(state) do trial
-                rhs=_signed_reactor_rhs(air,eltype(trial));out=zero(trial)
+                rhs=Arrhenius._signed_reactor_rhs(air,eltype(trial));out=zero(trial)
                 rhs(out,trial,nothing,0.);out
             end
             elements=findall(e -> e in ("H","C"),gas.elements)

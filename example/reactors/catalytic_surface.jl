@@ -1,7 +1,7 @@
 # Prepare once: python mechanism/export_surface.py ptcombust.yaml Pt_surf --output pt.surface.npz
 # Run: julia --project=YOUR_SCIML_ENV example/reactors/catalytic_surface.jl pt.surface.npz
 using Arrhenius
-include("surface_solver.jl")
+using SciMLBase, OrdinaryDiffEqBDF
 
 function catalytic_surface(path)
     mechanism = SurfaceMechanism(path)

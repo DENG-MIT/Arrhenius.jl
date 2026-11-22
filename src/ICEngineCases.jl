@@ -252,9 +252,19 @@ function write_ic_engine_csv(path,output,gas)
     return path
 end
 
+"""
+    native_engine_sdirk(problem; max_temperature_change=20.0, dtmax=1/(360*50.0), kwargs...)
+
+Native L-stable SDIRK integration for the periodically switched engine
+network, via `OrdinaryDiffEqSDIRK.KenCarp4()`. Requires loading `SciMLBase`
+and `OrdinaryDiffEqSDIRK` to activate `ArrheniusOrdinaryDiffEqExt`, which
+provides the method body.
+"""
+function native_engine_sdirk end
+
 export ENGINE_FREQUENCY, ENGINE_DISPLACEMENT, ENGINE_CLEARANCE, ENGINE_PISTON_AREA,
     ENGINE_INJECTION_RATE, engine_crank_angle, engine_piston_speed, engine_volume,
     engine_gate, engine_switching_times, engine_network, solve_ic_engine,
     engine_output_indices, ic_engine_observables, engine_trapezoid, engine_quadratic_integral,
     engine_quadrature_terms, engine_integral_values, ic_engine_integrals, ic_engine_summary,
-    write_ic_engine_csv
+    write_ic_engine_csv, native_engine_sdirk

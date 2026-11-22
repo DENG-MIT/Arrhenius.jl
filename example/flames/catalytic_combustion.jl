@@ -5,7 +5,7 @@
 # Run with a Julia environment containing Arrhenius, SciMLBase and OrdinaryDiffEqBDF:
 # julia catalytic_combustion.jl pt.surface.npz
 using Arrhenius
-include(joinpath(@__DIR__,"..","reactors","surface_solver.jl"))
+using SciMLBase, OrdinaryDiffEqBDF
 
 surface=SurfaceMechanism(ARGS[1])
 gas=CreateSolution(surface.gas_file)

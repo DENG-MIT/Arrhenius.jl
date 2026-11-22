@@ -1,9 +1,8 @@
 using Arrhenius
+using SciMLBase, OrdinaryDiffEqBDF
 using NPZ
 using Test
 using TOML
-
-include(joinpath(@__DIR__, "..", "example", "reactors", "surface_solver.jl"))
 
 function validate_surfaces(directory)
     reports = Dict{String,Any}()

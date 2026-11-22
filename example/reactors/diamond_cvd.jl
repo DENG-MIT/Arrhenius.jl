@@ -1,7 +1,7 @@
 # Prepare once: python mechanism/export_surface.py diamond.yaml diamond_100 --output diamond.surface.npz
 # Run: julia --project=YOUR_SCIML_ENV example/reactors/diamond_cvd.jl diamond.surface.npz
 using Arrhenius
-include("surface_solver.jl")
+using SciMLBase, OrdinaryDiffEqBDF
 
 function diamond_cvd(path)
     m = SurfaceMechanism(path)

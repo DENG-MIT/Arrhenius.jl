@@ -1,8 +1,8 @@
 using Arrhenius, LinearAlgebra, NPZ
+using SciMLBase, OrdinaryDiffEqBDF
 if !isdefined(Arrhenius,:CatalyticImpingingJet)
     Base.include(Arrhenius,joinpath(@__DIR__,"..","src","CatalyticFlames.jl"))
 end
-include(joinpath(@__DIR__,"..","example","reactors","surface_solver.jl"))
 const CF=Arrhenius
 BLAS.set_num_threads(1)
 root,output=ARGS[1:2]

@@ -1,7 +1,7 @@
 using SciMLBase
 using OrdinaryDiffEqBDF
 
-function native_surface_bdf(problem; kwargs...)
+function Arrhenius.native_surface_bdf(problem; kwargs...)
     f = ODEFunction(problem.f; jac=problem.jac, tgrad=problem.tgrad)
     ode = ODEProblem(f, problem.u0, problem.tspan, problem.p)
     # Adsorption often starts on a much shorter timescale than the final horizon.

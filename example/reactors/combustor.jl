@@ -1,6 +1,6 @@
 # Native steady burning states at decreasing residence times, using GRI-Mech 3.0.
 using Arrhenius
-include("network_solver.jl")
+using SciMLBase, OrdinaryDiffEqBDF
 
 function main()
   gas = CreateSolution(isempty(ARGS) ? joinpath(@__DIR__,"..","..","mechanism","gri30.yaml") : ARGS[1])

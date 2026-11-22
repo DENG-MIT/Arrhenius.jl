@@ -1,7 +1,7 @@
 using SciMLBase, OrdinaryDiffEqSDIRK
 
 "Native L-stable SDIRK integration for the periodically switched engine network."
-function native_engine_sdirk(problem;max_temperature_change=20.0,dtmax=1/(360*50.0),kwargs...)
+function Arrhenius.native_engine_sdirk(problem;max_temperature_change=20.0,dtmax=1/(360*50.0),kwargs...)
     temperature_index = problem.f.model.network.nodes.cylinder.initial.gas.n_species+1
     previous_temperature = Ref(problem.u0[temperature_index])
     outside = (u,p,t)->problem.isoutofdomain(u,p,t) ||

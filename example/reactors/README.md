@@ -36,6 +36,16 @@ Each integration creates fresh solver workspaces. An already-loaded mechanism
 can be reused for subsequent reactor calculations. Use separate workspaces for
 concurrent integrations, and do not mutate a mechanism during a solve.
 
+A second, lighter extension, `ArrheniusOrdinaryDiffEqExt`, activates once
+`SciMLBase`, `OrdinaryDiffEqBDF`, and `OrdinaryDiffEqSDIRK` are all loaded
+(this environment lists all of them too). It never touches QNDF's internal
+cache interfaces the way `ArrheniusStructuredReactorExt` does, so its
+dependencies are loosely bounded rather than exact-pinned. It provides
+`native_network_bdf`, `native_surface_bdf`, `native_surface_flow_bdf`,
+`native_engine_sdirk`, and the shock-tube integrators
+(`shocktube_sdirk`, `shocktube_integrator`, `shocktube_qndf_integrator`,
+`shocktube_ignition`, `shocktube_calculations`, `non_ideal_shock_tube`).
+
 The structured solver uses the dependency versions in this environment.
 Environments that do not load all of the extension's dependencies get no
 `native_bdf`/`native_rosenbrock23` methods at all (a clear `MethodError`

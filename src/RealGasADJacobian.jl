@@ -127,4 +127,28 @@ function _shocktube_ad_jacobian(reactor,::Val{N},trial_policy::P) where {N,P<:Sh
     end
 end
 
+"""
+    shocktube_sdirk(problem; kwargs...)
+    shocktube_integrator(reactor; end_time=.005, jacobian=:ad)
+    shocktube_qndf_integrator(reactor; trial_policy, end_time=.005)
+    shocktube_ignition(reactor; end_time=.005, save_stride=20, jacobian=:ad,
+                       solver=:sdirk, trial_policy=ClippedShockTubeTrials())
+    shocktube_calculations(gas, model; smoke=false, jacobian=:ad, solver=:sdirk,
+                           trial_policy=ClippedShockTubeTrials())
+    non_ideal_shock_tube(directory; sweep=true, jacobian=:ad, solver=:sdirk)
+
+Native shock-tube integrators and the Cantera `non_ideal_shock_tube.py`
+port. Requires loading `SciMLBase` and `OrdinaryDiffEqSDIRK` (and, for the
+`:qndf` solver option, `OrdinaryDiffEqBDF`) to activate
+`ArrheniusOrdinaryDiffEqExt`, which provides the method bodies.
+"""
+function shocktube_sdirk end
+function shocktube_integrator end
+function shocktube_qndf_integrator end
+function shocktube_ignition end
+function shocktube_calculations end
+function non_ideal_shock_tube end
+
 export shocktube_ad_jacobian, ShockTubeTrialPolicy, ClippedShockTubeTrials, SignedIntegerShockTubeTrials
+export shocktube_sdirk, shocktube_integrator, shocktube_qndf_integrator
+export shocktube_ignition, shocktube_calculations, non_ideal_shock_tube

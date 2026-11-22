@@ -1,8 +1,8 @@
 using Arrhenius
+using SciMLBase, OrdinaryDiffEqSDIRK
 using NPZ
 using Test
 using TOML
-include(joinpath(@__DIR__,"..","example","reactors","ic_engine_solver.jl"))
 
 struct EngineOutputControlProbe{M}
     model::M

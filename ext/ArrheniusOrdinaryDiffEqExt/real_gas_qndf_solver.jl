@@ -1,6 +1,5 @@
-# Include real_gas_ode_solver.jl (or non_ideal_shock_tube.jl) first.
-# Optional dependency of the caller's solver environment; not an Arrhenius dependency.
-using OrdinaryDiffEqBDF
+# Sibling include within ArrheniusOrdinaryDiffEqExt; shares the extension's
+# own using Arrhenius, SciMLBase, OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK.
 
 struct _ScaledShockTubeRHS{F,V}
     physical::F
@@ -57,12 +56,12 @@ Concentration atol is 1e-19 kmol/m^3, temperature atol is 1e-6 K, rtol is 1e-9,
 and the nonlinear convergence coefficient is 0.01. These choices do not change
 physical domain gates or project accepted states. No final time stop is imposed.
 """
-function shocktube_qndf_integrator(reactor;trial_policy::SignedIntegerShockTubeTrials,end_time=.005)
+function Arrhenius.shocktube_qndf_integrator(reactor;trial_policy::SignedIntegerShockTubeTrials,end_time=.005)
     isfinite(end_time) && end_time>0 || throw(ArgumentError("positive finite end time required"))
-    _validate_trial_policy(trial_policy,reactor)
+    Arrhenius._validate_trial_policy(trial_policy,reactor)
     u=reactor_state(reactor)
     scale=vcat(reactor.gas.MW./reactor.density,1000.)
-    rhs=_ScaledShockTubeRHS(_trial_rhs(trial_policy,reactor),scale,copy(u),zero(u))
+    rhs=_ScaledShockTubeRHS(Arrhenius._trial_rhs(trial_policy,reactor),scale,copy(u),zero(u))
     jac=_ScaledShockTubeJacobian(shocktube_ad_jacobian(reactor;trial_policy),scale,copy(u),zeros(length(u),length(u)))
     f=ODEFunction(rhs;jac,tgrad=(out,z,p,t)->fill!(out,zero(eltype(out))))
     ode=ODEProblem(f,u./scale,(0.,Inf),nothing)

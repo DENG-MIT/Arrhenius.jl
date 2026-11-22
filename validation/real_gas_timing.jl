@@ -12,7 +12,7 @@ const SHOCKTUBE_AD_PATH = joinpath(@__DIR__,"..","src","RealGasADJacobian.jl")
 import_seconds = @elapsed begin
     @eval using Arrhenius, NPZ, SHA, Dates, TOML, LinearAlgebra, Libdl
     include(SHOCKTUBE_EXAMPLE_PATH)
-    "--qndf" in ARGS && include(joinpath(dirname(SHOCKTUBE_EXAMPLE_PATH),"real_gas_qndf_solver.jl"))
+    "--qndf" in ARGS && (@eval using OrdinaryDiffEqBDF)
 end
 
 function shocktube_thread_settings(;enforce=true)
@@ -53,9 +53,9 @@ function shocktube_require_replay(actual,expected,repetition)
 end
 
 function shocktube_source_hashes(root)
-    paths=[joinpath(folder,file) for (folder,_,files) in walkdir(joinpath(root,"src")) for file in files]
-    append!(paths,[joinpath(root,"example","reactors",file) for file in
-        ("non_ideal_shock_tube.jl","real_gas_ode_solver.jl","real_gas_qndf_solver.jl")])
+    paths=[joinpath(folder,file) for subdirectory in ("src","ext")
+        for (folder,_,files) in walkdir(joinpath(root,subdirectory)) for file in files]
+    push!(paths,joinpath(root,"example","reactors","non_ideal_shock_tube.jl"))
     push!(paths,joinpath(root,"validation","real_gas_timing.jl"))
     Dict(replace(relpath(path,root),'\\'=>'/')=>bytes2hex(sha256(read(path))) for path in paths)
 end
@@ -75,8 +75,6 @@ function shocktube_timing_main(args)
     ad = !("--finite-difference" in args)
     qndf = "--qndf" in args
     qndf && !ad && error("--qndf requires the AD Jacobian")
-    qndf && !isdefined(@__MODULE__,:shocktube_qndf_integrator) &&
-        error("include real_gas_qndf_solver.jl before calling this driver with --qndf")
     solver = qndf ? :qndf : :sdirk
     root = normpath(joinpath(@__DIR__,".."))
     realpath(pathof(Arrhenius))==realpath(joinpath(root,"src","Arrhenius.jl")) ||
